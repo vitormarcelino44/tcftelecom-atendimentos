@@ -1,0 +1,33 @@
+COMO FAZER O LINK DE CONVITE IR PARA O SITE
+
+O sistema está em HTML no arquivo:
+index.html
+
+Enquanto você abre o arquivo direto no computador, o navegador usa um caminho local, como:
+file:///C:/...
+
+Esse link só funciona no seu computador.
+
+Para o link de convite funcionar para outras pessoas:
+1. Hospede o arquivo index.html em algum lugar:
+   - Netlify
+   - Vercel
+   - GitHub Pages
+   - servidor próprio
+   - hospedagem da empresa
+
+2. Depois de hospedado, copie o link público.
+   Exemplo:
+   https://seudominio.com.br/sistema
+
+3. Entre como admin no sistema.
+4. Vá em Configurações.
+5. Cole o link no campo "Link público do site".
+6. Clique em "Salvar link do site".
+7. Gere o convite.
+
+A partir daí, o convite será gerado com o link do site, não do disco local.
+
+Admin:
+Usuário: Victor
+Senha: vi20081997
