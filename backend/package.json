@@ -4,13 +4,16 @@
   "description": "",
   "main": "index.js",
  "scripts": {
-  "start": "npx prisma generate && node src/server.js",
+ "start": "node src/server.js",
   "dev": "node src/server.js"
 },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
+  "engines": {
+  "node": "20.x"
+},
   "dependencies": {
     "@prisma/client": "^6.19.3",
     "cors": "^2.8.5",
