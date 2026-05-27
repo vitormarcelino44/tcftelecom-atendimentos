@@ -90,8 +90,15 @@ app.delete("/atendimentos/:id", async (req, res) => {
     });
   }
 });
-
 const PORT = process.env.PORT || 3000;
+
+process.on("uncaughtException", (err) => {
+  console.error("ERRO GERAL:", err);
+});
+
+process.on("unhandledRejection", (err) => {
+  console.error("PROMISE ERROR:", err);
+});
 
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`Servidor rodando na porta ${PORT}`);
