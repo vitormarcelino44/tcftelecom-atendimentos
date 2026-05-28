@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>TCF TELECOM</title>
+</head>
+<body>
+
+  <h1>Dashboard TCF TELECOM</h1>
+
+  <button onclick="testarAPI()">
+    Testar API
+  </button>
+
+  <pre id="resultado"></pre>
+
+  <script>
+    async function testarAPI() {
+
+      const resposta = await fetch(
+        "https://harmonious-trust-production.up.railway.app"
+      );
+
+      const texto = await resposta.text();
+
+      document.getElementById("resultado").innerText = texto;
+    }
+  </script>
+
+</body>
+</html>
