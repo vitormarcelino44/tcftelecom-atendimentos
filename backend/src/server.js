@@ -1,3 +1,4 @@
+
 const express = require("express");
 const cors = require("cors");
 const { PrismaClient } = require("@prisma/client");
@@ -5,16 +6,13 @@ const { PrismaClient } = require("@prisma/client");
 const app = express();
 const prisma = new PrismaClient();
 
-app.use(cors({
-  origin: "*"
-}));
+app.use(cors());
 app.use(express.json());
 
 // TESTE
-app.get("/", (req, res) =
+app.get("/", (req, res) => {
   res.send("API TCFTELECOM ONLINE");
 });
-
 // LISTAR
 app.get("/atendimentos", async (req, res) => {
   try {
