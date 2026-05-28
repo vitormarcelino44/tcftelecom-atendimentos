@@ -1,5 +1,6 @@
-[phases.setup]
-nixPkgs = ["nodejs_20"]
+[build]
+builder = "NIXPACKS"
 
-[start]
-cmd = "cd backend && npm install && npx prisma generate && npm start"
+[deploy]
+startCommand = "cd backend && npm install && npx prisma generate && npm start"
+restartPolicyType = "ON_FAILURE"
