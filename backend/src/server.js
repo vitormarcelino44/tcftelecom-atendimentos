@@ -5,11 +5,13 @@ const { PrismaClient } = require("@prisma/client");
 const app = express();
 const prisma = new PrismaClient();
 
-app.use(cors());
+app.use(cors({
+  origin: "*"
+}));
 app.use(express.json());
 
 // TESTE
-app.get("/", (req, res) => {
+app.get("/", (req, res) =
   res.send("API TCFTELECOM ONLINE");
 });
 
