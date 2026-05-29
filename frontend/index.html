@@ -4933,6 +4933,7 @@ body:not(.light-mode) .auth-message.show{
 
     function cancelarEdicao() { limparFormulario(); }
 
+    const API_URL = "https://harmonious-trust-production-8554.up.railway.app";
     document.getElementById("formAtendimento").addEventListener("submit", function(e) {
       e.preventDefault();
       const registro = {
@@ -4950,19 +4951,24 @@ body:not(.light-mode) .auth-message.show{
         observacoes: document.getElementById("observacoes").value.trim()
       };
 
-      const lista = carregar();
-      const editIndex = document.getElementById("editIndex").value;
-      if (editIndex !== "") {
-        lista[Number(editIndex)] = registro;
-        mostrarMensagem("Atendimento atualizado com sucesso.");
-      } else {
-        lista.push(registro);
-        mostrarMensagem("Atendimento salvo com sucesso.");
-      }
-      if (!salvar(lista)) return;
-      limparFormulario();
-      atualizarTudo();
-      abrirTelaPorId("registros");
+     fetch("https://harmonious-trust-production-8554.up.railway.app/atendimentos", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json"
+  },
+  body: JSON.stringify(registro)
+})
+.then(res => res.json())
+.then(() => {
+  mostrarMensagem("Atendimento salvo no banco com sucesso.");
+  limparFormulario();
+  atualizarTudo();
+  abrirTelaPorId("registros");
+})
+.catch(erro => {
+  console.error("Erro ao salvar no banco:", erro);
+  alert("Erro ao salvar atendimento no banco.");
+});
     });
 
     function mostrarMensagem(texto) {
