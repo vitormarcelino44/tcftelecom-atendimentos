@@ -34,15 +34,29 @@ app.get("/atendimentos", async (req, res) => {
 // CRIAR
 app.post("/atendimentos", async (req, res) => {
   try {
-
-    const novo =
-      await prisma.atendimento.create({
-        data: req.body
-      });
+    const novo = await prisma.atendimento.create({
+      data: {
+        data: req.body.data || null,
+        tecnico: req.body.tecnico || null,
+        cliente: req.body.cliente || null,
+        contato: req.body.contato || null,
+        telefone: req.body.telefone || null,
+        descricao: req.body.descricao || null,
+        tipo: req.body.tipo || null,
+        osAberta: req.body.osAberta || null,
+        resolvidoRemoto: req.body.resolvidoRemoto || null,
+        resolvidoInternamente: req.body.resolvidoInternamente || null,
+        critico: req.body.critico || null,
+        posSuporte: req.body.posSuporte || null,
+        status: req.body.status || null,
+        observacoes: req.body.observacoes || null
+      }
+    });
 
     res.json(novo);
 
   } catch (erro) {
+    console.error("ERRO AO CRIAR ATENDIMENTO:", erro);
     res.status(500).json({
       erro: erro.message
     });
