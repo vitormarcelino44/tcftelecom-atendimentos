@@ -1,4 +1,3 @@
-
 const express = require("express");
 const cors = require("cors");
 const { PrismaClient } = require("@prisma/client");
@@ -13,6 +12,7 @@ app.use(express.json());
 app.get("/", (req, res) => {
   res.send("API TCFTELECOM ONLINE");
 });
+
 // LISTAR
 app.get("/atendimentos", async (req, res) => {
   try {
@@ -23,8 +23,9 @@ app.get("/atendimentos", async (req, res) => {
     });
 
     res.json(dados);
-
   } catch (erro) {
+    console.error("ERRO AO LISTAR ATENDIMENTOS:", erro);
+
     res.status(500).json({
       erro: erro.message
     });
@@ -34,6 +35,8 @@ app.get("/atendimentos", async (req, res) => {
 // CRIAR
 app.post("/atendimentos", async (req, res) => {
   try {
+    console.log("DADOS RECEBIDOS NO POST:", req.body);
+
     const novo = await prisma.atendimento.create({
       data: {
         data: req.body.data || null,
@@ -44,8 +47,8 @@ app.post("/atendimentos", async (req, res) => {
         descricao: req.body.descricao || null,
         tipo: req.body.tipo || null,
         osAberta: req.body.osAberta || null,
-        resolvidoRemoto: req.body.resolvidoRemoto || null,
         resolvidoInternamente: req.body.resolvidoInternamente || null,
+        resolvidoRemoto: req.body.resolvidoRemoto || null,
         critico: req.body.critico || null,
         posSuporte: req.body.posSuporte || null,
         status: req.body.status || null,
@@ -53,12 +56,14 @@ app.post("/atendimentos", async (req, res) => {
       }
     });
 
-    res.json(novo);
-
+    res.status(201).json(novo);
   } catch (erro) {
     console.error("ERRO AO CRIAR ATENDIMENTO:", erro);
+
     res.status(500).json({
-      erro: erro.message
+      erro: erro.message,
+      code: erro.code,
+      meta: erro.meta
     });
   }
 });
@@ -66,20 +71,36 @@ app.post("/atendimentos", async (req, res) => {
 // EDITAR
 app.put("/atendimentos/:id", async (req, res) => {
   try {
-
-    const atualizado =
-      await prisma.atendimento.update({
-        where: {
-          id: Number(req.params.id)
-        },
-        data: req.body
-      });
+    const atualizado = await prisma.atendimento.update({
+      where: {
+        id: Number(req.params.id)
+      },
+      data: {
+        data: req.body.data || null,
+        tecnico: req.body.tecnico || null,
+        cliente: req.body.cliente || null,
+        contato: req.body.contato || null,
+        telefone: req.body.telefone || null,
+        descricao: req.body.descricao || null,
+        tipo: req.body.tipo || null,
+        osAberta: req.body.osAberta || null,
+        resolvidoInternamente: req.body.resolvidoInternamente || null,
+        resolvidoRemoto: req.body.resolvidoRemoto || null,
+        critico: req.body.critico || null,
+        posSuporte: req.body.posSuporte || null,
+        status: req.body.status || null,
+        observacoes: req.body.observacoes || null
+      }
+    });
 
     res.json(atualizado);
-
   } catch (erro) {
+    console.error("ERRO AO EDITAR ATENDIMENTO:", erro);
+
     res.status(500).json({
-      erro: erro.message
+      erro: erro.message,
+      code: erro.code,
+      meta: erro.meta
     });
   }
 });
@@ -87,7 +108,6 @@ app.put("/atendimentos/:id", async (req, res) => {
 // EXCLUIR
 app.delete("/atendimentos/:id", async (req, res) => {
   try {
-
     await prisma.atendimento.delete({
       where: {
         id: Number(req.params.id)
@@ -97,13 +117,17 @@ app.delete("/atendimentos/:id", async (req, res) => {
     res.json({
       sucesso: true
     });
-
   } catch (erro) {
+    console.error("ERRO AO EXCLUIR ATENDIMENTO:", erro);
+
     res.status(500).json({
-      erro: erro.message
+      erro: erro.message,
+      code: erro.code,
+      meta: erro.meta
     });
   }
 });
+
 const PORT = process.env.PORT || 3000;
 
 process.on("uncaughtException", (err) => {
