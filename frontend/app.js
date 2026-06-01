@@ -1,5 +1,4 @@
-const API_URL = "https://harmonious-trust-production-8554.up.railway.app";
-
+const API_URL = "https://tcftelecom-atendimentos-production.up.railway.app";
 async function carregarAtendimentos() {
 
   const resultado =
