@@ -4891,15 +4891,25 @@ body:not(.light-mode) .auth-message.show{
       abrirTela(id, btn);
     }
 
-    function carregar() {
-      try {
-        return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
-      } catch (erro) {
-        console.error("Erro ao carregar atendimentos:", erro);
-        return [];
-      }
-    }
+async function carregarDoBanco() {
+  try {
+    const resposta = await fetch(`${API_URL}/atendimentos`);
+    const dados = await resposta.json();
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(dados));
+    atualizarTudo();
+  } catch (erro) {
+    console.error("Erro ao carregar atendimentos do banco:", erro);
+  }
+}
 
+function carregar() {
+  try {
+    return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+  } catch (erro) {
+    console.error("Erro ao carregar atendimentos:", erro);
+    return [];
+  }
+}
     function salvar(lista) {
       try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(lista));
@@ -4933,7 +4943,7 @@ body:not(.light-mode) .auth-message.show{
 
     function cancelarEdicao() { limparFormulario(); }
 
-    const API_URL = "https://harmonious-trust-production-8554.up.railway.app";
+    const API_URL = "https://tcftelecom-atendimentos-production.up.railway.app";
     document.getElementById("formAtendimento").addEventListener("submit", function(e) {
       e.preventDefault();
       const registro = {
@@ -4951,7 +4961,7 @@ body:not(.light-mode) .auth-message.show{
         observacoes: document.getElementById("observacoes").value.trim()
       };
 
-     fetch("https://harmonious-trust-production-8554.up.railway.app/atendimentos", {
+     fetch(`${API_URL}/atendimentos`, {
   method: "POST",
   headers: {
     "Content-Type": "application/json"
@@ -4962,8 +4972,8 @@ body:not(.light-mode) .auth-message.show{
 .then(() => {
   mostrarMensagem("Atendimento salvo no banco com sucesso.");
   limparFormulario();
-  atualizarTudo();
-  abrirTelaPorId("registros");
+  carregarDoBanco();
+abrirTelaPorId("registros");
 })
 .catch(erro => {
   console.error("Erro ao salvar no banco:", erro);
