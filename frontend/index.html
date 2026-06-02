@@ -8502,3 +8502,151 @@ body.tcf-register-mode .login-main-btn{
   obs.observe(document.documentElement, {subtree:true, childList:true, characterData:true, attributes:true});
 })();
 </script>
+
+<!-- PATCH TCF v0.57 - Gestão administrativa completa de usuários, convites e permissões -->
+<style id="v057-gestao-usuarios-admin">
+.tcf-admin-user-card{display:grid;grid-template-columns:52px minmax(180px,1fr) 210px 160px auto;gap:14px;align-items:center;padding:15px;border-radius:18px;background:rgba(100,116,139,.10);border:1px solid rgba(148,163,184,.22);margin-bottom:10px;}
+.tcf-admin-user-avatar{width:52px;height:52px;border-radius:16px;display:grid;place-items:center;font-weight:950;color:#fff;background:linear-gradient(135deg,#2563eb,#38bdf8);}
+.tcf-admin-user-info strong{display:block;font-size:15px;color:var(--text,#0f172a);}
+.tcf-admin-user-info span{display:block;font-size:12px;color:var(--muted,#64748b);margin-top:3px;}
+.tcf-admin-user-actions{display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-end;}
+.tcf-admin-user-actions button{padding:9px 11px!important;border-radius:11px!important;font-size:12px!important;}
+.tcf-admin-user-card select{min-height:42px!important;border-radius:12px!important;}
+.tcf-admin-status{font-size:12px;font-weight:950;border-radius:999px;padding:7px 10px;text-align:center;border:1px solid rgba(148,163,184,.24);}
+.tcf-admin-status.ok{color:#16a34a;background:rgba(34,197,94,.12);border-color:rgba(34,197,94,.24);}
+.tcf-admin-status.block{color:#e11d48;background:rgba(244,63,94,.12);border-color:rgba(244,63,94,.24);}
+.tcf-admin-perm-panel{margin-top:10px;padding:12px;border-radius:14px;background:rgba(148,163,184,.10);border:1px solid rgba(148,163,184,.18);grid-column:2 / -1;display:none;}
+.tcf-admin-perm-panel.open{display:block;}
+.tcf-perm-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;}
+.tcf-perm-grid label{display:flex!important;gap:8px;align-items:center;font-size:12px;font-weight:800;color:inherit!important;margin:0!important;}
+.tcf-perm-grid input{width:auto!important;min-height:auto!important;}
+.tcf-link-manager{margin-top:18px;padding:16px;border-radius:20px;background:rgba(56,189,248,.08);border:1px solid rgba(56,189,248,.22);}
+.tcf-link-manager h3{margin:0 0 6px;font-size:20px;}
+.tcf-link-row{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;margin-top:10px;}
+.tcf-link-output{padding:13px;border-radius:14px;background:rgba(15,23,42,.08);border:1px solid rgba(148,163,184,.22);word-break:break-all;font-size:13px;}
+body:not(.light-mode):not(.light) .tcf-link-output{background:rgba(2,6,23,.55);color:#e5e7eb;}
+.tcf-inline-ok{color:#16a34a!important;font-weight:900;}
+.tcf-inline-err{color:#e11d48!important;font-weight:900;}
+@media(max-width:1200px){.tcf-admin-user-card{grid-template-columns:52px 1fr;}.tcf-admin-user-actions{justify-content:flex-start}.tcf-admin-perm-panel{grid-column:1 / -1}.tcf-perm-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:680px){.tcf-perm-grid{grid-template-columns:1fr}.tcf-link-row{grid-template-columns:1fr}}
+</style>
+<script id="v057-gestao-usuarios-admin-script">
+(function(){
+  const USERS_KEY="usuarios_senhas_v21";
+  const PROFILE_KEY="usuarios_perfis_v42";
+  const FIRST_KEY="usuarios_primeiro_acesso_v29";
+  const LOGINS_KEY="usuarios_logins_v42";
+  const INVITE_KEY="convites_tokens_v42";
+  const PERMS_KEY="usuarios_permissoes_v57";
+  const ADMIN_USER="Victor";
+  const ADMIN_PASS="vi20081997";
+  const DEFAULT_PASS="12345678";
+  const TELAS=["dashboard","cadastro","registros","graficos","indicadores","usuarios","perfil","configuracoes"];
+  const PERFIS={
+    "Administrador":["dashboard","cadastro","registros","graficos","indicadores","usuarios","perfil","configuracoes"],
+    "Supervisor":["dashboard","cadastro","registros","graficos","indicadores","usuarios","perfil"],
+    "Operador":["dashboard","cadastro","registros","graficos","perfil"],
+    "Atendente":["dashboard","cadastro","registros","graficos","perfil"],
+    "Suporte":["dashboard","cadastro","registros","graficos","indicadores","perfil"],
+    "Técnico":["dashboard","cadastro","registros","perfil"]
+  };
+  function read(key,fallback){try{return JSON.parse(localStorage.getItem(key)||JSON.stringify(fallback));}catch(e){return fallback;}}
+  function write(key,val){localStorage.setItem(key,JSON.stringify(val));}
+  function esc(v){return String(v??"").replace(/[&<>'"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[c]));}
+  function idSafe(v){return btoa(unescape(encodeURIComponent(String(v)))).replace(/=/g,"");}
+  function nowBR(){return new Date().toLocaleString("pt-BR",{dateStyle:"short",timeStyle:"short"});}
+  function initials(n){return String(n||"U").split(/\s+/).map(x=>x[0]).join("").slice(0,2).toUpperCase();}
+  function getCurrent(){return localStorage.getItem("sistema_login_v29")||localStorage.getItem("sistema_login_v21")||"";}
+  function isAdmin(){return String(getCurrent()).toLowerCase()===ADMIN_USER.toLowerCase()||document.body.classList.contains("admin");}
+  function findKey(obj,nome){return Object.keys(obj||{}).find(k=>k.toLowerCase()===String(nome).toLowerCase());}
+  function ensureBase(){
+    const users=read(USERS_KEY,{}), profiles=read(PROFILE_KEY,{}), first=read(FIRST_KEY,{}), perms=read(PERMS_KEY,{});
+    if(!findKey(users,ADMIN_USER)) users[ADMIN_USER]=ADMIN_PASS;
+    profiles[ADMIN_USER]=Object.assign({nome:ADMIN_USER,email:"",perfil:"Administrador",criadoEm:nowBR(),ultimoLogin:""},profiles[ADMIN_USER]||{});
+    first[ADMIN_USER]=false;
+    perms[ADMIN_USER]=PERFIS.Administrador;
+    write(USERS_KEY,users);write(PROFILE_KEY,profiles);write(FIRST_KEY,first);write(PERMS_KEY,perms);
+  }
+  function allUsers(){
+    ensureBase();
+    const users=read(USERS_KEY,{}), profiles=read(PROFILE_KEY,{}), first=read(FIRST_KEY,{}), hist=read(LOGINS_KEY,[]), perms=read(PERMS_KEY,{});
+    const nomes=new Set([...Object.keys(users),...Object.keys(profiles),...hist.map(h=>h.usuario).filter(Boolean)]);
+    return [...nomes].map(nome=>{
+      const p=profiles[nome]||{};
+      const h=hist.find(x=>String(x.usuario).toLowerCase()===String(nome).toLowerCase())||{};
+      const perfil=p.perfil||(String(nome).toLowerCase()===ADMIN_USER.toLowerCase()?"Administrador":"Atendente");
+      return {nome,email:p.email||"",perfil,senha:users[nome]||"",primeiro:first[nome]===true,bloqueado:p.bloqueado===true,criadoEm:p.criadoEm||"",ultimoLogin:p.ultimoLogin||h.ultimoLogin||"",online:h.online===true,permissoes:perms[nome]||PERFIS[perfil]||PERFIS.Atendente};
+    }).sort((a,b)=>(a.nome===ADMIN_USER?-1:b.nome===ADMIN_USER?1:a.nome.localeCompare(b.nome,"pt-BR")));
+  }
+  function saveProfile(nome,changes){const p=read(PROFILE_KEY,{});p[nome]=Object.assign({nome,perfil:"Atendente",criadoEm:nowBR()},p[nome]||{},changes);write(PROFILE_KEY,p);}
+  function savePerms(nome,arr){const p=read(PERMS_KEY,{});p[nome]=arr;write(PERMS_KEY,p);}
+  function clearInputs(ids){ids.forEach(id=>{const el=document.getElementById(id);if(el)el.value="";});}
+  function message(id,text,ok){const el=document.getElementById(id);if(!el){alert(text);return;}el.textContent=text;el.className=ok?"tcf-inline-ok":"tcf-inline-err";setTimeout(()=>{el.textContent="";el.className="";},4200);}
+  function createUserFrom(ids,msgId){
+    const nome=(document.getElementById(ids.nome)?.value||"").trim();
+    const email=(document.getElementById(ids.email)?.value||"").trim();
+    const senha=(document.getElementById(ids.senha)?.value||"").trim()||DEFAULT_PASS;
+    const perfil=(document.getElementById(ids.perfil)?.value||"Atendente").trim();
+    if(!nome){message(msgId,"Digite o login/nome do usuário.",false);return;}
+    if(email&&!email.includes("@")){message(msgId,"Digite um e-mail válido.",false);return;}
+    if(senha.length<4){message(msgId,"A senha precisa ter pelo menos 4 caracteres.",false);return;}
+    const users=read(USERS_KEY,{}), first=read(FIRST_KEY,{});
+    const existing=findKey(users,nome)||nome;
+    users[existing]=senha; first[existing]=false;
+    write(USERS_KEY,users);write(FIRST_KEY,first);
+    saveProfile(existing,{nome:existing,email,perfil,bloqueado:false,criadoEm:read(PROFILE_KEY,{})[existing]?.criadoEm||nowBR()});
+    savePerms(existing,PERFIS[perfil]||PERFIS.Atendente);
+    clearInputs([ids.nome,ids.email,ids.senha]);
+    message(msgId,`Usuário ${existing} cadastrado/atualizado com sucesso.`,true);
+    renderUsuariosAdmin();
+  }
+  window.cadastrarNovoUsuarioTCF=function(){createUserFrom({nome:"novoUsuarioNome",email:"novoUsuarioEmail",senha:"novoUsuarioSenha",perfil:"novoUsuarioPerfil"},"novoUsuarioMsg");};
+  window.criarUsuarioDiretoTCF=function(){createUserFrom({nome:"tcfNovoUsuarioNome",email:"tcfNovoUsuarioEmail",senha:"tcfNovoUsuarioSenha",perfil:"tcfNovoUsuarioPerfil"},"tcfNovoUsuarioMsg");};
+  window.criarUsuarioDashboardTCF=function(){createUserFrom({nome:"dashUsuarioNome",email:"dashUsuarioEmail",senha:"dashUsuarioSenha",perfil:"dashUsuarioPerfil"},"dashUsuarioMsg");};
+  window.salvarPerfilAdminTCF=function(nome){
+    const id=idSafe(nome); const perfil=document.getElementById("perfil_"+id)?.value||"Atendente"; const status=document.getElementById("status_"+id)?.value||"ativo";
+    saveProfile(nome,{perfil,bloqueado:status==="bloqueado"});
+    const checks=[...document.querySelectorAll(`input[data-perm-user="${CSS.escape(nome)}"]:checked`)].map(x=>x.value);
+    savePerms(nome,checks.length?checks:(PERFIS[perfil]||PERFIS.Atendente));
+    renderUsuariosAdmin(); alert("Usuário atualizado.");
+  };
+  window.togglePermissoesTCF=function(nome){const p=document.getElementById("perms_"+idSafe(nome));if(p)p.classList.toggle("open");};
+  window.redefinirSenhaUsuarioTCF=function(nome){const nova=prompt("Digite a nova senha para " + nome + ":"); if(nova===null)return; if(nova.trim().length<4){alert("A senha precisa ter pelo menos 4 caracteres.");return;} const users=read(USERS_KEY,{}); const key=findKey(users,nome)||nome; users[key]=nova.trim(); write(USERS_KEY,users); const first=read(FIRST_KEY,{}); first[key]=false; write(FIRST_KEY,first); alert("Senha redefinida com sucesso.");};
+  window.removerUsuarioTCF=function(nome){if(String(nome).toLowerCase()===ADMIN_USER.toLowerCase()){alert("O administrador principal não pode ser removido.");return;} if(!confirm("Remover o usuário " + nome + "?"))return; [USERS_KEY,PROFILE_KEY,FIRST_KEY,PERMS_KEY].forEach(k=>{const obj=read(k,{}); const key=findKey(obj,nome)||nome; delete obj[key]; write(k,obj);}); let hist=read(LOGINS_KEY,[]).filter(x=>String(x.usuario).toLowerCase()!==String(nome).toLowerCase()); write(LOGINS_KEY,hist); renderUsuariosAdmin();};
+  window.limparHistoricoLogins=function(){if(!confirm("Limpar somente o histórico de acessos? Os usuários cadastrados serão mantidos."))return; write(LOGINS_KEY,[]); renderUsuariosAdmin();};
+  function baseUrl(){return (localStorage.getItem("site_public_url_v30")||window.SITE_PUBLIC_URL||location.origin+location.pathname).replace(/\/$/,"");}
+  window.gerarConvite=function(){
+    const nome=(document.getElementById("conviteNome")?.value||"").trim(); const perfil=document.getElementById("convitePerfil")?.value||"Atendente";
+    if(!nome){alert("Digite o nome do atendente.");return;}
+    const token="tcf_"+Date.now().toString(36)+Math.random().toString(36).slice(2,8);
+    const conv=read(INVITE_KEY,{}); conv[token]={token,nome,perfil,criadoEm:nowBR(),usado:false}; write(INVITE_KEY,conv);
+    const users=read(USERS_KEY,{}), first=read(FIRST_KEY,{}); if(!findKey(users,nome)){users[nome]=DEFAULT_PASS; first[nome]=true; write(USERS_KEY,users); write(FIRST_KEY,first);} saveProfile(nome,{perfil,criadoEm:read(PROFILE_KEY,{})[nome]?.criadoEm||nowBR(),origem:"Convite"}); savePerms(nome,PERFIS[perfil]||PERFIS.Atendente);
+    const url=baseUrl()+"?token="+encodeURIComponent(token)+"&convite="+encodeURIComponent(nome)+"&perfil="+encodeURIComponent(perfil);
+    const out=document.getElementById("linkConvite"); if(out)out.textContent=url+" | Senha padrão: "+DEFAULT_PASS;
+    renderUsuariosAdmin();
+  };
+  window.copiarConvite=function(){const texto=(document.getElementById("linkConvite")?.textContent||"").replace(/ \| Senha padrão:.*/,"").trim(); if(!texto||texto.includes("Nenhum")){alert("Gere o link primeiro.");return;} navigator.clipboard?.writeText(texto).then(()=>alert("Link copiado."),()=>prompt("Copie o link:",texto));};
+  window.copiarLinkLoginUsuarioTCF=function(nome){const url=baseUrl()+"?usuario="+encodeURIComponent(nome); navigator.clipboard?.writeText(url).then(()=>alert("Link de acesso copiado."),()=>prompt("Copie o link:",url));};
+  function renderLinksManager(){
+    const config=document.querySelector("#configuracoes .config-list"); if(!config||document.getElementById("tcfLinkManager"))return;
+    const div=document.createElement("div"); div.id="tcfLinkManager"; div.className="config-item admin-only tcf-link-manager"; div.innerHTML=`<h3>Gerenciador de links</h3><div class="trend">Salve o link público e gere convites copiáveis para novos usuários.</div><div class="tcf-link-row"><input id="sitePublicUrlV57" placeholder="https://tcftelecom-atendimentos-48fp.vercel.app"><button class="secondary" type="button" onclick="salvarUrlPublicaV57()">Salvar link</button></div><div class="tcf-link-row"><div class="tcf-link-output" id="linkPublicoAtualV57">Nenhum link salvo.</div><button class="primary" type="button" onclick="copiarLinkPublicoV57()">Copiar link do site</button></div>`;
+    config.appendChild(div); const inp=document.getElementById("sitePublicUrlV57"); if(inp)inp.value=localStorage.getItem("site_public_url_v30")||location.origin+location.pathname; atualizarLinkPublicoV57();
+  }
+  window.atualizarLinkPublicoV57=function(){const out=document.getElementById("linkPublicoAtualV57"); if(out)out.textContent=baseUrl();};
+  window.salvarUrlPublicaV57=function(){const val=(document.getElementById("sitePublicUrlV57")?.value||"").trim().replace(/\/$/,""); if(!val){alert("Digite o link público.");return;} localStorage.setItem("site_public_url_v30",val); window.SITE_PUBLIC_URL=val; const old=document.getElementById("sitePublicUrl"); if(old)old.value=val; atualizarLinkPublicoV57(); alert("Link salvo.");};
+  window.copiarLinkPublicoV57=function(){const url=baseUrl(); navigator.clipboard?.writeText(url).then(()=>alert("Link copiado."),()=>prompt("Copie o link:",url));};
+  window.renderUsuariosAdmin=function(){
+    ensureBase(); const lista=allUsers(); const admins=lista.filter(u=>u.perfil==="Administrador").length; const ops=lista.filter(u=>u.perfil!=="Administrador").length; const hist=read(LOGINS_KEY,[]).length;
+    const set=(id,val)=>{const el=document.getElementById(id); if(el)el.textContent=val;}; set("kpiUsuariosTotal",lista.length); set("kpiUsuariosAdmin",admins); set("kpiUsuariosOperador",ops); set("kpiUsuariosLogins",hist);
+    const html=lista.map(u=>{const id=idSafe(u.nome); const perms=u.permissoes||PERFIS[u.perfil]||[]; return `<div class="tcf-admin-user-card"><div class="tcf-admin-user-avatar">${esc(initials(u.nome))}</div><div class="tcf-admin-user-info"><strong>${esc(u.nome)}</strong><span>${esc(u.email||"sem e-mail")} • ${esc(u.perfil)} • Criado: ${esc(u.criadoEm||"-")}</span><span>Último acesso: ${esc(u.ultimoLogin||"sem login registrado")}</span></div><select id="perfil_${id}">${Object.keys(PERFIS).map(p=>`<option ${p===u.perfil?"selected":""}>${p}</option>`).join("")}</select><select id="status_${id}"><option value="ativo" ${!u.bloqueado?"selected":""}>Ativo</option><option value="bloqueado" ${u.bloqueado?"selected":""}>Bloqueado</option></select><div class="tcf-admin-user-actions"><button class="primary" onclick="salvarPerfilAdminTCF('${esc(u.nome)}')">Salvar</button><button class="secondary" onclick="togglePermissoesTCF('${esc(u.nome)}')">Permissões</button><button class="warning" onclick="redefinirSenhaUsuarioTCF('${esc(u.nome)}')">Senha</button><button class="secondary" onclick="copiarLinkLoginUsuarioTCF('${esc(u.nome)}')">Link</button><button class="danger" onclick="removerUsuarioTCF('${esc(u.nome)}')">Remover</button></div><div id="perms_${id}" class="tcf-admin-perm-panel"><strong>Permissões de acesso</strong><div class="tcf-perm-grid">${TELAS.map(t=>`<label><input type="checkbox" data-perm-user="${esc(u.nome)}" value="${t}" ${perms.includes(t)?"checked":""}> ${t}</label>`).join("")}</div></div></div>`;}).join("") || `<div class="empty">Nenhum usuário cadastrado.</div>`;
+    ["usuariosAdminListaPage","usuariosAdminLista"].forEach(id=>{const el=document.getElementById(id); if(el)el.innerHTML=html;}); renderLinksManager(); aplicarPermissoesTCF();
+  };
+  window.aplicarPermissoesTCF=function(){
+    const atual=getCurrent(); const u=allUsers().find(x=>String(x.nome).toLowerCase()===String(atual).toLowerCase()); const admin=String(atual).toLowerCase()===ADMIN_USER.toLowerCase(); if(admin){document.body.classList.add("admin");}
+    const permissoes=admin?PERFIS.Administrador:(u?.permissoes||PERFIS.Atendente);
+    document.querySelectorAll('[data-role="admin"]').forEach(el=>{el.style.display=(admin||permissoes.includes(el.getAttribute('onclick')?.match(/'([^']+)'/)?.[1]||""))?"":"none";});
+  };
+  const oldAbrir=window.abrirTela; window.abrirTela=function(id,botao){ if(typeof oldAbrir==="function")oldAbrir(id,botao); if(id==="usuarios"||id==="configuracoes")setTimeout(renderUsuariosAdmin,60); };
+  window.addEventListener("load",function(){ensureBase(); renderLinksManager(); setTimeout(renderUsuariosAdmin,600);});
+})();
+</script>
