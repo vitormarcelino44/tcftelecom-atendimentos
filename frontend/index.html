@@ -8293,3 +8293,212 @@ body.tcf-cadastro-mode .reset-password-link{
   document.addEventListener('DOMContentLoaded', removerAbasDuplicadasTCF);
 })();
 </script>
+
+
+<!-- PATCH TCF v0.56 - Corrige cadastro na tela de login -->
+<style id="v056-corrige-cadastro-login">
+body.tcf-cadastro-mode .login-main-btn,
+body.tcf-register-mode .login-main-btn{
+  letter-spacing:.2px !important;
+}
+</style>
+<script id="v056-corrige-cadastro-login-script">
+(function(){
+  const USERS_KEY = "usuarios_senhas_v21";
+  const PROFILE_KEY = "usuarios_perfis_v42";
+  const FIRST_KEY = "usuarios_primeiro_acesso_v29";
+  const LOGIN_V29 = "sistema_login_v29";
+  const LOGIN_V21 = "sistema_login_v21";
+  const ADMIN_USER = "Victor";
+  const ADMIN_PASS = "vi20081997";
+  let cadastroAtivoTCF = false;
+
+  function readJSON(key, fallback){
+    try { return JSON.parse(localStorage.getItem(key) || JSON.stringify(fallback)); }
+    catch(e){ return fallback; }
+  }
+
+  function writeJSON(key, value){
+    localStorage.setItem(key, JSON.stringify(value));
+  }
+
+  function lower(v){ return String(v || "").trim().toLowerCase(); }
+
+  function nowBR(){
+    return new Date().toLocaleString("pt-BR", { dateStyle:"short", timeStyle:"short" });
+  }
+
+  function msg(texto, ok){
+    const el = document.getElementById("authMessage") || document.getElementById("loginErro");
+    if(!el){ alert(texto); return; }
+    el.className = "auth-message show " + (ok ? "auth-success" : "auth-error");
+    el.textContent = texto;
+    el.style.display = "block";
+  }
+
+  function limparMsg(){
+    const el = document.getElementById("authMessage") || document.getElementById("loginErro");
+    if(el){ el.className = "auth-message"; el.textContent = ""; }
+  }
+
+  function liberar(usuario, isAdmin){
+    localStorage.setItem(LOGIN_V29, usuario);
+    localStorage.setItem(LOGIN_V21, usuario);
+    const overlay = document.getElementById("loginOverlay");
+    if(overlay) overlay.style.display = "none";
+    document.body.classList.toggle("admin", !!isAdmin);
+    if(typeof aplicarUsuarioLogado === "function") aplicarUsuarioLogado(usuario);
+    if(typeof carregarPerfilUsuario === "function") carregarPerfilUsuario();
+    if(typeof renderUsuariosAdmin === "function") renderUsuariosAdmin();
+  }
+
+  function setModoCadastro(ativo){
+    cadastroAtivoTCF = !!ativo;
+    document.body.classList.toggle("tcf-cadastro-mode", cadastroAtivoTCF);
+    document.body.classList.toggle("tcf-register-mode", cadastroAtivoTCF);
+    document.body.classList.toggle("invite-mode", cadastroAtivoTCF);
+
+    const tabEntrar = document.getElementById("tcfTabEntrar") || document.getElementById("btnModoLogin");
+    const tabCadastrar = document.getElementById("tcfTabCadastrar") || document.getElementById("btnModoCadastro");
+    if(tabEntrar) tabEntrar.classList.toggle("active", !cadastroAtivoTCF);
+    if(tabCadastrar) tabCadastrar.classList.toggle("active", cadastroAtivoTCF);
+
+    const titulo = document.querySelector(".login-card-top strong");
+    if(titulo) titulo.textContent = cadastroAtivoTCF ? "Cadastrar usuário" : "Entrar no Sistema";
+
+    const btn = document.querySelector(".login-main-btn");
+    if(btn){
+      btn.textContent = cadastroAtivoTCF ? "Cadastrar usuário" : "Acessar sistema";
+      btn.onclick = function(ev){ ev.preventDefault(); entrarSistemaV056(); return false; };
+    }
+
+    const senha = document.getElementById("loginSenha");
+    if(senha) senha.placeholder = cadastroAtivoTCF ? "Crie uma senha" : "Digite sua senha";
+
+    const emailLabel = document.getElementById("loginEmailLabel");
+    const email = document.getElementById("loginEmail");
+    const confirmarLabel = document.getElementById("confirmSenhaLabel");
+    const confirmar = document.getElementById("loginSenhaConfirmar");
+    [emailLabel,email,confirmarLabel,confirmar].forEach(el => {
+      if(el){ el.style.display = cadastroAtivoTCF ? "block" : "none"; }
+    });
+    if(email) email.required = cadastroAtivoTCF;
+    if(confirmar) confirmar.required = cadastroAtivoTCF;
+
+    limparMsg();
+  }
+
+  function entrarSistemaV056(){
+    const usuario = (document.getElementById("loginUsuario")?.value || "").trim();
+    const email = (document.getElementById("loginEmail")?.value || "").trim();
+    const senha = (document.getElementById("loginSenha")?.value || "").trim();
+    const confirmar = (document.getElementById("loginSenhaConfirmar")?.value || "").trim();
+
+    const emCadastro = cadastroAtivoTCF || document.body.classList.contains("tcf-cadastro-mode") || document.body.classList.contains("tcf-register-mode");
+
+    if(!usuario || !senha){ msg("Preencha usuário e senha.", false); return; }
+
+    if(emCadastro){
+      if(!email || !email.includes("@")){ msg("Digite um e-mail válido.", false); return; }
+      if(senha.length < 4){ msg("A senha precisa ter pelo menos 4 caracteres.", false); return; }
+      if(senha !== confirmar){ msg("As senhas não conferem.", false); return; }
+
+      const users = readJSON(USERS_KEY, {});
+      const profiles = readJSON(PROFILE_KEY, {});
+      const first = readJSON(FIRST_KEY, {});
+      const existente = Object.keys(users).find(k => lower(k) === lower(usuario));
+      if(existente){ msg("Este usuário já existe. Clique em Entrar para acessar.", false); return; }
+
+      users[usuario] = senha;
+      first[usuario] = false;
+      profiles[usuario] = Object.assign({}, profiles[usuario] || {}, {
+        nome: usuario,
+        email: email,
+        perfil: lower(usuario) === lower(ADMIN_USER) ? "Administrador" : "Atendente",
+        criadoEm: nowBR(),
+        ultimoLogin: nowBR(),
+        origem: "Cadastro na tela de login"
+      });
+
+      writeJSON(USERS_KEY, users);
+      writeJSON(PROFILE_KEY, profiles);
+      writeJSON(FIRST_KEY, first);
+
+      msg("Cadastro criado com sucesso. Entrando no sistema...", true);
+      setTimeout(function(){ liberar(usuario, lower(usuario) === lower(ADMIN_USER)); }, 350);
+      return;
+    }
+
+    if(lower(usuario) === lower(ADMIN_USER) && senha === ADMIN_PASS){
+      const users = readJSON(USERS_KEY, {});
+      const profiles = readJSON(PROFILE_KEY, {});
+      users[ADMIN_USER] = ADMIN_PASS;
+      profiles[ADMIN_USER] = Object.assign({nome:ADMIN_USER,email:"",perfil:"Administrador",criadoEm:nowBR()}, profiles[ADMIN_USER] || {}, {ultimoLogin:nowBR()});
+      writeJSON(USERS_KEY, users);
+      writeJSON(PROFILE_KEY, profiles);
+      liberar(ADMIN_USER, true);
+      return;
+    }
+
+    const users = readJSON(USERS_KEY, {});
+    const chave = Object.keys(users).find(k => lower(k) === lower(usuario));
+    if(!chave || users[chave] !== senha){ msg("Usuário ou senha incorretos. Confira os dados ou cadastre um novo usuário.", false); return; }
+
+    const profiles = readJSON(PROFILE_KEY, {});
+    profiles[chave] = Object.assign({nome:chave,email:"",perfil:"Atendente",criadoEm:nowBR()}, profiles[chave] || {}, {ultimoLogin:nowBR()});
+    writeJSON(PROFILE_KEY, profiles);
+    liberar(chave, lower(chave) === lower(ADMIN_USER));
+  }
+
+  function instalar(){
+    const tabEntrar = document.getElementById("tcfTabEntrar") || document.getElementById("btnModoLogin");
+    const tabCadastrar = document.getElementById("tcfTabCadastrar") || document.getElementById("btnModoCadastro");
+    if(tabEntrar) tabEntrar.onclick = function(e){ e.preventDefault(); setModoCadastro(false); };
+    if(tabCadastrar) tabCadastrar.onclick = function(e){ e.preventDefault(); setModoCadastro(true); };
+
+    const btn = document.querySelector(".login-main-btn");
+    if(btn) btn.onclick = function(e){ e.preventDefault(); entrarSistemaV056(); return false; };
+
+    // Corrige o bug principal: no modo cadastro o texto não pode conter "acessar",
+    // porque scripts antigos interceptavam esse texto e tentavam fazer login.
+    if(document.body.classList.contains("tcf-cadastro-mode") || document.body.classList.contains("tcf-register-mode")){
+      setModoCadastro(true);
+    }
+  }
+
+  document.addEventListener("click", function(e){
+    const tabCadastro = e.target.closest("#tcfTabCadastrar, #btnModoCadastro");
+    const tabEntrar = e.target.closest("#tcfTabEntrar, #btnModoLogin");
+    if(tabCadastro){ e.preventDefault(); e.stopImmediatePropagation(); setModoCadastro(true); return; }
+    if(tabEntrar){ e.preventDefault(); e.stopImmediatePropagation(); setModoCadastro(false); return; }
+  }, true);
+
+  document.addEventListener("keydown", function(e){
+    if(e.key === "Enter" && document.getElementById("loginOverlay")?.style.display !== "none"){
+      const active = document.activeElement?.id || "";
+      if(["loginUsuario","loginSenha","loginSenhaConfirmar","loginEmail"].includes(active)){
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        entrarSistemaV056();
+      }
+    }
+  }, true);
+
+  window.entrarSistema = entrarSistemaV056;
+  window.mudarModoLogin = function(modo){ setModoCadastro(modo === "cadastro"); };
+
+  window.addEventListener("load", function(){
+    setTimeout(function(){ instalar(); setModoCadastro(false); }, 800);
+  });
+
+  const obs = new MutationObserver(function(){
+    const btn = document.querySelector(".login-main-btn");
+    if(!btn) return;
+    const emCadastro = cadastroAtivoTCF || document.body.classList.contains("tcf-cadastro-mode") || document.body.classList.contains("tcf-register-mode");
+    if(emCadastro && /acessar/i.test(btn.textContent || "")){
+      btn.textContent = "Cadastrar usuário";
+    }
+  });
+  obs.observe(document.documentElement, {subtree:true, childList:true, characterData:true, attributes:true});
+})();
+</script>
