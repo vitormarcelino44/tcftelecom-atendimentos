@@ -4883,7 +4883,8 @@ body:not(.light-mode) .auth-message.show{
         document.getElementById("tituloTela").textContent = titulos[id][0];
         document.getElementById("subtituloTela").textContent = titulos[id][1];
       }
-      atualizarTudo();
+atualizarTudo();
+carregarDoBanco();
     }
 
     function abrirTelaPorId(id) {
@@ -6223,10 +6224,15 @@ window.addEventListener("load",function(){
 
   const oldAbrirTela = window.abrirTela;
   window.abrirTela = function(id, botao){
-    if(typeof oldAbrirTela === "function") oldAbrirTela(id, botao);
-    if(id === "perfil") carregarPerfilUsuario();
-    if(id === "configuracoes") renderUsuariosAdmin();
-  };
+  if(typeof oldAbrirTela === "function") oldAbrirTela(id, botao);
+
+  if(id === "dashboard" || id === "registros" || id === "graficos" || id === "indicadores"){
+    carregarDoBanco();
+  }
+
+  if(id === "perfil") carregarPerfilUsuario();
+  if(id === "configuracoes") renderUsuariosAdmin();
+};
 
   const oldSair = window.sairSistemaFinal;
   window.sairSistemaFinal = function(){
