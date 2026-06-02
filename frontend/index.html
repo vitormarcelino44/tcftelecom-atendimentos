@@ -6626,5 +6626,1670 @@ body.light table tbody td{
 })();
 </script>
 
+
+
+<!-- PATCH FINAL TCF v0.48 - Supabase CRUD + Dashboard + Usuários -->
+<style id="v048-ajustes-crud-usuarios">
+  .tcf-user-create-panel{margin-bottom:22px;}
+  .tcf-user-create-panel .mini-title{font-size:22px;font-weight:950;margin-bottom:8px;}
+  .tcf-user-create-panel .mini-help{color:var(--muted);line-height:1.5;margin-bottom:16px;}
+  .tcf-user-create-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;}
+  .tcf-user-create-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px;}
+  .tcf-inline-alert{display:none;margin-top:12px;padding:12px 14px;border-radius:14px;font-weight:900;font-size:13px;}
+  .tcf-inline-alert.ok{display:block;background:rgba(34,197,94,.10);border:1px solid rgba(34,197,94,.28);color:#22c55e;}
+  .tcf-inline-alert.err{display:block;background:rgba(239,68,68,.10);border:1px solid rgba(239,68,68,.28);color:#ef4444;}
+  @media(max-width:900px){.tcf-user-create-grid{grid-template-columns:1fr;}}
+</style>
+
+<script id="v048-supabase-crud-dashboard-users">
+(function(){
+  const API = window.API_URL || "https://tcftelecom-atendimentos-production.up.railway.app";
+  const STORAGE = window.STORAGE_KEY || "atendimentos_v0_5";
+  const USERS_KEY = "usuarios_senhas_v21";
+  const PROFILE_KEY = "usuarios_perfis_v42";
+  const FIRST_KEY = "usuarios_primeiro_acesso_v29";
+  const ADMIN_USER = "Victor";
+
+  function readJSON(key, fallback){
+    try { return JSON.parse(localStorage.getItem(key) || JSON.stringify(fallback)); }
+    catch(e){ return fallback; }
+  }
+
+  function writeJSON(key, value){
+    localStorage.setItem(key, JSON.stringify(value));
+  }
+
+  function listaLocal(){
+    return readJSON(STORAGE, []);
+  }
+
+  function setMsg(id, text, ok=true){
+    const el = document.getElementById(id);
+    if(!el) return;
+    el.textContent = text;
+    el.className = "tcf-inline-alert " + (ok ? "ok" : "err");
+    setTimeout(()=>{ el.className = "tcf-inline-alert"; }, 3500);
+  }
+
+  function valor(id, fallback=""){
+    const el = document.getElementById(id);
+    return (el?.value ?? fallback).trim ? (el?.value ?? fallback).trim() : (el?.value ?? fallback);
+  }
+
+  function dataInputParaBR(v){
+    if(!v) return "";
+    if(v.includes("/")) return v;
+    const [ano, mes, dia] = v.split("-");
+    if(!ano || !mes || !dia) return v;
+    return `${dia}/${mes}/${ano}`;
+  }
+
+  function dataBRParaInput(v){
+    if(!v) return "";
+    if(v.includes("-")) return v.slice(0,10);
+    const [dia, mes, ano] = v.split("/");
+    if(!dia || !mes || !ano) return "";
+    return `${ano}-${mes}-${dia}`;
+  }
+
+  function montarRegistro(){
+    return {
+      data: dataInputParaBR(document.getElementById("data")?.value || ""),
+      tecnico: valor("tecnico"),
+      cliente: valor("cliente"),
+      contato: valor("contato"),
+      telefone: null,
+      descricao: null,
+      tipo: valor("tipo"),
+      osAberta: valor("osAberta") || "Não",
+      resolvidoRemoto: valor("resolvidoRemoto") || "Não",
+      critico: valor("critico") || "Não",
+      posSuporte: valor("posSuporte") || "Não",
+      status: valor("status") || "Pendente",
+      observacoes: valor("observacoes")
+    };
+  }
+
+  async function apiJSON(url, options={}){
+    const res = await fetch(url, options);
+    const text = await res.text();
+    let body = null;
+    try { body = text ? JSON.parse(text) : null; } catch(e){ body = text; }
+    if(!res.ok){
+      const msg = body?.erro || body?.message || text || `Erro HTTP ${res.status}`;
+      throw new Error(msg);
+    }
+    return body;
+  }
+
+  window.carregarDoBanco = async function(){
+    try{
+      const dados = await apiJSON(`${API}/atendimentos`);
+      const lista = Array.isArray(dados) ? dados : [];
+      writeJSON(STORAGE, lista);
+      window.atualizarTudo?.();
+      return lista;
+    }catch(err){
+      console.error("Erro ao carregar atendimentos do banco:", err);
+      return listaLocal();
+    }
+  };
+
+  window.carregar = function(){
+    return listaLocal();
+  };
+
+  window.limparFormulario = function(){
+    const form = document.getElementById("formAtendimento");
+    if(form) form.reset();
+    const data = document.getElementById("data");
+    if(data) data.valueAsDate = new Date();
+    const edit = document.getElementById("editIndex");
+    if(edit) edit.value = "";
+    const btn = document.getElementById("btnSalvar");
+    if(btn) btn.textContent = "Salvar Atendimento";
+    const badge = document.getElementById("editBadge");
+    if(badge) badge.style.display = "none";
+  };
+
+  window.cancelarEdicao = window.limparFormulario;
+
+  window.filtrarListaComIndice = function(){
+    const busca = (document.getElementById("busca")?.value || "").toLowerCase().trim();
+    const atendente = document.getElementById("filtroAtendente")?.value || "";
+    const critico = document.getElementById("filtroCritico")?.value || "";
+    return listaLocal().filter(item => {
+      const texto = `${item.cliente || ""} ${item.contato || ""} ${item.telefone || ""} ${item.observacoes || ""}`.toLowerCase();
+      return (!busca || texto.includes(busca)) &&
+             (!atendente || item.tecnico === atendente) &&
+             (!critico || item.critico === critico);
+    }).map(item => ({item, index:item.id}));
+  };
+
+  window.atualizarTabela = function(){
+    const tbody = document.getElementById("tabelaAtendimentos");
+    if(!tbody) return;
+    const lista = window.filtrarListaComIndice();
+    tbody.innerHTML = "";
+    if(lista.length === 0){
+      tbody.innerHTML = `<tr><td colspan="12" style="text-align:center;padding:22px;">Nenhum atendimento encontrado.</td></tr>`;
+      return;
+    }
+    lista.forEach(({item}) => {
+      const id = Number(item.id);
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${item.data || ""}</td>
+        <td>${item.tecnico || ""}</td>
+        <td>${item.cliente || ""}</td>
+        <td>${item.contato || item.telefone || ""}</td>
+        <td>${item.tipo || ""}</td>
+        <td>${item.osAberta || "Não"}</td>
+        <td>${item.resolvidoRemoto || "Não"}</td>
+        <td>${item.critico || "Não"}</td>
+        <td>${item.posSuporte || "Não"}</td>
+        <td>${item.status || ""}</td>
+        <td>${item.observacoes || ""}</td>
+        <td><div class="row-actions">
+          <button class="warning small-btn" type="button" onclick="editarRegistro(${id})">Editar</button>
+          <button class="danger small-btn" type="button" onclick="excluirRegistro(${id})">Excluir</button>
+        </div></td>`;
+      tbody.appendChild(tr);
+    });
+  };
+
+  window.editarRegistro = function(id){
+    const item = listaLocal().find(x => Number(x.id) === Number(id));
+    if(!item){ alert("Registro não encontrado para edição."); return; }
+    document.getElementById("editIndex").value = item.id;
+    document.getElementById("data").value = dataBRParaInput(item.data);
+    document.getElementById("tecnico").value = item.tecnico || "";
+    document.getElementById("cliente").value = item.cliente || "";
+    document.getElementById("contato").value = item.contato || item.telefone || "";
+    document.getElementById("tipo").value = item.tipo || "";
+    document.getElementById("osAberta").value = item.osAberta || "Não";
+    document.getElementById("resolvidoRemoto").value = item.resolvidoRemoto || "Não";
+    const interno = document.getElementById("resolvidoInternamente");
+    if(interno) interno.value = item.resolvidoInternamente || item.resolvidoRemoto || "Não";
+    document.getElementById("critico").value = item.critico || "Não";
+    document.getElementById("posSuporte").value = item.posSuporte || "Não";
+    document.getElementById("status").value = item.status || "Pendente";
+    document.getElementById("observacoes").value = item.observacoes || "";
+    document.getElementById("btnSalvar").textContent = "Atualizar Atendimento";
+    document.getElementById("editBadge").style.display = "inline";
+    window.abrirTelaPorId?.("cadastro");
+  };
+
+  window.excluirRegistro = async function(id){
+    if(!id){ alert("ID inválido para exclusão."); return; }
+    if(!confirm("Deseja excluir este atendimento?")) return;
+    try{
+      await apiJSON(`${API}/atendimentos/${id}`, { method:"DELETE" });
+      await window.carregarDoBanco();
+      window.mostrarMensagem?.("Atendimento excluído com sucesso.");
+    }catch(err){
+      console.error("Erro ao excluir atendimento:", err);
+      alert("Erro ao excluir atendimento: " + err.message);
+    }
+  };
+
+  window.apagarRegistros = async function(){
+    const lista = listaLocal();
+    if(lista.length === 0){ alert("Nenhum atendimento para apagar."); return; }
+    if(!confirm("Tem certeza que deseja apagar TODOS os atendimentos do banco?")) return;
+    try{
+      for(const item of lista){
+        if(item.id) await apiJSON(`${API}/atendimentos/${item.id}`, { method:"DELETE" });
+      }
+      await window.carregarDoBanco();
+      alert("Todos os atendimentos foram apagados.");
+    }catch(err){
+      console.error("Erro ao apagar todos:", err);
+      alert("Erro ao apagar registros: " + err.message);
+    }
+  };
+
+  function instalarSubmitUnico(){
+    const formAntigo = document.getElementById("formAtendimento");
+    if(!formAntigo) return;
+    const form = formAntigo.cloneNode(true);
+    formAntigo.parentNode.replaceChild(form, formAntigo);
+    form.addEventListener("submit", async function(e){
+      e.preventDefault();
+      const id = document.getElementById("editIndex")?.value || "";
+      const registro = montarRegistro();
+      const editando = Boolean(id);
+      const url = editando ? `${API}/atendimentos/${id}` : `${API}/atendimentos`;
+      const method = editando ? "PUT" : "POST";
+      try{
+        await apiJSON(url, {
+          method,
+          headers:{"Content-Type":"application/json"},
+          body:JSON.stringify(registro)
+        });
+        window.mostrarMensagem?.(editando ? "Atendimento atualizado com sucesso." : "Atendimento salvo no banco com sucesso.");
+        window.limparFormulario();
+        await window.carregarDoBanco();
+        window.abrirTelaPorId?.("registros");
+      }catch(err){
+        console.error("Erro ao salvar atendimento:", err);
+        alert("Erro ao salvar atendimento: " + err.message);
+      }
+    });
+  }
+
+  window.calcular = function(){
+    const lista = listaLocal();
+    const total = lista.length;
+    return {
+      lista,
+      total,
+      criticos: lista.filter(x => x.critico === "Sim").length,
+      remoto: lista.filter(x => x.resolvidoRemoto === "Sim").length,
+      pos: lista.filter(x => x.posSuporte === "Sim").length,
+      os: lista.filter(x => x.osAberta === "Sim").length,
+      concluido: lista.filter(x => x.status === "Concluído").length
+    };
+  };
+
+  window.contagemTipos = function(){
+    const baseTipos = window.tipos || ["Suporte","Verificação da Conexão","Mudança de Cômodo","Instabilidade","LOS","Sinal Alto","Problema na ONU","Fonte com Defeito"];
+    const contagem = {};
+    baseTipos.forEach(t => contagem[t] = 0);
+    listaLocal().forEach(x => {
+      const tipo = x.tipo || "Sem tipo";
+      contagem[tipo] = (contagem[tipo] || 0) + 1;
+    });
+    return contagem;
+  };
+
+  window.renderResolvidosInternamente = function(lista){
+    const el = document.getElementById("graficoResolvidosInternamente");
+    if(!el) return;
+    const total = lista.length;
+    const sim = lista.filter(x => x.resolvidoRemoto === "Sim" || x.resolvidoInternamente === "Sim").length;
+    const nao = Math.max(total - sim, 0);
+    if(total === 0){
+      el.innerHTML = `<div class="empty">Cadastre atendimentos para visualizar resoluções.</div>`;
+      return;
+    }
+    const maior = Math.max(sim, nao, 1);
+    el.innerHTML = [
+      ["Resolvidos pelo suporte", sim, "var(--green)"],
+      ["Não resolvidos pelo suporte", nao, "var(--red)"]
+    ].map(([nome, qtd, cor]) => {
+      const width = Math.round((qtd / maior) * 100);
+      return `<div class="bar-item"><div class="bar-head"><span>${nome}</span><strong>${qtd}</strong></div><div class="bar"><div class="fill" style="width:${width}%;background:${cor}"></div></div></div>`;
+    }).join("");
+  };
+
+  function inserirCadastroUsuarios(){
+    const alvo = document.querySelector("#usuarios .panel");
+    if(!alvo || document.getElementById("tcfCadastroUsuarioPanel")) return;
+    const div = document.createElement("div");
+    div.id = "tcfCadastroUsuarioPanel";
+    div.className = "panel tcf-user-create-panel admin-only";
+    div.innerHTML = `
+      <div class="mini-title">Cadastrar novo usuário</div>
+      <div class="mini-help">Área administrativa para criar acesso direto ao sistema. A conta é salva no controle de login local do sistema atual.</div>
+      <div class="tcf-user-create-grid">
+        <div class="field"><label>Nome</label><input id="novoUsuarioNome" placeholder="Ex.: Hiago"></div>
+        <div class="field"><label>E-mail</label><input id="novoUsuarioEmail" type="email" placeholder="email@empresa.com.br"></div>
+        <div class="field"><label>Senha inicial</label><input id="novoUsuarioSenha" type="password" placeholder="Ex.: 12345678"></div>
+        <div class="field"><label>Perfil</label><select id="novoUsuarioPerfil"><option>Operador</option><option>Supervisor</option><option>Administrador</option><option>Atendente</option><option>Suporte</option><option>Técnico</option></select></div>
+      </div>
+      <div class="tcf-user-create-actions">
+        <button type="button" class="primary" onclick="cadastrarNovoUsuarioTCF()">Cadastrar usuário</button>
+        <button type="button" class="secondary" onclick="renderUsuariosAdmin && renderUsuariosAdmin()">Atualizar lista</button>
+      </div>
+      <div id="novoUsuarioMsg" class="tcf-inline-alert"></div>`;
+    alvo.insertBefore(div, alvo.children[2] || alvo.firstChild);
+  }
+
+  window.cadastrarNovoUsuarioTCF = function(){
+    const nome = valor("novoUsuarioNome");
+    const email = valor("novoUsuarioEmail");
+    const senha = valor("novoUsuarioSenha") || "12345678";
+    const perfil = valor("novoUsuarioPerfil") || "Operador";
+    if(!nome){ setMsg("novoUsuarioMsg", "Digite o nome do usuário.", false); return; }
+    if(senha.length < 4){ setMsg("novoUsuarioMsg", "A senha precisa ter pelo menos 4 caracteres.", false); return; }
+    const users = readJSON(USERS_KEY, {});
+    const perfis = readJSON(PROFILE_KEY, {});
+    const first = readJSON(FIRST_KEY, {});
+    users[nome] = senha;
+    perfis[nome] = Object.assign({}, perfis[nome] || {}, {email, perfil, criadoEm:new Date().toLocaleString("pt-BR")});
+    first[nome] = false;
+    writeJSON(USERS_KEY, users);
+    writeJSON(PROFILE_KEY, perfis);
+    writeJSON(FIRST_KEY, first);
+    ["novoUsuarioNome","novoUsuarioEmail","novoUsuarioSenha"].forEach(id => { const el=document.getElementById(id); if(el) el.value=""; });
+    setMsg("novoUsuarioMsg", `Usuário ${nome} cadastrado com sucesso.`, true);
+    window.renderUsuariosAdmin?.();
+    window.aplicarPermissoesTCF?.();
+  };
+
+  const abrirOriginal = window.abrirTela;
+  window.abrirTela = function(id, botao){
+    if(typeof abrirOriginal === "function") abrirOriginal(id, botao);
+    if(["dashboard","registros","graficos","indicadores"].includes(id)){
+      window.carregarDoBanco();
+    }
+    if(id === "usuarios"){
+      inserirCadastroUsuarios();
+      window.renderUsuariosAdmin?.();
+    }
+    window.aplicarPermissoesTCF?.();
+  };
+
+  window.addEventListener("load", function(){
+    instalarSubmitUnico();
+    inserirCadastroUsuarios();
+    setTimeout(()=>window.carregarDoBanco(), 250);
+  });
+})();
+</script>
+
+
+
+<!-- v049 - limpeza visual, ajuda modal, início/login -->
+<style id="v049-profissional-limpeza-final">
+/* Corrige a ajuda antiga que ficava aparecendo embaixo da tela */
+#helpModal{
+  display:none !important;
+}
+
+#helpModalFinal{
+  position:fixed !important;
+  inset:0 !important;
+  display:none;
+  align-items:center !important;
+  justify-content:center !important;
+  z-index:999999 !important;
+  padding:24px !important;
+  background:rgba(2,6,23,.62) !important;
+  backdrop-filter:blur(10px) !important;
+}
+
+.help-card-final{
+  width:min(560px,94vw) !important;
+  border-radius:28px !important;
+  padding:30px !important;
+  background:linear-gradient(145deg,rgba(15,23,42,.98),rgba(30,41,59,.96)) !important;
+  border:1px solid rgba(148,163,184,.24) !important;
+  color:#f8fafc !important;
+  box-shadow:0 35px 100px rgba(0,0,0,.48) !important;
+}
+
+.help-card-final h2{
+  margin:0 0 8px !important;
+  font-size:28px !important;
+  letter-spacing:-.5px !important;
+}
+
+.help-card-final p,
+.help-card-final li{
+  color:#cbd5e1 !important;
+  line-height:1.55 !important;
+}
+
+.help-card-final ul{
+  margin:18px 0 22px !important;
+  padding-left:20px !important;
+}
+
+body.light-mode #helpModalFinal,
+body.light #helpModalFinal{
+  background:rgba(15,23,42,.32) !important;
+}
+
+body.light-mode .help-card-final,
+body.light .help-card-final{
+  background:#ffffff !important;
+  color:#0f172a !important;
+  border-color:#dbe3ef !important;
+  box-shadow:0 30px 80px rgba(15,23,42,.20) !important;
+}
+
+body.light-mode .help-card-final p,
+body.light-mode .help-card-final li,
+body.light .help-card-final p,
+body.light .help-card-final li{
+  color:#475569 !important;
+}
+
+/* Acabamento mais limpo nos painéis */
+.panel{
+  border-radius:26px !important;
+}
+
+#registros .panel,
+#cadastro .panel,
+#usuarios .panel,
+#configuracoes .panel,
+#perfil .panel{
+  max-width:100% !important;
+}
+
+.table-wrap{
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.02) !important;
+}
+
+.row-actions button{
+  min-width:68px !important;
+}
+
+/* Botões extras de navegação */
+.sidebar-final-btn.home span{color:#38bdf8 !important;}
+.sidebar-final-btn.login span{color:#a78bfa !important;}
+.sidebar-final-btn.exit b::after{content:" / Login";}
+
+/* Cadastro de usuários mais profissional */
+.tcf-user-create-panel{
+  margin-top:18px !important;
+  border-radius:24px !important;
+  background:linear-gradient(135deg,rgba(56,189,248,.10),rgba(15,23,42,.22)) !important;
+}
+
+.tcf-user-create-panel .mini-title{
+  font-size:24px !important;
+  font-weight:950 !important;
+  margin-bottom:6px !important;
+}
+
+.tcf-user-create-panel .mini-help{
+  color:var(--muted) !important;
+  line-height:1.45 !important;
+  margin-bottom:16px !important;
+}
+
+.tcf-user-create-grid{
+  display:grid !important;
+  grid-template-columns:repeat(4,minmax(0,1fr)) !important;
+  gap:14px !important;
+}
+
+.tcf-user-create-actions{
+  display:flex !important;
+  gap:10px !important;
+  flex-wrap:wrap !important;
+  margin-top:14px !important;
+}
+
+.tcf-inline-alert{
+  margin-top:12px !important;
+  min-height:18px !important;
+  font-weight:900 !important;
+}
+
+@media(max-width:1100px){
+  .tcf-user-create-grid{grid-template-columns:1fr 1fr !important;}
+}
+@media(max-width:650px){
+  .tcf-user-create-grid{grid-template-columns:1fr !important;}
+}
+</style>
+
+<script id="v049-navegacao-login-profissional">
+(function(){
+  function irInicio(){
+    if(typeof window.abrirTelaPorId === "function") window.abrirTelaPorId("dashboard");
+    else location.href = location.origin + location.pathname;
+  }
+
+  function voltarLogin(){
+    try{
+      [
+        "sistema_login_v29",
+        "sistema_login_v28",
+        "sistema_login_v21",
+        "sistema_login_v14",
+        "sistema_auto_login_v29",
+        "token"
+      ].forEach(k => localStorage.removeItem(k));
+    }catch(e){}
+    location.href = location.origin + location.pathname;
+  }
+
+  window.irInicioTCF = irInicio;
+  window.voltarLoginTCF = voltarLogin;
+
+  function instalarBotoesNavegacao(){
+    const box = document.querySelector(".sidebar-final-bottom");
+    if(!box || document.getElementById("btnInicioTCF")) return;
+
+    const linha = box.querySelector(".sidebar-final-line");
+    const inicio = document.createElement("button");
+    inicio.id = "btnInicioTCF";
+    inicio.className = "sidebar-final-btn home";
+    inicio.type = "button";
+    inicio.onclick = irInicio;
+    inicio.innerHTML = "<span>🏠</span><b>Início</b>";
+
+    const login = document.createElement("button");
+    login.id = "btnLoginTCF";
+    login.className = "sidebar-final-btn login";
+    login.type = "button";
+    login.onclick = voltarLogin;
+    login.innerHTML = "<span>🔐</span><b>Login</b>";
+
+    if(linha){
+      box.insertBefore(inicio, linha.nextSibling);
+      box.insertBefore(login, inicio.nextSibling);
+    }else{
+      box.prepend(login);
+      box.prepend(inicio);
+    }
+  }
+
+  const oldAbrirAjudaFinal = window.abrirAjudaFinal;
+  window.abrirAjudaFinal = function(){
+    const antigo = document.getElementById("helpModal");
+    if(antigo) antigo.style.display = "none";
+    const modal = document.getElementById("helpModalFinal");
+    if(modal) modal.style.display = "flex";
+    else if(typeof oldAbrirAjudaFinal === "function") oldAbrirAjudaFinal();
+  };
+
+  window.fecharAjudaFinal = function(){
+    const modal = document.getElementById("helpModalFinal");
+    if(modal) modal.style.display = "none";
+  };
+
+  document.addEventListener("click", function(e){
+    const modal = document.getElementById("helpModalFinal");
+    if(e.target === modal) window.fecharAjudaFinal();
+  });
+
+  window.addEventListener("load", function(){
+    instalarBotoesNavegacao();
+    const antigo = document.getElementById("helpModal");
+    if(antigo) antigo.style.display = "none";
+  });
+})();
+</script>
+
+
+<!-- PATCH TCF v0.51 - Sair no login + cadastro rápido no Dashboard -->
+<style id="v051-login-dashboard-cadastro">
+/* Ajuste visual do login: mais limpo e profissional */
+.login-card-top,
+.login-grid,
+.login-error{
+  max-width:460px !important;
+}
+.reset-password-link{
+  width:100% !important;
+  max-width:460px !important;
+  margin:18px auto 0 !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  min-height:54px !important;
+  border-radius:16px !important;
+  background:rgba(56,189,248,.08) !important;
+  border:1px solid rgba(56,189,248,.24) !important;
+  color:#7dd3fc !important;
+  font-size:15px !important;
+  font-weight:900 !important;
+  text-decoration:none !important;
+}
+.login-exit-btn{
+  width:100% !important;
+  max-width:460px !important;
+  margin:12px auto 0 !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  min-height:54px !important;
+  border-radius:16px !important;
+  background:rgba(255,255,255,.06) !important;
+  border:1px solid rgba(148,163,184,.24) !important;
+  color:#e5e7eb !important;
+  font-size:15px !important;
+  font-weight:900 !important;
+  cursor:pointer !important;
+}
+.login-exit-btn:hover,
+.reset-password-link:hover{
+  transform:translateY(-1px) !important;
+  filter:brightness(1.08) !important;
+}
+body.light-mode .login-exit-btn,
+body.light .login-exit-btn{
+  background:#fff !important;
+  color:#0f172a !important;
+  border-color:#dbe3ef !important;
+}
+body.light-mode .reset-password-link,
+body.light .reset-password-link{
+  background:#eff6ff !important;
+  color:#0369a1 !important;
+  border-color:#bfdbfe !important;
+}
+.sidebar-final-btn.exit b::after{content:"" !important;}
+
+/* Cadastro rápido no Dashboard */
+.tcf-dashboard-user-panel{
+  margin-top:22px;
+  border:1px solid rgba(56,189,248,.22) !important;
+  background:
+    radial-gradient(circle at top right, rgba(56,189,248,.10), transparent 36%),
+    linear-gradient(135deg, rgba(15,23,42,.88), rgba(2,6,23,.72)) !important;
+}
+body.light-mode .tcf-dashboard-user-panel,
+body.light .tcf-dashboard-user-panel{
+  background:#fff !important;
+  border-color:#dbeafe !important;
+}
+.tcf-dashboard-user-head{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:18px;
+  margin-bottom:18px;
+}
+.tcf-dashboard-user-head h2{margin:0 0 6px !important;}
+.tcf-dashboard-user-badge{
+  padding:8px 12px;
+  border-radius:999px;
+  background:rgba(56,189,248,.12);
+  border:1px solid rgba(56,189,248,.24);
+  color:#38bdf8;
+  font-weight:900;
+  font-size:12px;
+  white-space:nowrap;
+}
+.tcf-dashboard-user-grid{
+  display:grid;
+  grid-template-columns:1.1fr 1.2fr 1fr .8fr;
+  gap:12px;
+  align-items:end;
+}
+.tcf-dashboard-user-grid label{
+  display:block;
+  margin-bottom:7px;
+  font-size:13px;
+  font-weight:900;
+  color:var(--muted);
+}
+.tcf-dashboard-user-actions{
+  display:flex;
+  gap:10px;
+  margin-top:14px;
+  flex-wrap:wrap;
+}
+.tcf-dashboard-user-msg{
+  display:none;
+  margin-top:12px;
+  padding:12px 14px;
+  border-radius:14px;
+  font-weight:900;
+}
+.tcf-dashboard-user-msg.ok{
+  display:block;
+  background:rgba(34,197,94,.10);
+  border:1px solid rgba(34,197,94,.28);
+  color:#22c55e;
+}
+.tcf-dashboard-user-msg.err{
+  display:block;
+  background:rgba(239,68,68,.10);
+  border:1px solid rgba(239,68,68,.28);
+  color:#ef4444;
+}
+@media(max-width:1050px){
+  .tcf-dashboard-user-grid{grid-template-columns:1fr 1fr;}
+}
+@media(max-width:700px){
+  .tcf-dashboard-user-head{display:grid;}
+  .tcf-dashboard-user-grid{grid-template-columns:1fr;}
+}
+</style>
+
+<script id="v051-login-dashboard-cadastro-script">
+(function(){
+  const USERS_KEY = "usuarios_senhas_v21";
+  const PROFILE_KEY = "usuarios_perfis_v42";
+  const FIRST_KEY = "usuarios_primeiro_acesso_v29";
+  const LOGIN_KEYS = ["sistema_login_v29","sistema_login_v21","sistema_login_v14","sistema_auto_login_v29"];
+
+  function readJSON(key, fallback){
+    try{return JSON.parse(localStorage.getItem(key) || JSON.stringify(fallback));}
+    catch(e){return fallback;}
+  }
+  function writeJSON(key, value){localStorage.setItem(key, JSON.stringify(value));}
+  function nowBR(){return new Date().toLocaleString("pt-BR",{dateStyle:"short",timeStyle:"short"});}
+
+  function showLogin(){
+    LOGIN_KEYS.forEach(k => localStorage.removeItem(k));
+    const overlay = document.getElementById("loginOverlay");
+    if(overlay){
+      overlay.style.display = "flex";
+      overlay.classList.remove("hidden");
+      document.body.classList.remove("admin");
+    }
+  }
+
+  function hideLoginOnly(){
+    const overlay = document.getElementById("loginOverlay");
+    if(overlay) overlay.style.display = "none";
+  }
+
+  window.sairSistemaFinal = function(){
+    showLogin();
+  };
+  window.voltarLoginTCF = showLogin;
+  window.fecharLoginTCF = hideLoginOnly;
+
+  function instalarBotaoSairLogin(){
+    if(document.getElementById("loginExitBtnTCF")) return;
+    const ref = document.querySelector(".reset-password-link");
+    if(!ref) return;
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.id = "loginExitBtnTCF";
+    btn.className = "login-exit-btn";
+    btn.innerHTML = "↩ Sair e voltar ao Dashboard";
+    btn.onclick = hideLoginOnly;
+    ref.insertAdjacentElement("afterend", btn);
+  }
+
+  function criarUsuarioDireto(origem){
+    const prefix = origem === "dashboard" ? "dash" : "tcfNovo";
+    const nome = (document.getElementById(prefix + "UsuarioNome")?.value || "").trim();
+    const email = (document.getElementById(prefix + "UsuarioEmail")?.value || "").trim();
+    const senha = (document.getElementById(prefix + "UsuarioSenha")?.value || "").trim();
+    const perfil = document.getElementById(prefix + "UsuarioPerfil")?.value || "Atendente";
+    const msgId = origem === "dashboard" ? "dashUsuarioMsg" : "tcfNovoUsuarioMsg";
+    const msg = document.getElementById(msgId);
+
+    function setMsg(text, ok){
+      if(!msg){alert(text);return;}
+      msg.textContent = text;
+      msg.className = (origem === "dashboard" ? "tcf-dashboard-user-msg " : "tcf-inline-alert ") + (ok ? "ok" : "err");
+      setTimeout(()=>{ msg.className = origem === "dashboard" ? "tcf-dashboard-user-msg" : "tcf-inline-alert"; }, 3500);
+    }
+
+    if(!nome || !senha){ setMsg("Preencha login e senha.", false); return; }
+    if(senha.length < 4){ setMsg("A senha precisa ter pelo menos 4 caracteres.", false); return; }
+    if(email && !email.includes("@")){ setMsg("Digite um e-mail válido ou deixe em branco.", false); return; }
+
+    const users = readJSON(USERS_KEY, {});
+    const profiles = readJSON(PROFILE_KEY, {});
+    const first = readJSON(FIRST_KEY, {});
+
+    users[nome] = senha;
+    first[nome] = false;
+    profiles[nome] = Object.assign({}, profiles[nome] || {}, {
+      nome, email, perfil, criadoEm: profiles[nome]?.criadoEm || nowBR(), ultimoLogin: profiles[nome]?.ultimoLogin || ""
+    });
+
+    writeJSON(USERS_KEY, users);
+    writeJSON(FIRST_KEY, first);
+    writeJSON(PROFILE_KEY, profiles);
+
+    [prefix + "UsuarioNome", prefix + "UsuarioEmail", prefix + "UsuarioSenha"].forEach(id => {
+      const el = document.getElementById(id); if(el) el.value = "";
+    });
+    setMsg("Usuário cadastrado com sucesso. Ele já pode entrar com login e senha.", true);
+    if(typeof renderUsuariosAdmin === "function") renderUsuariosAdmin();
+  }
+
+  window.criarUsuarioDashboardTCF = function(){criarUsuarioDireto("dashboard");};
+  window.criarUsuarioDiretoTCF = function(){criarUsuarioDireto("usuarios");};
+
+  function instalarCadastroDashboard(){
+    if(document.getElementById("cadastroUsuariosDashboardTCF")) return;
+    const dashboard = document.getElementById("dashboard");
+    if(!dashboard) return;
+    const painel = document.createElement("div");
+    painel.id = "cadastroUsuariosDashboardTCF";
+    painel.className = "panel tcf-dashboard-user-panel admin-only";
+    painel.innerHTML = `
+      <div class="tcf-dashboard-user-head">
+        <div>
+          <h2>Cadastro de usuários</h2>
+          <p class="panel-desc">Crie login e senha para novos atendentes acessarem o sistema.</p>
+        </div>
+        <div class="tcf-dashboard-user-badge">ADMIN</div>
+      </div>
+      <div class="tcf-dashboard-user-grid">
+        <div><label>Login / Nome</label><input id="dashUsuarioNome" placeholder="Ex.: Hiago"></div>
+        <div><label>E-mail</label><input id="dashUsuarioEmail" type="email" placeholder="email@tcftelecom.com.br"></div>
+        <div><label>Senha</label><input id="dashUsuarioSenha" type="password" placeholder="Senha inicial"></div>
+        <div><label>Perfil</label><select id="dashUsuarioPerfil"><option>Atendente</option><option>Suporte</option><option>Técnico</option><option>Supervisor</option><option>Administrador</option></select></div>
+      </div>
+      <div class="tcf-dashboard-user-actions">
+        <button class="primary" type="button" onclick="criarUsuarioDashboardTCF()">Cadastrar usuário</button>
+        <button class="secondary" type="button" onclick="abrirTelaPorId('usuarios')">Ver usuários</button>
+      </div>
+      <div id="dashUsuarioMsg" class="tcf-dashboard-user-msg"></div>
+    `;
+    dashboard.appendChild(painel);
+  }
+
+  function instalarCadastroUsuariosAba(){
+    const painelExistente = document.getElementById("tcfCadastroUsuarioPanel");
+    if(!painelExistente || document.getElementById("tcfNovoUsuarioSenha")) return;
+    const grid = painelExistente.querySelector(".tcf-user-create-grid");
+    if(!grid) return;
+    grid.innerHTML = `
+      <div><label>Login / Nome</label><input id="tcfNovoUsuarioNome" placeholder="Ex.: Hiago"></div>
+      <div><label>E-mail</label><input id="tcfNovoUsuarioEmail" type="email" placeholder="email@tcftelecom.com.br"></div>
+      <div><label>Senha</label><input id="tcfNovoUsuarioSenha" type="password" placeholder="Senha inicial"></div>
+      <div><label>Perfil</label><select id="tcfNovoUsuarioPerfil"><option>Atendente</option><option>Suporte</option><option>Técnico</option><option>Supervisor</option><option>Administrador</option></select></div>
+    `;
+    const actions = painelExistente.querySelector(".tcf-user-create-actions");
+    if(actions){
+      actions.innerHTML = `<button class="primary" type="button" onclick="criarUsuarioDiretoTCF()">Cadastrar usuário</button><button class="secondary" type="button" onclick="renderUsuariosAdmin()">Atualizar lista</button>`;
+    }
+  }
+
+  function ajustarTextos(){
+    const sair = Array.from(document.querySelectorAll(".sidebar-final-btn.exit b")).find(x => (x.textContent || "").toLowerCase().includes("sair"));
+    if(sair) sair.textContent = "Sair";
+    const loginBtn = document.getElementById("btnLoginTCF");
+    if(loginBtn) loginBtn.innerHTML = "<span>🔐</span><b>Login</b>";
+  }
+
+  window.addEventListener("load", function(){
+    setTimeout(function(){
+      instalarBotaoSairLogin();
+      instalarCadastroDashboard();
+      instalarCadastroUsuariosAba();
+      ajustarTextos();
+      document.body.classList.toggle("admin", (localStorage.getItem("sistema_login_v29") || localStorage.getItem("sistema_login_v21") || "").toLowerCase() === "victor");
+    }, 400);
+  });
+
+  const oldAbrirTela = window.abrirTela;
+  window.abrirTela = function(id, botao){
+    if(typeof oldAbrirTela === "function") oldAbrirTela(id, botao);
+    setTimeout(function(){
+      instalarBotaoSairLogin();
+      instalarCadastroDashboard();
+      instalarCadastroUsuariosAba();
+      ajustarTextos();
+    }, 80);
+  };
+})();
+</script>
+
+
+<!-- PATCH TCF v0.53 - Sair visível + Login/Cadastro na tela inicial -->
+<style id="v053-sair-cadastro-final">
+/* Remove botões extras que estavam poluindo o menu */
+#btnInicioTCF,
+#btnLoginTCF{
+  display:none !important;
+}
+
+/* Menu lateral mais limpo e com Sair sempre visível */
+.sidebar{
+  overflow-y:auto !important;
+  overflow-x:hidden !important;
+  padding-bottom:18px !important;
+}
+.sidebar::-webkit-scrollbar{width:0 !important;}
+.sidebar-final-bottom{
+  margin-top:auto !important;
+  gap:10px !important;
+  padding-bottom:6px !important;
+}
+.sidebar-final-version{
+  padding:16px 20px !important;
+  min-height:auto !important;
+}
+.sidebar-final-version strong{font-size:20px !important;}
+.sidebar-final-version span{font-size:13px !important;}
+.sidebar-final-version small{font-size:12px !important;}
+.sidebar-final-btn{
+  height:46px !important;
+  min-height:46px !important;
+  font-size:17px !important;
+  border-radius:14px !important;
+}
+.sidebar-final-btn.theme{order:20 !important;}
+.sidebar-final-btn.exit{
+  order:30 !important;
+  display:flex !important;
+  background:rgba(251,113,133,.10) !important;
+  border:1px solid rgba(251,113,133,.30) !important;
+  color:#fecdd3 !important;
+}
+.sidebar-final-btn.exit span{color:#fb7185 !important;}
+.sidebar-final-btn.exit b{display:block !important;color:#fecdd3 !important;}
+.sidebar-final-btn.exit b::after{content:"" !important;}
+.sidebar-final-btn.exit:hover{
+  background:rgba(251,113,133,.18) !important;
+  color:#fff !important;
+}
+/* Ajuda continua existindo, mas não ocupa espaço no menu inferior */
+.sidebar-final-btn:not(.theme):not(.exit){
+  display:none !important;
+}
+
+/* Login com abas Entrar / Cadastrar */
+.login-mode-switch{
+  display:grid !important;
+  grid-template-columns:1fr 1fr !important;
+  gap:10px !important;
+  margin:0 0 14px !important;
+}
+.login-mode-switch button{
+  display:block !important;
+  height:44px !important;
+  border-radius:14px !important;
+  border:1px solid rgba(148,163,184,.26) !important;
+  background:rgba(15,23,42,.64) !important;
+  color:#cbd5e1 !important;
+  font-weight:950 !important;
+  cursor:pointer !important;
+}
+.login-mode-switch button.active{
+  background:linear-gradient(135deg,#0284c7,#38bdf8) !important;
+  color:#fff !important;
+  border-color:rgba(56,189,248,.35) !important;
+  box-shadow:0 12px 30px rgba(14,165,233,.18) !important;
+}
+body.light-mode .login-mode-switch button,
+body.light .login-mode-switch button{
+  background:#f8fafc !important;
+  color:#0f172a !important;
+  border-color:#cbd5e1 !important;
+}
+body.light-mode .login-mode-switch button.active,
+body.light .login-mode-switch button.active{
+  background:linear-gradient(135deg,#0284c7,#38bdf8) !important;
+  color:#fff !important;
+}
+
+/* Campos de cadastro ficam ocultos no login e aparecem no modo cadastro */
+#loginEmailLabel,
+#loginEmail,
+#confirmSenhaLabel,
+#loginSenhaConfirmar{
+  display:none !important;
+}
+body.tcf-register-mode #loginEmailLabel,
+body.tcf-register-mode #loginEmail,
+body.tcf-register-mode #confirmSenhaLabel,
+body.tcf-register-mode #loginSenhaConfirmar{
+  display:block !important;
+}
+body.tcf-register-mode .login-card-top strong::after{
+  content:"Crie seu login, e-mail e senha. Após cadastrar, o acesso fica salvo no sistema e o admin consegue acompanhar na aba Usuários." !important;
+}
+body:not(.tcf-register-mode) .login-card-top strong::after{
+  content:"Entre com seu usuário e senha. Para novo acesso, clique em Cadastrar." !important;
+}
+.login-card-top,
+.login-grid,
+.login-error{
+  max-width:470px !important;
+}
+.reset-password-link{
+  max-width:470px !important;
+  border-radius:16px !important;
+}
+.login-exit-btn{
+  display:none !important;
+}
+
+@media(max-height:760px){
+  .nav button{height:52px !important;min-height:52px !important;}
+  .sidebar-final-version{padding:12px 16px !important;}
+  .sidebar-final-btn{height:42px !important;min-height:42px !important;}
+}
+</style>
+
+<script id="v053-sair-cadastro-final-script">
+(function(){
+  const USERS_KEY = "usuarios_senhas_v21";
+  const PROFILE_KEY = "usuarios_perfis_v42";
+  const FIRST_KEY = "usuarios_primeiro_acesso_v29";
+  const LOGINS_KEY = "usuarios_logins_v42";
+  const ADMIN_USER = "Victor";
+  const ADMIN_PASS = "vi20081997";
+  const LOGIN_KEYS = ["sistema_login_v29","sistema_login_v21","sistema_login_v14","sistema_login_v28","sistema_auto_login_v29","token"];
+  let modo = "login";
+
+  function read(key, fallback){
+    try{return JSON.parse(localStorage.getItem(key) || JSON.stringify(fallback));}
+    catch(e){return fallback;}
+  }
+  function write(key, value){localStorage.setItem(key, JSON.stringify(value));}
+  function nowBR(){return new Date().toLocaleString("pt-BR",{dateStyle:"short",timeStyle:"short"});}
+  function lower(v){return String(v||"").trim().toLowerCase();}
+
+  function showMsg(text, ok){
+    const el = document.getElementById("authMessage") || document.getElementById("loginErro");
+    if(!el){ alert(text); return; }
+    el.className = "auth-message show " + (ok ? "auth-success" : "auth-error");
+    el.textContent = text;
+  }
+
+  function limparLogin(){
+    LOGIN_KEYS.forEach(k => localStorage.removeItem(k));
+    document.body.classList.remove("admin");
+  }
+
+  function mostrarLogin(){
+    limparLogin();
+    const overlay = document.getElementById("loginOverlay");
+    if(overlay){
+      overlay.style.display = "flex";
+      overlay.classList.remove("hidden");
+    }
+    mudarModoLoginFinal("login");
+  }
+
+  function liberar(usuario){
+    const isAdmin = lower(usuario) === lower(ADMIN_USER);
+    localStorage.setItem("sistema_login_v29", usuario);
+    localStorage.setItem("sistema_login_v21", usuario);
+    document.body.classList.toggle("admin", isAdmin);
+    const overlay = document.getElementById("loginOverlay");
+    if(overlay) overlay.style.display = "none";
+
+    const hist = read(LOGINS_KEY, []).filter(x => lower(x.usuario) !== lower(usuario));
+    hist.unshift({usuario, ultimoLogin: nowBR(), online: true});
+    write(LOGINS_KEY, hist.slice(0,80));
+
+    if(typeof aplicarUsuarioLogado === "function") aplicarUsuarioLogado(usuario);
+    if(typeof renderUsuariosAdmin === "function") renderUsuariosAdmin();
+    if(typeof carregarPerfilUsuario === "function") carregarPerfilUsuario();
+  }
+
+  function mudarModoLoginFinal(novoModo){
+    modo = novoModo === "cadastro" ? "cadastro" : "login";
+    document.body.classList.toggle("tcf-register-mode", modo === "cadastro");
+    document.body.classList.toggle("invite-mode", modo === "cadastro");
+
+    const btnLogin = document.getElementById("btnModoLogin");
+    const btnCadastro = document.getElementById("btnModoCadastro");
+    if(btnLogin) btnLogin.classList.toggle("active", modo === "login");
+    if(btnCadastro){
+      btnCadastro.textContent = "Cadastrar";
+      btnCadastro.classList.toggle("active", modo === "cadastro");
+    }
+
+    const title = document.querySelector(".login-card-top strong");
+    if(title) title.textContent = modo === "cadastro" ? "Cadastrar usuário" : "Entrar no Sistema";
+
+    const btn = document.querySelector(".login-main-btn");
+    if(btn) btn.textContent = modo === "cadastro" ? "Cadastrar e acessar" : "Acessar sistema";
+
+    const pass = document.getElementById("loginSenha");
+    if(pass) pass.placeholder = modo === "cadastro" ? "Crie uma senha" : "Digite sua senha";
+
+    const msg = document.getElementById("authMessage") || document.getElementById("loginErro");
+    if(msg){ msg.className = "auth-message"; msg.textContent = ""; }
+  }
+
+  function entrarSistemaFinal(){
+    const usuario = (document.getElementById("loginUsuario")?.value || "").trim();
+    const email = (document.getElementById("loginEmail")?.value || "").trim();
+    const senha = (document.getElementById("loginSenha")?.value || "").trim();
+    const confirmar = (document.getElementById("loginSenhaConfirmar")?.value || "").trim();
+
+    if(!usuario || !senha){ showMsg("Preencha usuário e senha.", false); return; }
+
+    const users = read(USERS_KEY, {});
+    const profiles = read(PROFILE_KEY, {});
+    const first = read(FIRST_KEY, {});
+
+    if(modo === "cadastro" || document.body.classList.contains("tcf-register-mode")){
+      if(senha.length < 4){ showMsg("A senha precisa ter pelo menos 4 caracteres.", false); return; }
+      if(senha !== confirmar){ showMsg("As senhas não conferem.", false); return; }
+      if(!email || !email.includes("@")){ showMsg("Digite um e-mail válido.", false); return; }
+
+      const existe = Object.keys(users).some(k => lower(k) === lower(usuario));
+      if(existe){ showMsg("Este usuário já existe. Use Entrar ou escolha outro login.", false); return; }
+
+      users[usuario] = senha;
+      first[usuario] = false;
+      profiles[usuario] = Object.assign({}, profiles[usuario] || {}, {
+        nome: usuario,
+        email: email,
+        perfil: "Atendente",
+        criadoEm: nowBR(),
+        ultimoLogin: nowBR(),
+        origem: "Cadastro na tela inicial"
+      });
+      write(USERS_KEY, users);
+      write(FIRST_KEY, first);
+      write(PROFILE_KEY, profiles);
+      showMsg("Cadastro criado com sucesso. Entrando no sistema...", true);
+      setTimeout(() => liberar(usuario), 500);
+      return;
+    }
+
+    if(lower(usuario) === lower(ADMIN_USER) && senha === ADMIN_PASS){
+      users[ADMIN_USER] = ADMIN_PASS;
+      profiles[ADMIN_USER] = Object.assign({nome:ADMIN_USER,email:"",perfil:"Administrador",criadoEm:nowBR()}, profiles[ADMIN_USER] || {}, {ultimoLogin:nowBR()});
+      write(USERS_KEY, users);
+      write(PROFILE_KEY, profiles);
+      liberar(ADMIN_USER);
+      return;
+    }
+
+    const chave = Object.keys(users).find(k => lower(k) === lower(usuario));
+    if(!chave || users[chave] !== senha){
+      showMsg("Usuário ou senha incorretos. Confira os dados ou cadastre um novo usuário.", false);
+      return;
+    }
+
+    profiles[chave] = Object.assign({nome:chave,email:"",perfil:"Atendente",criadoEm:nowBR()}, profiles[chave] || {}, {ultimoLogin:nowBR()});
+    write(PROFILE_KEY, profiles);
+    liberar(chave);
+  }
+
+  function instalarBotaoSair(){
+    const box = document.querySelector(".sidebar-final-bottom");
+    if(!box) return;
+
+    document.getElementById("btnInicioTCF")?.remove();
+    document.getElementById("btnLoginTCF")?.remove();
+
+    let sair = box.querySelector(".sidebar-final-btn.exit");
+    if(!sair){
+      sair = document.createElement("button");
+      sair.className = "sidebar-final-btn exit";
+      sair.type = "button";
+      sair.innerHTML = "<span>↪</span><b>Sair</b>";
+      box.appendChild(sair);
+    }
+    sair.style.display = "flex";
+    sair.onclick = mostrarLogin;
+    const b = sair.querySelector("b");
+    if(b) b.textContent = "Sair";
+  }
+
+  function instalarLogin(){
+    const btnLogin = document.getElementById("btnModoLogin");
+    const btnCadastro = document.getElementById("btnModoCadastro");
+    if(btnLogin){ btnLogin.textContent = "Entrar"; btnLogin.onclick = () => mudarModoLoginFinal("login"); }
+    if(btnCadastro){ btnCadastro.textContent = "Cadastrar"; btnCadastro.onclick = () => mudarModoLoginFinal("cadastro"); }
+
+    const btn = document.querySelector(".login-main-btn");
+    if(btn){ btn.onclick = function(e){ e.preventDefault(); entrarSistemaFinal(); return false; }; }
+
+    document.getElementById("loginExitBtnTCF")?.remove();
+    mudarModoLoginFinal("login");
+  }
+
+  window.sairSistemaFinal = mostrarLogin;
+  window.voltarLoginTCF = mostrarLogin;
+  window.mudarModoLogin = mudarModoLoginFinal;
+  window.entrarSistema = entrarSistemaFinal;
+
+  document.addEventListener("click", function(e){
+    const btn = e.target.closest("button");
+    if(!btn) return;
+    const txt = (btn.textContent || "").trim().toLowerCase();
+    if(btn.classList.contains("login-main-btn") || txt.includes("acessar sistema") || txt.includes("cadastrar e acessar")){
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      entrarSistemaFinal();
+    }
+  }, true);
+
+  document.addEventListener("keydown", function(e){
+    if(e.key === "Enter" && document.getElementById("loginOverlay")?.style.display !== "none"){
+      e.preventDefault();
+      entrarSistemaFinal();
+    }
+  }, true);
+
+  function init(){
+    instalarBotaoSair();
+    instalarLogin();
+    const usuario = localStorage.getItem("sistema_login_v29") || localStorage.getItem("sistema_login_v21") || "";
+    document.body.classList.toggle("admin", lower(usuario) === lower(ADMIN_USER));
+  }
+
+  window.addEventListener("load", function(){ setTimeout(init, 250); });
+  const oldAbrirTela = window.abrirTela;
+  window.abrirTela = function(id, botao){
+    if(typeof oldAbrirTela === "function") oldAbrirTela(id, botao);
+    setTimeout(init, 80);
+  };
+})();
+</script>
+
+
+
+<!-- PATCH TCF v0.55 - Cadastro completo visível: usuário, e-mail, senha e confirmar senha -->
+<style id="v055-cadastro-completo-login">
+/* Força os campos corretos na aba Cadastrar, mesmo com CSS antigo do arquivo */
+body.tcf-cadastro-mode #loginEmailLabel,
+body.tcf-cadastro-mode #loginEmail,
+body.tcf-cadastro-mode #confirmSenhaLabel,
+body.tcf-cadastro-mode #loginSenhaConfirmar,
+body.tcf-register-mode #loginEmailLabel,
+body.tcf-register-mode #loginEmail,
+body.tcf-register-mode #confirmSenhaLabel,
+body.tcf-register-mode #loginSenhaConfirmar{
+  display:block !important;
+  visibility:visible !important;
+  opacity:1 !important;
+  height:auto !important;
+  min-height:0 !important;
+  max-height:none !important;
+  overflow:visible !important;
+}
+body.tcf-cadastro-mode #loginEmail,
+body.tcf-cadastro-mode #loginSenhaConfirmar,
+body.tcf-register-mode #loginEmail,
+body.tcf-register-mode #loginSenhaConfirmar{
+  min-height:62px !important;
+  margin:0 !important;
+}
+body.tcf-cadastro-mode #loginEmailLabel,
+body.tcf-cadastro-mode #confirmSenhaLabel,
+body.tcf-register-mode #loginEmailLabel,
+body.tcf-register-mode #confirmSenhaLabel{
+  margin-top:14px !important;
+}
+body:not(.tcf-cadastro-mode):not(.tcf-register-mode) #loginEmailLabel,
+body:not(.tcf-cadastro-mode):not(.tcf-register-mode) #loginEmail,
+body:not(.tcf-cadastro-mode):not(.tcf-register-mode) #confirmSenhaLabel,
+body:not(.tcf-cadastro-mode):not(.tcf-register-mode) #loginSenhaConfirmar{
+  display:none !important;
+}
+body.tcf-cadastro-mode #loginSenha,
+body.tcf-register-mode #loginSenha{
+  margin-bottom:0 !important;
+}
+body.tcf-cadastro-mode .login-card-top strong::after,
+body.tcf-register-mode .login-card-top strong::after{
+  content:"Informe login, e-mail, senha e confirmação. O cadastro ficará salvo no sistema e o admin Victor poderá acompanhar na aba Usuários." !important;
+}
+</style>
+
+<script id="v055-cadastro-completo-login-script">
+(function(){
+  function prepararCadastroCompletoTCF(){
+    const emailLabel = document.getElementById('loginEmailLabel');
+    const email = document.getElementById('loginEmail');
+    const confLabel = document.getElementById('confirmSenhaLabel');
+    const conf = document.getElementById('loginSenhaConfirmar');
+    const senha = document.getElementById('loginSenha');
+
+    if(emailLabel) emailLabel.textContent = 'E-mail';
+    if(email){
+      email.type = 'email';
+      email.placeholder = 'Ex.: usuario@tcftelecom.com.br';
+      email.autocomplete = 'email';
+    }
+    if(confLabel) confLabel.textContent = 'Confirmar senha';
+    if(conf){
+      conf.type = 'password';
+      conf.placeholder = 'Confirme sua senha';
+      conf.autocomplete = 'new-password';
+    }
+    if(senha){
+      senha.placeholder = document.body.classList.contains('tcf-cadastro-mode') ? 'Crie uma senha' : 'Digite sua senha';
+    }
+  }
+
+  function marcarCamposObrigatoriosCadastroTCF(){
+    const cadastro = document.body.classList.contains('tcf-cadastro-mode') || document.body.classList.contains('tcf-register-mode');
+    const email = document.getElementById('loginEmail');
+    const conf = document.getElementById('loginSenhaConfirmar');
+    if(email) email.required = cadastro;
+    if(conf) conf.required = cadastro;
+  }
+
+  document.addEventListener('click', function(e){
+    if(e.target && (e.target.id === 'tcfTabCadastrar' || e.target.id === 'btnModoCadastro')){
+      setTimeout(function(){ prepararCadastroCompletoTCF(); marcarCamposObrigatoriosCadastroTCF(); }, 80);
+    }
+    if(e.target && (e.target.id === 'tcfTabEntrar' || e.target.id === 'btnModoLogin')){
+      setTimeout(marcarCamposObrigatoriosCadastroTCF, 80);
+    }
+  }, true);
+
+  window.addEventListener('load', function(){
+    setTimeout(function(){ prepararCadastroCompletoTCF(); marcarCamposObrigatoriosCadastroTCF(); }, 400);
+  });
+})();
+</script>
+
 </body>
 </html>
+
+<!-- PATCH TCF v0.52 - Login com cadastro + sair correto no dashboard -->
+<style id="v052-login-cadastro-sair-fix">
+/* Remove botões duplicados que estavam poluindo o menu */
+#btnInicioTCF,
+#btnLoginTCF{
+  display:none !important;
+}
+
+/* Garante opção Sair limpa no rodapé da dashboard */
+.sidebar-final-btn.exit{
+  display:flex !important;
+  margin-top:2px !important;
+}
+.sidebar-final-btn.exit b{
+  font-weight:700 !important;
+}
+.sidebar-final-btn.exit b::after{
+  content:"" !important;
+}
+
+/* Esconde botão estranho de voltar dashboard dentro do login */
+#loginExitBtnTCF{
+  display:none !important;
+}
+
+/* Login com abas Entrar / Cadastrar */
+.tcf-auth-tabs{
+  width:100% !important;
+  max-width:460px !important;
+  margin:0 auto !important;
+  display:grid !important;
+  grid-template-columns:1fr 1fr !important;
+  gap:10px !important;
+  background:#fff !important;
+  border-left:1px solid #dbe3ef !important;
+  border-right:1px solid #dbe3ef !important;
+  padding:0 42px 10px !important;
+}
+.tcf-auth-tabs button{
+  height:42px !important;
+  border-radius:12px !important;
+  border:1px solid #dbe3ef !important;
+  background:#f8fafc !important;
+  color:#0f172a !important;
+  font-weight:900 !important;
+  cursor:pointer !important;
+}
+.tcf-auth-tabs button.active{
+  background:linear-gradient(135deg,#0284c7,#38bdf8) !important;
+  color:#fff !important;
+  border-color:transparent !important;
+}
+body:not(.light-mode) .tcf-auth-tabs{
+  background:rgba(15,23,42,.92) !important;
+  border-color:rgba(148,163,184,.22) !important;
+}
+body:not(.light-mode) .tcf-auth-tabs button{
+  background:rgba(2,6,23,.76) !important;
+  color:#cbd5e1 !important;
+  border-color:rgba(148,163,184,.26) !important;
+}
+body:not(.light-mode) .tcf-auth-tabs button.active{
+  background:linear-gradient(135deg,#0284c7,#38bdf8) !important;
+  color:#fff !important;
+}
+
+.tcf-cadastro-extra{
+  display:none !important;
+}
+body.tcf-cadastro-mode .tcf-cadastro-extra{
+  display:block !important;
+}
+body.tcf-cadastro-mode .login-card-top strong::after{
+  content:"Crie seu cadastro com login e senha. O administrador Victor poderá controlar os usuários depois." !important;
+}
+body.tcf-cadastro-mode .login-main-btn{
+  content:"";
+}
+
+.login-card-top,
+.tcf-auth-tabs,
+.login-grid,
+.login-error{
+  box-shadow:none !important;
+}
+.login-card-top{
+  box-shadow:0 22px 60px rgba(15,23,42,.10) !important;
+}
+.login-error{
+  box-shadow:0 22px 60px rgba(15,23,42,.10) !important;
+}
+
+/* Ajusta botão esqueci senha para não ficar separado demais */
+.reset-password-link{
+  max-width:460px !important;
+  margin-top:14px !important;
+}
+body.tcf-cadastro-mode .reset-password-link{
+  display:none !important;
+}
+</style>
+
+<script id="v052-login-cadastro-sair-fix-script">
+(function(){
+  const USERS_KEY = "usuarios_senhas_v21";
+  const PROFILE_KEY = "usuarios_perfis_v42";
+  const FIRST_KEY = "usuarios_primeiro_acesso_v29";
+  const LOGIN_V29 = "sistema_login_v29";
+  const LOGIN_V21 = "sistema_login_v21";
+  const AUTO_KEY = "sistema_auto_login_v29";
+  const ADMIN_USER = "Victor";
+  const ADMIN_PASS = "vi20081997";
+  let authModeTCF = "login";
+
+  function readJSON(key, fallback){
+    try{return JSON.parse(localStorage.getItem(key) || JSON.stringify(fallback));}
+    catch(e){return fallback;}
+  }
+  function writeJSON(key, value){localStorage.setItem(key, JSON.stringify(value));}
+  function nowBR(){return new Date().toLocaleString("pt-BR",{dateStyle:"short",timeStyle:"short"});}
+
+  function msg(texto, ok=false){
+    const el = document.getElementById("authMessage") || document.getElementById("loginErro");
+    if(!el){ alert(texto); return; }
+    el.className = "auth-message show " + (ok ? "auth-success" : "auth-error");
+    el.textContent = texto;
+    el.style.display = "block";
+  }
+
+  function setMode(mode){
+    authModeTCF = mode;
+    document.body.classList.toggle("tcf-cadastro-mode", mode === "cadastro");
+    const entrar = document.getElementById("tcfTabEntrar");
+    const cadastrar = document.getElementById("tcfTabCadastrar");
+    if(entrar) entrar.classList.toggle("active", mode === "login");
+    if(cadastrar) cadastrar.classList.toggle("active", mode === "cadastro");
+    const btn = document.querySelector(".login-main-btn");
+    if(btn) btn.textContent = mode === "cadastro" ? "Cadastrar e acessar" : "Acessar sistema";
+    const title = document.querySelector(".login-card-top strong");
+    if(title) title.textContent = mode === "cadastro" ? "Cadastrar usuário" : "Entrar no Sistema";
+    const erro = document.getElementById("authMessage") || document.getElementById("loginErro");
+    if(erro){ erro.className = "auth-message"; erro.textContent = ""; }
+  }
+
+  function instalarCadastroNoLogin(){
+    const loginGrid = document.querySelector(".login-grid");
+    const top = document.querySelector(".login-card-top");
+    if(!loginGrid || !top || document.getElementById("tcfAuthTabs")) return;
+
+    const tabs = document.createElement("div");
+    tabs.id = "tcfAuthTabs";
+    tabs.className = "tcf-auth-tabs";
+    tabs.innerHTML = `
+      <button type="button" id="tcfTabEntrar" class="active">Entrar</button>
+      <button type="button" id="tcfTabCadastrar">Cadastrar</button>
+    `;
+    top.insertAdjacentElement("afterend", tabs);
+
+    const emailLabel = document.getElementById("loginEmailLabel");
+    const email = document.getElementById("loginEmail");
+    const confLabel = document.getElementById("confirmSenhaLabel");
+    const conf = document.getElementById("loginSenhaConfirmar");
+
+    if(emailLabel){ emailLabel.classList.add("tcf-cadastro-extra"); emailLabel.style.display = ""; emailLabel.textContent = "E-mail"; }
+    if(email){ email.classList.add("tcf-cadastro-extra"); email.style.display = ""; }
+    if(confLabel){ confLabel.classList.add("tcf-cadastro-extra"); confLabel.style.display = ""; }
+    if(conf){ conf.classList.add("tcf-cadastro-extra"); conf.style.display = ""; }
+
+    document.getElementById("tcfTabEntrar").onclick = () => setMode("login");
+    document.getElementById("tcfTabCadastrar").onclick = () => setMode("cadastro");
+    setMode("login");
+  }
+
+  function liberarSistema(usuario, isAdmin){
+    localStorage.setItem(LOGIN_V29, usuario);
+    localStorage.setItem(LOGIN_V21, usuario);
+    const overlay = document.getElementById("loginOverlay");
+    if(overlay) overlay.style.display = "none";
+    document.body.classList.toggle("admin", !!isAdmin);
+    if(typeof aplicarUsuarioLogado === "function") aplicarUsuarioLogado(usuario);
+    if(typeof carregarPerfilUsuario === "function") carregarPerfilUsuario();
+    if(typeof renderUsuariosAdmin === "function") renderUsuariosAdmin();
+  }
+
+  window.entrarSistema = function(){
+    const usuario = (document.getElementById("loginUsuario")?.value || "").trim();
+    const senha = (document.getElementById("loginSenha")?.value || "").trim();
+    const confirmar = (document.getElementById("loginSenhaConfirmar")?.value || "").trim();
+    const email = (document.getElementById("loginEmail")?.value || "").trim();
+
+    if(!usuario || !senha){ msg("Preencha usuário e senha."); return; }
+
+    if(authModeTCF === "cadastro"){
+      if(!email || !email.includes("@")){ msg("Digite um e-mail válido."); return; }
+      if(senha.length < 4){ msg("A senha precisa ter pelo menos 4 caracteres."); return; }
+      if(senha !== confirmar){ msg("As senhas não conferem."); return; }
+
+      const users = readJSON(USERS_KEY, {});
+      const profiles = readJSON(PROFILE_KEY, {});
+      const first = readJSON(FIRST_KEY, {});
+
+      if(users[usuario]){ msg("Este usuário já existe. Use Entrar ou escolha outro login."); return; }
+
+      users[usuario] = senha;
+      first[usuario] = false;
+      profiles[usuario] = Object.assign({}, profiles[usuario] || {}, {
+        nome: usuario,
+        email: email,
+        perfil: "Atendente",
+        criadoEm: nowBR(),
+        criadoPor: "Cadastro na tela inicial"
+      });
+
+      writeJSON(USERS_KEY, users);
+      writeJSON(PROFILE_KEY, profiles);
+      writeJSON(FIRST_KEY, first);
+
+      msg("Cadastro criado com sucesso. Entrando no sistema...", true);
+      setTimeout(() => liberarSistema(usuario, false), 450);
+      return;
+    }
+
+    if(usuario.toLowerCase() === ADMIN_USER.toLowerCase() && senha === ADMIN_PASS){
+      const users = readJSON(USERS_KEY, {});
+      users[ADMIN_USER] = ADMIN_PASS;
+      writeJSON(USERS_KEY, users);
+      liberarSistema(ADMIN_USER, true);
+      return;
+    }
+
+    const users = readJSON(USERS_KEY, {});
+    if(users[usuario] && users[usuario] === senha){
+      liberarSistema(usuario, usuario.toLowerCase() === ADMIN_USER.toLowerCase());
+      return;
+    }
+
+    msg("Usuário ou senha incorretos. Confira os dados ou cadastre um novo usuário.");
+  };
+
+  window.sairSistemaFinal = function(){
+    [LOGIN_V29, LOGIN_V21, "sistema_login_v14", AUTO_KEY, "token"].forEach(k => localStorage.removeItem(k));
+    const overlay = document.getElementById("loginOverlay");
+    if(overlay) overlay.style.display = "flex";
+    document.body.classList.remove("admin");
+    setMode("login");
+  };
+
+  function corrigirMenuSair(){
+    const inicio = document.getElementById("btnInicioTCF");
+    const login = document.getElementById("btnLoginTCF");
+    if(inicio) inicio.remove();
+    if(login) login.remove();
+    const sairBtn = document.querySelector(".sidebar-final-btn.exit");
+    if(sairBtn){
+      sairBtn.innerHTML = "<span>↪</span><b>Sair</b>";
+      sairBtn.onclick = window.sairSistemaFinal;
+      const box = document.querySelector(".sidebar-final-bottom");
+      if(box && sairBtn.parentElement === box) box.appendChild(sairBtn);
+    }
+  }
+
+  document.addEventListener("click", function(e){
+    const btn = e.target.closest(".login-main-btn");
+    if(btn){
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      window.entrarSistema();
+    }
+  }, true);
+
+  document.addEventListener("keydown", function(e){
+    if(e.key === "Enter" && document.getElementById("loginOverlay")?.style.display !== "none"){
+      const active = document.activeElement?.id || "";
+      if(["loginUsuario","loginSenha","loginSenhaConfirmar","loginEmail"].includes(active)){
+        e.preventDefault();
+        window.entrarSistema();
+      }
+    }
+  }, true);
+
+  window.addEventListener("load", function(){
+    setTimeout(function(){
+      instalarCadastroNoLogin();
+      corrigirMenuSair();
+      const usuario = localStorage.getItem(LOGIN_V29) || localStorage.getItem(LOGIN_V21) || "";
+      document.body.classList.toggle("admin", usuario.toLowerCase() === ADMIN_USER.toLowerCase());
+    }, 600);
+  });
+
+  const oldAbrirTelaV52 = window.abrirTela;
+  window.abrirTela = function(id, botao){
+    if(typeof oldAbrirTelaV52 === "function") oldAbrirTelaV52(id, botao);
+    setTimeout(corrigirMenuSair, 80);
+  };
+})();
+</script>
+
+<!-- PATCH TCF v0.54 - Remove abas duplicadas do login -->
+<style id="v054-remove-login-tabs-duplicadas">
+/* Mantém apenas as abas funcionais de baixo: #tcfAuthTabs */
+.login-mode-switch{
+  display:none !important;
+  visibility:hidden !important;
+  height:0 !important;
+  min-height:0 !important;
+  max-height:0 !important;
+  overflow:hidden !important;
+  margin:0 !important;
+  padding:0 !important;
+  border:0 !important;
+}
+#btnModoLogin,
+#btnModoCadastro{
+  display:none !important;
+}
+#tcfAuthTabs{
+  margin-top:0 !important;
+  margin-bottom:12px !important;
+}
+</style>
+<script id="v054-remove-login-tabs-duplicadas-script">
+(function(){
+  function removerAbasDuplicadasTCF(){
+    document.querySelectorAll('.login-mode-switch').forEach(el => el.remove());
+    const tabs = document.getElementById('tcfAuthTabs');
+    if(tabs){
+      tabs.style.display = 'grid';
+    }
+  }
+  window.addEventListener('load', function(){ setTimeout(removerAbasDuplicadasTCF, 200); });
+  document.addEventListener('DOMContentLoaded', removerAbasDuplicadasTCF);
+})();
+</script>
