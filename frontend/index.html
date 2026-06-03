@@ -4448,6 +4448,526 @@ body:not(.light-mode) .auth-message.show{
 }
 </style>
 
+
+
+<style id="v060-visual-premium-only">
+/* =========================================================
+   TCFTELECOM v060 - VISUAL PREMIUM ONLY
+   Camada visual segura: não altera API, rotas, login, banco,
+   permissões, CRUD ou estrutura HTML principal.
+   ========================================================= */
+
+:root{
+  --v060-primary:#38bdf8;
+  --v060-primary-2:#2563eb;
+  --v060-primary-3:#0ea5e9;
+  --v060-dark-bg:#07111f;
+  --v060-dark-card:rgba(20,30,48,.82);
+  --v060-dark-card-2:rgba(15,23,42,.92);
+  --v060-dark-border:rgba(148,163,184,.20);
+  --v060-light-bg:#f3f6fb;
+  --v060-light-card:#ffffff;
+  --v060-light-border:#dfe7f2;
+  --v060-text-dark:#f8fafc;
+  --v060-text-light:#0f172a;
+  --v060-muted-dark:#cbd5e1;
+  --v060-muted-light:#64748b;
+  --v060-success:#22c55e;
+  --v060-warning:#f59e0b;
+  --v060-danger:#ef4444;
+  --v060-radius-xl:30px;
+  --v060-radius-lg:22px;
+  --v060-shadow-dark:0 24px 80px rgba(0,0,0,.28);
+  --v060-shadow-light:0 18px 55px rgba(15,23,42,.09);
+}
+
+html{
+  scroll-behavior:smooth;
+}
+
+body:not(.light):not(.light-mode){
+  background:
+    radial-gradient(circle at 5% 3%, rgba(56,189,248,.24), transparent 28%),
+    radial-gradient(circle at 92% 0%, rgba(37,99,235,.24), transparent 33%),
+    radial-gradient(circle at 70% 100%, rgba(14,165,233,.10), transparent 30%),
+    linear-gradient(135deg,#050b16 0%,#07111f 42%,#0b1222 100%) !important;
+  color:var(--v060-text-dark) !important;
+}
+
+body.light,
+body.light-mode{
+  background:
+    radial-gradient(circle at 90% 8%, rgba(56,189,248,.12), transparent 28%),
+    radial-gradient(circle at 12% 88%, rgba(37,99,235,.08), transparent 30%),
+    linear-gradient(135deg,#f8fafc 0%,#eef3f9 100%) !important;
+  color:var(--v060-text-light) !important;
+}
+
+/* Sidebar fixa e mais refinada */
+.sidebar{
+  position:fixed !important;
+  left:0 !important;
+  top:0 !important;
+  bottom:0 !important;
+  z-index:80 !important;
+  height:100vh !important;
+  overflow:hidden !important;
+  border-right:1px solid rgba(148,163,184,.16) !important;
+}
+
+.app{
+  grid-template-columns:306px minmax(0,1fr) !important;
+}
+
+.content{
+  margin-left:0 !important;
+  min-width:0 !important;
+  padding:34px 44px 110px !important;
+}
+
+body:not(.light):not(.light-mode) .sidebar{
+  background:
+    radial-gradient(circle at 0% 0%, rgba(56,189,248,.22), transparent 30%),
+    radial-gradient(circle at 80% 90%, rgba(37,99,235,.36), transparent 35%),
+    linear-gradient(180deg,#0c1627 0%,#0b1729 46%,#0d224a 100%) !important;
+  box-shadow:16px 0 65px rgba(0,0,0,.24) !important;
+}
+
+body.light .sidebar,
+body.light-mode .sidebar{
+  background:
+    radial-gradient(circle at 0% 0%, rgba(56,189,248,.16), transparent 30%),
+    linear-gradient(180deg,#1f2a3a 0%,#162034 100%) !important;
+  box-shadow:16px 0 45px rgba(15,23,42,.14) !important;
+}
+
+.sidebar-logo-final{
+  font-size:30px !important;
+  letter-spacing:-1.4px !important;
+  margin-bottom:36px !important;
+  filter:drop-shadow(0 14px 34px rgba(56,189,248,.18));
+}
+
+.sidebar-logo-final::before{
+  border-radius:14px !important;
+  box-shadow:0 20px 46px rgba(56,189,248,.30) !important;
+}
+
+.nav button{
+  height:62px !important;
+  border-radius:18px !important;
+  margin:1px 0 !important;
+  font-weight:800 !important;
+  letter-spacing:-.2px !important;
+}
+
+.nav button:hover{
+  transform:translateX(3px) !important;
+  background:rgba(255,255,255,.085) !important;
+}
+
+.nav button.active{
+  position:relative !important;
+  overflow:hidden !important;
+}
+
+.nav button.active::after{
+  content:"";
+  position:absolute;
+  right:14px;
+  width:8px;
+  height:8px;
+  border-radius:999px;
+  background:#38bdf8;
+  box-shadow:0 0 18px rgba(56,189,248,.9);
+}
+
+.sidebar-final-version{
+  border-radius:20px !important;
+  background:linear-gradient(145deg,rgba(15,23,42,.72),rgba(30,41,59,.46)) !important;
+}
+
+.sidebar-final-btn{
+  border-radius:16px !important;
+}
+
+/* Topbar */
+.topbar{
+  border-radius:34px !important;
+  min-height:168px !important;
+  padding:34px 38px !important;
+}
+
+body:not(.light):not(.light-mode) .topbar{
+  background:
+    linear-gradient(135deg,rgba(30,41,59,.92),rgba(15,23,42,.78)),
+    radial-gradient(circle at right,rgba(56,189,248,.16),transparent 35%) !important;
+  border:1px solid var(--v060-dark-border) !important;
+  box-shadow:var(--v060-shadow-dark) !important;
+}
+
+body.light .topbar,
+body.light-mode .topbar{
+  background:
+    radial-gradient(circle at right,rgba(56,189,248,.10),transparent 34%),
+    linear-gradient(135deg,#fff,#f8fafc) !important;
+  border:1px solid var(--v060-light-border) !important;
+  box-shadow:var(--v060-shadow-light) !important;
+}
+
+.label{
+  font-size:12px !important;
+  letter-spacing:7px !important;
+  color:var(--v060-primary) !important;
+}
+
+h1#tituloTela{
+  font-size:clamp(34px,3.2vw,50px) !important;
+  letter-spacing:-2px !important;
+}
+
+.subtitle{
+  max-width:840px !important;
+  line-height:1.65 !important;
+}
+
+.version-box{
+  border-radius:26px !important;
+  backdrop-filter:blur(18px) !important;
+}
+
+/* Cards */
+.grid{
+  gap:24px !important;
+}
+
+.card{
+  border-radius:28px !important;
+  min-height:166px !important;
+  padding:26px !important;
+  transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease !important;
+}
+
+.card:hover{
+  transform:translateY(-4px) !important;
+}
+
+body:not(.light):not(.light-mode) .card{
+  box-shadow:0 24px 68px rgba(0,0,0,.24) !important;
+}
+
+body.light .card,
+body.light-mode .card{
+  box-shadow:0 18px 50px rgba(15,23,42,.10) !important;
+}
+
+.card-title{
+  font-size:15px !important;
+  letter-spacing:.1px !important;
+  opacity:.96 !important;
+}
+
+.value{
+  font-size:clamp(34px,3vw,48px) !important;
+  letter-spacing:-1.7px !important;
+}
+
+.trend{
+  font-size:13px !important;
+  line-height:1.45 !important;
+}
+
+/* Painéis */
+.panel{
+  border-radius:30px !important;
+  padding:32px !important;
+  transition:border-color .18s ease, box-shadow .18s ease !important;
+}
+
+body:not(.light):not(.light-mode) .panel{
+  background:
+    radial-gradient(circle at top right, rgba(56,189,248,.08), transparent 32%),
+    linear-gradient(145deg,rgba(30,41,59,.88),rgba(15,23,42,.78)) !important;
+  border:1px solid var(--v060-dark-border) !important;
+  box-shadow:0 22px 70px rgba(0,0,0,.20) !important;
+}
+
+body.light .panel,
+body.light-mode .panel{
+  background:
+    radial-gradient(circle at top right, rgba(56,189,248,.07), transparent 32%),
+    #ffffff !important;
+  border:1px solid var(--v060-light-border) !important;
+  box-shadow:var(--v060-shadow-light) !important;
+}
+
+.panel h2{
+  font-size:clamp(23px,2vw,32px) !important;
+  letter-spacing:-1px !important;
+}
+
+.panel-desc{
+  line-height:1.65 !important;
+  margin-bottom:22px !important;
+}
+
+/* Formulários */
+.field label{
+  font-size:13px !important;
+  text-transform:uppercase !important;
+  letter-spacing:.4px !important;
+  margin-bottom:9px !important;
+}
+
+input,
+select,
+textarea{
+  border-radius:18px !important;
+  min-height:56px !important;
+  transition:border-color .18s ease, box-shadow .18s ease, background .18s ease !important;
+}
+
+body:not(.light):not(.light-mode) input,
+body:not(.light):not(.light-mode) select,
+body:not(.light):not(.light-mode) textarea{
+  background:rgba(2,6,23,.58) !important;
+  border:1px solid rgba(148,163,184,.28) !important;
+  color:#f8fafc !important;
+}
+
+body.light input,
+body.light select,
+body.light textarea,
+body.light-mode input,
+body.light-mode select,
+body.light-mode textarea{
+  background:#f8fafc !important;
+  border:1px solid #d7e0eb !important;
+  color:#0f172a !important;
+}
+
+input:focus,
+select:focus,
+textarea:focus{
+  border-color:var(--v060-primary) !important;
+  box-shadow:0 0 0 5px rgba(56,189,248,.15) !important;
+}
+
+/* Botões */
+button,
+.primary,
+.secondary,
+.success,
+.warning,
+.danger{
+  border-radius:17px !important;
+  transition:transform .16s ease, box-shadow .16s ease, filter .16s ease !important;
+}
+
+button:hover{
+  transform:translateY(-2px) !important;
+}
+
+.primary{
+  background:linear-gradient(135deg,#2563eb,#38bdf8) !important;
+  box-shadow:0 16px 38px rgba(37,99,235,.24) !important;
+}
+
+.success{
+  background:rgba(34,197,94,.14) !important;
+  color:#22c55e !important;
+  border:1px solid rgba(34,197,94,.30) !important;
+}
+
+.warning{
+  background:rgba(245,158,11,.14) !important;
+  color:#f59e0b !important;
+  border:1px solid rgba(245,158,11,.32) !important;
+}
+
+.danger{
+  background:rgba(239,68,68,.13) !important;
+  color:#fb7185 !important;
+  border:1px solid rgba(239,68,68,.30) !important;
+}
+
+.secondary{
+  border:1px solid rgba(148,163,184,.25) !important;
+}
+
+/* Tabelas */
+.table-wrap{
+  border-radius:26px !important;
+  overflow:auto !important;
+  box-shadow:inset 0 0 0 1px rgba(148,163,184,.10) !important;
+}
+
+table{
+  border-collapse:separate !important;
+  border-spacing:0 !important;
+}
+
+thead th{
+  position:sticky !important;
+  top:0 !important;
+  z-index:2 !important;
+  background:linear-gradient(135deg,#0f2f4d,#123f68) !important;
+  padding:15px 14px !important;
+  font-size:13px !important;
+  letter-spacing:.3px !important;
+  text-transform:uppercase !important;
+}
+
+tbody td{
+  padding:14px !important;
+  line-height:1.45 !important;
+}
+
+body:not(.light):not(.light-mode) tbody tr:hover td{
+  background:rgba(56,189,248,.10) !important;
+}
+
+body.light tbody tr:hover td,
+body.light-mode tbody tr:hover td{
+  background:#eff6ff !important;
+}
+
+.row-actions{
+  gap:8px !important;
+}
+
+.small-btn{
+  padding:9px 11px !important;
+  border-radius:12px !important;
+}
+
+/* Usuários / permissões */
+.user-list-pro{
+  gap:14px !important;
+}
+
+.user-card-pro,
+.permission-card,
+.config-item,
+.site-url-box,
+.invite-card,
+.link-output{
+  border-radius:22px !important;
+}
+
+body:not(.light):not(.light-mode) .user-card-pro,
+body:not(.light):not(.light-mode) .permission-card,
+body:not(.light):not(.light-mode) .config-item,
+body:not(.light):not(.light-mode) .site-url-box,
+body:not(.light):not(.light-mode) .invite-card{
+  background:rgba(15,23,42,.46) !important;
+  border:1px solid rgba(148,163,184,.20) !important;
+}
+
+body.light .user-card-pro,
+body.light .permission-card,
+body.light .config-item,
+body.light .site-url-box,
+body.light .invite-card,
+body.light-mode .user-card-pro,
+body.light-mode .permission-card,
+body.light-mode .config-item,
+body.light-mode .site-url-box,
+body.light-mode .invite-card{
+  background:#fff !important;
+  border:1px solid #e2e8f0 !important;
+  box-shadow:0 12px 32px rgba(15,23,42,.06) !important;
+}
+
+.user-avatar-mini,
+.profile-avatar-pro{
+  box-shadow:0 18px 44px rgba(37,99,235,.20) !important;
+}
+
+.user-status-pill,
+.online-badge{
+  border-radius:999px !important;
+}
+
+/* Gráficos */
+.bar{
+  height:20px !important;
+  border-radius:999px !important;
+}
+
+.fill,
+.line-bar{
+  background:linear-gradient(90deg,#2563eb,#38bdf8) !important;
+}
+
+.line-chart{
+  gap:14px !important;
+}
+
+.donut{
+  filter:drop-shadow(0 24px 45px rgba(15,23,42,.18));
+}
+
+/* Login refinado sem alterar fluxo */
+.login-card-top,
+.login-grid,
+.login-error{
+  border-color:rgba(148,163,184,.24) !important;
+}
+
+.login-main-btn{
+  border-radius:18px !important;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar{
+  width:10px;
+  height:10px;
+}
+::-webkit-scrollbar-track{
+  background:transparent;
+}
+::-webkit-scrollbar-thumb{
+  background:rgba(148,163,184,.42);
+  border-radius:999px;
+}
+::-webkit-scrollbar-thumb:hover{
+  background:rgba(56,189,248,.55);
+}
+
+/* Responsividade preservada */
+@media(max-width:1180px){
+  .app{
+    grid-template-columns:96px minmax(0,1fr) !important;
+  }
+  .content{
+    padding-left:26px !important;
+    padding-right:26px !important;
+  }
+}
+
+@media(max-width:900px){
+  .sidebar{
+    position:relative !important;
+    width:100% !important;
+    height:auto !important;
+  }
+  .app{
+    grid-template-columns:1fr !important;
+  }
+  .content{
+    padding:22px 18px 80px !important;
+  }
+  .topbar{
+    border-radius:26px !important;
+    padding:26px !important;
+  }
+  .panel{
+    padding:24px !important;
+  }
+}
+</style>
+
 </head>
 
 <body>
@@ -4631,7 +5151,8 @@ body:not(.light-mode) .auth-message.show{
             <input class="filter-input" id="busca" type="text" placeholder="Buscar cliente, contato ou observação..." oninput="atualizarTabela()">
             <select class="filter-select" id="filtroAtendente" onchange="atualizarTabela()"><option value="">Todos os atendentes</option><option>Victor</option><option>Hiago</option><option>Higor</option><option>Odair</option><option>Otavio</option><option>Gustavo</option><option>Cleiton</option></select>
             <select class="filter-select" id="filtroCritico" onchange="atualizarTabela()"><option value="">Crítico: todos</option><option>Sim</option><option>Não</option></select>
-            <button class="success" type="button" onclick="exportarCSV()">Exportar CSV</button>
+            <button class="success" type="button" onclick="exportarXLSX()">Exportar Excel</button>
+            <button class="secondary" type="button" onclick="exportarCSV()">Exportar CSV</button>
             <button class="secondary" type="button" onclick="exportarPDF()">Exportar PDF</button>
             <button class="danger" type="button" onclick="apagarRegistros()">Apagar todos</button>
           </div>
@@ -5288,6 +5809,203 @@ abrirTelaPorId("registros");
         localStorage.removeItem(STORAGE_KEY);
         atualizarTudo();
       }
+    }
+
+
+
+    function carregarBibliotecaExcel() {
+      return new Promise((resolve, reject) => {
+        if (window.XLSX) { resolve(window.XLSX); return; }
+        const script = document.createElement("script");
+        script.src = "https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js";
+        script.onload = () => window.XLSX ? resolve(window.XLSX) : reject(new Error("Biblioteca Excel não carregou."));
+        script.onerror = () => reject(new Error("Não foi possível carregar a biblioteca Excel. Verifique a conexão."));
+        document.head.appendChild(script);
+      });
+    }
+
+    function contarPorCampo(lista, campo) {
+      return lista.reduce((acc, item) => {
+        const chave = item[campo] || "Não informado";
+        acc[chave] = (acc[chave] || 0) + 1;
+        return acc;
+      }, {});
+    }
+
+    function ordenarResumo(obj) {
+      return Object.entries(obj).sort((a, b) => b[1] - a[1] || String(a[0]).localeCompare(String(b[0])));
+    }
+
+    function nomeArquivoExcel() {
+      const agora = new Date();
+      const pad = n => String(n).padStart(2, "0");
+      return `TCFTELECOM_atendimentos_${agora.getFullYear()}-${pad(agora.getMonth()+1)}-${pad(agora.getDate())}_${pad(agora.getHours())}-${pad(agora.getMinutes())}.xlsx`;
+    }
+
+    function aplicarEstiloCelula(ws, ref, style) {
+      if (ws[ref]) ws[ref].s = style;
+    }
+
+    function aplicarEstiloRange(ws, rangeA1, style) {
+      const range = XLSX.utils.decode_range(rangeA1);
+      for (let R = range.s.r; R <= range.e.r; ++R) {
+        for (let C = range.s.c; C <= range.e.c; ++C) {
+          const ref = XLSX.utils.encode_cell({r:R, c:C});
+          if (!ws[ref]) ws[ref] = { t: "s", v: "" };
+          ws[ref].s = JSON.parse(JSON.stringify(style));
+        }
+      }
+    }
+
+    async function exportarXLSX() {
+      const lista = carregar();
+      if (!lista.length) {
+        alert("Nenhum atendimento para exportar.");
+        return;
+      }
+
+      let XLSXLib;
+      try {
+        XLSXLib = await carregarBibliotecaExcel();
+      } catch (erro) {
+        console.error(erro);
+        alert("Não foi possível gerar Excel agora. Tente novamente com internet ativa ou use Exportar CSV.");
+        return;
+      }
+
+      const wb = XLSXLib.utils.book_new();
+      wb.Props = {
+        Title: "Exportação de Atendimentos TCFTELECOM",
+        Subject: "Registro de atendimentos",
+        Author: "Sistema TCFTELECOM",
+        CreatedDate: new Date()
+      };
+
+      const cabecalho = [
+        "Data", "Técnico/Atendente", "Cliente", "Contato", "Tipo de Atendimento",
+        "OS Aberta?", "Resolvido Remoto?", "Resolvido Internamente?", "Crítico?",
+        "Pós Suporte Realizado?", "Status", "Observações"
+      ];
+
+      const linhas = lista.map(i => [
+        i.data || "",
+        i.tecnico || "",
+        i.cliente || "",
+        i.contato || i.telefone || "",
+        i.tipo || "",
+        i.osAberta || "",
+        i.resolvidoRemoto || "",
+        i.resolvidoInternamente || i.resolvidoRemoto || "",
+        i.critico || "",
+        i.posSuporte || "",
+        i.status || "",
+        i.observacoes || ""
+      ]);
+
+      const wsRegistro = XLSXLib.utils.aoa_to_sheet([
+        ["TCFTELECOM — Registro de Atendimentos"],
+        ["Exportação gerada automaticamente pelo sistema interno"],
+        ["Gerado em:", new Date().toLocaleString("pt-BR")],
+        [],
+        cabecalho,
+        ...linhas
+      ]);
+
+      wsRegistro["!merges"] = [
+        {s:{r:0,c:0}, e:{r:0,c:11}},
+        {s:{r:1,c:0}, e:{r:1,c:11}}
+      ];
+      wsRegistro["!cols"] = [
+        {wch:13}, {wch:22}, {wch:28}, {wch:18}, {wch:24}, {wch:14},
+        {wch:18}, {wch:24}, {wch:12}, {wch:22}, {wch:20}, {wch:46}
+      ];
+      wsRegistro["!freeze"] = {xSplit: 0, ySplit: 5};
+      wsRegistro["!autofilter"] = { ref: `A5:L${linhas.length + 5}` };
+
+      const titleStyle = { font:{bold:true, color:{rgb:"FFFFFF"}, sz:18}, fill:{fgColor:{rgb:"0F2F4D"}}, alignment:{horizontal:"center", vertical:"center"} };
+      const subStyle = { font:{italic:true, color:{rgb:"475569"}, sz:11}, alignment:{horizontal:"center"} };
+      const headerStyle = { font:{bold:true, color:{rgb:"FFFFFF"}}, fill:{fgColor:{rgb:"173A59"}}, alignment:{horizontal:"center", vertical:"center", wrapText:true}, border:{top:{style:"thin", color:{rgb:"CBD5E1"}},bottom:{style:"thin", color:{rgb:"CBD5E1"}},left:{style:"thin", color:{rgb:"CBD5E1"}},right:{style:"thin", color:{rgb:"CBD5E1"}}} };
+      const bodyStyle1 = { alignment:{vertical:"top", wrapText:true}, fill:{fgColor:{rgb:"FFFFFF"}}, border:{bottom:{style:"thin", color:{rgb:"E5E7EB"}}, right:{style:"thin", color:{rgb:"E5E7EB"}}} };
+      const bodyStyle2 = { alignment:{vertical:"top", wrapText:true}, fill:{fgColor:{rgb:"F8FAFC"}}, border:{bottom:{style:"thin", color:{rgb:"E5E7EB"}}, right:{style:"thin", color:{rgb:"E5E7EB"}}} };
+
+      aplicarEstiloCelula(wsRegistro, "A1", titleStyle);
+      aplicarEstiloCelula(wsRegistro, "A2", subStyle);
+      aplicarEstiloRange(wsRegistro, "A5:L5", headerStyle);
+      for (let r = 6; r <= linhas.length + 5; r++) {
+        aplicarEstiloRange(wsRegistro, `A${r}:L${r}`, r % 2 === 0 ? bodyStyle1 : bodyStyle2);
+      }
+
+      const total = lista.length;
+      const criticos = lista.filter(x => x.critico === "Sim").length;
+      const remoto = lista.filter(x => x.resolvidoRemoto === "Sim").length;
+      const interno = lista.filter(x => (x.resolvidoInternamente || x.resolvidoRemoto) === "Sim").length;
+      const os = lista.filter(x => x.osAberta === "Sim").length;
+      const pos = lista.filter(x => x.posSuporte === "Sim").length;
+      const pct = (parte) => total ? Math.round((parte / total) * 100) + "%" : "0%";
+
+      const porTipo = ordenarResumo(contarPorCampo(lista, "tipo"));
+      const porTecnico = ordenarResumo(contarPorCampo(lista, "tecnico"));
+      const porStatus = ordenarResumo(contarPorCampo(lista, "status"));
+
+      const wsDashboard = XLSXLib.utils.aoa_to_sheet([
+        ["TCFTELECOM — Dashboard da Exportação"],
+        ["Resumo automático dos atendimentos exportados"],
+        [],
+        ["Indicador", "Valor"],
+        ["Total de Atendimentos", total],
+        ["Atendimentos Críticos", criticos],
+        ["Resolvidos Remoto", remoto],
+        ["Resolvidos Internamente", interno],
+        ["Com OS Aberta", os],
+        ["Pós Suporte Realizado", pos],
+        ["Taxa Crítica", pct(criticos)],
+        ["Taxa Remota", pct(remoto)],
+        ["Taxa Pós Suporte", pct(pos)],
+        [],
+        ["Atendimentos por Tipo", "Quantidade"],
+        ...porTipo,
+        [],
+        ["Atendimentos por Técnico", "Quantidade"],
+        ...porTecnico,
+        [],
+        ["Atendimentos por Status", "Quantidade"],
+        ...porStatus
+      ]);
+      wsDashboard["!merges"] = [
+        {s:{r:0,c:0}, e:{r:0,c:5}},
+        {s:{r:1,c:0}, e:{r:1,c:5}}
+      ];
+      wsDashboard["!cols"] = [{wch:32}, {wch:16}, {wch:4}, {wch:26}, {wch:16}, {wch:16}];
+      aplicarEstiloCelula(wsDashboard, "A1", titleStyle);
+      aplicarEstiloCelula(wsDashboard, "A2", subStyle);
+      ["A4:B4"].forEach(r => aplicarEstiloRange(wsDashboard, r, headerStyle));
+      const tipoStart = 15;
+      aplicarEstiloRange(wsDashboard, `A${tipoStart}:B${tipoStart}`, headerStyle);
+      const tecnicoStart = tipoStart + porTipo.length + 2;
+      aplicarEstiloRange(wsDashboard, `A${tecnicoStart}:B${tecnicoStart}`, headerStyle);
+      const statusStart = tecnicoStart + porTecnico.length + 2;
+      aplicarEstiloRange(wsDashboard, `A${statusStart}:B${statusStart}`, headerStyle);
+
+      const wsListas = XLSXLib.utils.aoa_to_sheet([
+        ["Atendentes", "Tipos de Atendimento", "Status", "Sim/Não"],
+        ["Victor", "Suporte", "Concluído", "Sim"],
+        ["Hiago", "Verificação da Conexão", "Pendente", "Não"],
+        ["Higor", "Mudança de Cômodo", "Em andamento", ""],
+        ["Odair", "Instabilidade", "Aguardando técnico", ""],
+        ["Otavio", "LOS", "Aguardando cliente", ""],
+        ["Gustavo", "Sinal Alto", "", ""],
+        ["Cleiton", "Problema na ONU", "", ""],
+        ["", "Fonte com Defeito", "", ""],
+        ["", "Resolvido Internamente", "", ""]
+      ]);
+      wsListas["!cols"] = [{wch:22}, {wch:28}, {wch:24}, {wch:12}];
+      aplicarEstiloRange(wsListas, "A1:D1", headerStyle);
+
+      XLSXLib.utils.book_append_sheet(wb, wsRegistro, "Registro de Atendimentos");
+      XLSXLib.utils.book_append_sheet(wb, wsDashboard, "Dashboard");
+      XLSXLib.utils.book_append_sheet(wb, wsListas, "Listas");
+
+      XLSXLib.writeFile(wb, nomeArquivoExcel());
     }
 
     function limparCSV(valor) { return `"${String(valor ?? "").replace(/"/g, '""')}"`; }
@@ -8853,5 +9571,270 @@ body:not(.light-mode):not(.light) .tcf-link-output{background:rgba(2,6,23,.55);c
   };
   const oldAbrir=window.abrirTela; window.abrirTela=function(id,botao){ if(typeof oldAbrir==="function")oldAbrir(id,botao); if(id==="usuarios"||id==="configuracoes")setTimeout(renderUsuariosAdmin,60); };
   window.addEventListener("load",function(){ensureBase(); renderLinksManager(); setTimeout(renderUsuariosAdmin,600);});
+})();
+</script>
+
+<!-- PATCH TCF v0.59 - Acesso administrativo restrito e proteção do desenvolvedor -->
+<style id="v059-admin-dev-protegido-style">
+  .tcf-dev-lock{
+    display:inline-block;
+    margin-left:8px;
+    padding:4px 8px;
+    border-radius:999px;
+    background:rgba(14,165,233,.14);
+    border:1px solid rgba(14,165,233,.28);
+    color:#0284c7;
+    font-size:11px;
+    font-weight:900;
+  }
+  body:not(.light-mode):not(.light) .tcf-dev-lock{color:#7dd3fc;}
+  .tcf-protected-user select,
+  .tcf-protected-user .danger,
+  .tcf-protected-user .warning,
+  .tcf-protected-user input[type="checkbox"]{
+    opacity:.45!important;
+    pointer-events:none!important;
+  }
+  .tcf-protected-note{
+    margin-top:10px;
+    padding:10px 12px;
+    border-radius:12px;
+    background:rgba(250,204,21,.12);
+    border:1px solid rgba(250,204,21,.28);
+    color:#a16207;
+    font-weight:800;
+    font-size:12px;
+  }
+  body:not(.light-mode):not(.light) .tcf-protected-note{color:#fde68a;}
+</style>
+
+<script id="v059-admin-dev-protegido-script">
+(function(){
+  const DEV_USER = "Victor";
+  const PROFILE_KEY = "usuarios_perfis_v42";
+  const PERMS_KEY = "usuarios_permissoes_v57";
+  const LOGIN_KEYS = ["sistema_login_v29","sistema_login_v21","sistema_auto_login_v29","sistema_login_v28","sistema_login_v14"];
+  const TELAS_ADMIN = ["dashboard","cadastro","registros","graficos","indicadores","usuarios","perfil","configuracoes"];
+  const TELAS_OPERADOR = ["dashboard","cadastro","registros","graficos","perfil"];
+  const PERFIS_PADRAO = {
+    "Administrador": TELAS_ADMIN,
+    "Supervisor": ["dashboard","cadastro","registros","graficos","indicadores","perfil"],
+    "Atendente": TELAS_OPERADOR,
+    "Operador": TELAS_OPERADOR,
+    "Técnico": TELAS_OPERADOR,
+    "Suporte": TELAS_OPERADOR
+  };
+
+  function lower(v){return String(v||"").trim().toLowerCase();}
+  function read(key,fallback){try{return JSON.parse(localStorage.getItem(key)||JSON.stringify(fallback));}catch(e){return fallback;}}
+  function write(key,val){localStorage.setItem(key,JSON.stringify(val));}
+  function findKey(obj,nome){const n=lower(nome);return Object.keys(obj||{}).find(k=>lower(k)===n);}
+  function currentUser(){for(const k of LOGIN_KEYS){const v=localStorage.getItem(k); if(v) return v;} return "";}
+  function isDev(nome){return lower(nome||currentUser())===lower(DEV_USER);}
+  function perfilUsuario(nome){
+    if(isDev(nome)) return "Desenvolvedor";
+    const profiles=read(PROFILE_KEY,{});
+    const key=findKey(profiles,nome)||nome;
+    return profiles[key]?.perfil || "Atendente";
+  }
+  function isAdminUser(nome){
+    const perfil=perfilUsuario(nome);
+    return isDev(nome) || perfil === "Administrador";
+  }
+  function permissoesUsuario(nome){
+    if(isDev(nome)) return TELAS_ADMIN;
+    const perms=read(PERMS_KEY,{});
+    const key=findKey(perms,nome)||nome;
+    const salvo=perms[key];
+    if(Array.isArray(salvo)) return salvo;
+    return PERFIS_PADRAO[perfilUsuario(nome)] || TELAS_OPERADOR;
+  }
+
+  function garantirDevProtegido(){
+    const profiles=read(PROFILE_KEY,{});
+    const key=findKey(profiles,DEV_USER)||DEV_USER;
+    profiles[key]=Object.assign({}, profiles[key]||{}, {
+      nome:DEV_USER,
+      perfil:"Desenvolvedor",
+      bloqueado:false,
+      protegido:true
+    });
+    write(PROFILE_KEY,profiles);
+    const perms=read(PERMS_KEY,{});
+    perms[key]=TELAS_ADMIN;
+    write(PERMS_KEY,perms);
+  }
+
+  function aplicarControleMenuV59(){
+    garantirDevProtegido();
+    const user=currentUser();
+    const admin=isAdminUser(user);
+    document.body.classList.toggle("admin", admin);
+
+    document.querySelectorAll('.nav button').forEach(btn=>{
+      const onclick=btn.getAttribute('onclick')||'';
+      const match=onclick.match(/abrirTela\('([^']+)'/);
+      const tela=match?match[1]:'';
+      if(!tela) return;
+      if(tela==="usuarios" || tela==="configuracoes"){
+        btn.style.display = admin ? "" : "none";
+      }
+      if(tela && !admin && !permissoesUsuario(user).includes(tela)){
+        btn.style.display = "none";
+      }
+    });
+  }
+
+  function protegerCardDev(){
+    const atual=currentUser();
+    const devAtual=isDev(atual);
+    ["usuariosAdminListaPage","usuariosAdminLista"].forEach(containerId=>{
+      const el=document.getElementById(containerId);
+      if(!el) return;
+      const cards=[...el.querySelectorAll('.tcf-admin-user-card,.tcf-v58-user-card,.user-card-pro')];
+      cards.forEach(card=>{
+        const nomeEl=card.querySelector('strong');
+        const nome=(nomeEl?.textContent||"").trim();
+        if(!nome) return;
+        const isDevCard=isDev(nome);
+        if(isDevCard){
+          card.classList.add('tcf-protected-user');
+          if(nomeEl && !nomeEl.querySelector('.tcf-dev-lock')){
+            const b=document.createElement('span');
+            b.className='tcf-dev-lock';
+            b.textContent='DEV protegido';
+            nomeEl.appendChild(b);
+          }
+          if(!devAtual){
+            card.querySelectorAll('select, input[type="checkbox"]').forEach(x=>x.disabled=true);
+            card.querySelectorAll('button').forEach(btn=>{
+              const txt=(btn.textContent||'').toLowerCase();
+              if(txt.includes('salvar')||txt.includes('senha')||txt.includes('remover')||txt.includes('permiss')){
+                btn.disabled=true;
+                btn.title='Somente o desenvolvedor pode alterar esta conta.';
+              }
+            });
+            if(!card.querySelector('.tcf-protected-note')){
+              const note=document.createElement('div');
+              note.className='tcf-protected-note';
+              note.textContent='Conta principal do desenvolvedor. Outros administradores não podem alterar, bloquear, remover ou redefinir senha.';
+              card.appendChild(note);
+            }
+          }
+        }
+
+        if(!devAtual){
+          const perfilSel=card.querySelector('select[id^="perfil_"],select[id^="v58perfil_"]');
+          if(perfilSel){
+            [...perfilSel.options].forEach(opt=>{
+              if(opt.value==="Administrador" || opt.textContent==="Administrador" || opt.value==="Desenvolvedor" || opt.textContent==="Desenvolvedor"){
+                opt.disabled=true;
+              }
+            });
+          }
+          card.querySelectorAll('input[type="checkbox"]').forEach(chk=>{
+            if(chk.value==="usuarios" || chk.value==="configuracoes"){
+              chk.disabled=true;
+              chk.title='Somente o desenvolvedor pode liberar essa permissão.';
+            }
+          });
+        }
+      });
+    });
+  }
+
+  function bloquearAcaoProtegida(nome, acao){
+    if(isDev(nome) && !isDev(currentUser())){
+      alert('Esta é a conta principal do desenvolvedor. Outros administradores não podem ' + acao + '.');
+      return true;
+    }
+    return false;
+  }
+
+  function bloquearPromocaoAdmin(nome, selectId){
+    if(isDev(currentUser())) return false;
+    const sel=document.getElementById(selectId);
+    const perfil=sel?.value || sel?.selectedOptions?.[0]?.textContent || "";
+    if(perfil==="Administrador" || perfil==="Desenvolvedor"){
+      alert('Somente o desenvolvedor Victor pode atribuir perfil de Administrador.');
+      if(sel) sel.value=perfilUsuario(nome)==="Administrador"?"Atendente":perfilUsuario(nome);
+      return true;
+    }
+    return false;
+  }
+
+  const oldAbrir=window.abrirTela;
+  window.abrirTela=function(id,botao){
+    aplicarControleMenuV59();
+    const user=currentUser();
+    if((id==="usuarios" || id==="configuracoes") && !isAdminUser(user)){
+      alert('Acesso restrito. Apenas administradores autorizados podem acessar esta aba.');
+      return;
+    }
+    if(!isAdminUser(user) && !permissoesUsuario(user).includes(id)){
+      alert('Seu perfil não possui permissão para acessar esta tela.');
+      return;
+    }
+    if(typeof oldAbrir==="function") oldAbrir(id,botao);
+    setTimeout(()=>{aplicarControleMenuV59(); protegerCardDev();},120);
+  };
+
+  const oldRender=window.renderUsuariosAdmin;
+  window.renderUsuariosAdmin=function(){
+    garantirDevProtegido();
+    if(typeof oldRender==="function") oldRender();
+    aplicarControleMenuV59();
+    setTimeout(protegerCardDev,80);
+  };
+
+  function wrap(name,fn){
+    const old=window[name];
+    window[name]=function(nome){return fn.call(this, old, nome);};
+  }
+
+  wrap('salvarPerfilAdminTCF',function(old,nome){
+    if(bloquearAcaoProtegida(nome,'alterar perfil ou permissões')) return;
+    const id=String(nome||'').replace(/[^a-zA-Z0-9]/g,'_');
+    if(bloquearPromocaoAdmin(nome,'perfil_'+id)) return;
+    if(typeof old==='function') old.apply(this,arguments.length>2?[...arguments].slice(1):[nome]);
+    setTimeout(()=>{aplicarControleMenuV59(); protegerCardDev();},100);
+  });
+  wrap('salvarPerfilAdminV58',function(old,nome){
+    if(bloquearAcaoProtegida(nome,'alterar perfil ou permissões')) return;
+    const id=String(nome||'').replace(/[^a-zA-Z0-9]/g,'_');
+    if(bloquearPromocaoAdmin(nome,'v58perfil_'+id)) return;
+    if(typeof old==='function') old(nome);
+    setTimeout(()=>{aplicarControleMenuV59(); protegerCardDev();},100);
+  });
+  ['removerUsuarioTCF','removerUsuarioV58'].forEach(name=>wrap(name,function(old,nome){
+    if(bloquearAcaoProtegida(nome,'remover esta conta')) return;
+    if(typeof old==='function') old(nome);
+    setTimeout(()=>{aplicarControleMenuV59(); protegerCardDev();},100);
+  }));
+  ['redefinirSenhaUsuarioTCF','redefinirSenhaV58'].forEach(name=>wrap(name,function(old,nome){
+    if(bloquearAcaoProtegida(nome,'redefinir a senha desta conta')) return;
+    if(typeof old==='function') old(nome);
+  }));
+  ['togglePermissoesTCF','togglePermissoesV58'].forEach(name=>wrap(name,function(old,nome){
+    if(bloquearAcaoProtegida(nome,'alterar permissões desta conta')) return;
+    if(typeof old==='function') old(nome);
+    setTimeout(protegerCardDev,60);
+  }));
+
+  const oldConcluir=window.concluirLogin;
+  if(typeof oldConcluir==='function'){
+    window.concluirLogin=function(usuario,isAdmin){
+      const admin=isAdminUser(usuario);
+      oldConcluir(usuario,admin);
+      setTimeout(aplicarControleMenuV59,80);
+    };
+  }
+
+  window.addEventListener('load',function(){
+    garantirDevProtegido();
+    aplicarControleMenuV59();
+    setTimeout(()=>{if(typeof renderUsuariosAdmin==='function')renderUsuariosAdmin(); aplicarControleMenuV59(); protegerCardDev();},300);
+  });
+  document.addEventListener('click',function(){setTimeout(()=>{aplicarControleMenuV59(); protegerCardDev();},120);},true);
 })();
 </script>
