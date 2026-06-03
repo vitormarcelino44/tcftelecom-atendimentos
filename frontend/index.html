@@ -7957,6 +7957,211 @@ body.tcf-register-mode .login-card-top strong::after{
 })();
 </script>
 
+
+<!-- PATCH TCF v0.58 - Controle de acesso + menu lateral fixo -->
+<style id="v058-controle-acesso-sidebar-fixa">
+/* Sidebar fixa: o menu não acompanha a rolagem das páginas */
+@media (min-width: 901px){
+  .app{
+    display:block !important;
+    min-height:100vh !important;
+  }
+  .sidebar{
+    position:fixed !important;
+    left:0 !important;
+    top:0 !important;
+    bottom:0 !important;
+    height:100vh !important;
+    overflow:hidden !important;
+    z-index:1000 !important;
+  }
+  .content{
+    margin-left:306px !important;
+    width:calc(100% - 306px) !important;
+    min-height:100vh !important;
+  }
+}
+@media (min-width:901px) and (max-width:1180px){
+  .content{
+    margin-left:96px !important;
+    width:calc(100% - 96px) !important;
+  }
+}
+@media (max-width:900px){
+  .sidebar{
+    position:relative !important;
+    height:auto !important;
+  }
+  .content{
+    margin-left:0 !important;
+    width:100% !important;
+  }
+}
+
+/* Painel administrativo de acesso */
+.tcf-v58-access-panel{
+  margin-bottom:18px;
+  padding:18px;
+  border-radius:22px;
+  background:rgba(56,189,248,.08);
+  border:1px solid rgba(56,189,248,.22);
+}
+.tcf-v58-access-panel h3{margin:0 0 8px;font-size:22px;}
+.tcf-v58-access-panel p{margin:0;color:var(--muted,#64748b);line-height:1.45;}
+.tcf-v58-access-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-top:14px;}
+.tcf-v58-mini-card{padding:14px;border-radius:16px;background:rgba(255,255,255,.68);border:1px solid rgba(148,163,184,.22);}
+body:not(.light-mode):not(.light) .tcf-v58-mini-card{background:rgba(15,23,42,.55);}
+.tcf-v58-mini-card strong{display:block;font-size:22px;line-height:1;color:#38bdf8;}
+.tcf-v58-mini-card span{display:block;margin-top:7px;font-size:12px;font-weight:800;color:var(--muted,#64748b);}
+.tcf-v58-user-card{display:grid;grid-template-columns:54px minmax(210px,1fr) 155px 150px auto;gap:12px;align-items:center;padding:14px;border-radius:18px;background:rgba(100,116,139,.10);border:1px solid rgba(148,163,184,.22);margin-bottom:10px;}
+.tcf-v58-avatar{width:54px;height:54px;border-radius:17px;display:grid;place-items:center;font-weight:950;color:#fff;background:linear-gradient(135deg,#2563eb,#38bdf8);}
+.tcf-v58-info strong{display:block;font-size:15px;color:var(--text,#0f172a);}
+.tcf-v58-info span{display:block;font-size:12px;color:var(--muted,#64748b);margin-top:3px;}
+.tcf-v58-badges{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;}
+.tcf-v58-badge{font-size:11px;font-weight:900;border-radius:999px;padding:5px 8px;border:1px solid rgba(148,163,184,.22);}
+.tcf-v58-badge.online{color:#16a34a;background:rgba(34,197,94,.12);border-color:rgba(34,197,94,.28);}
+.tcf-v58-badge.offline{color:#64748b;background:rgba(100,116,139,.12);}
+.tcf-v58-badge.block{color:#e11d48;background:rgba(244,63,94,.12);border-color:rgba(244,63,94,.28);}
+.tcf-v58-badge.admin{color:#7c3aed;background:rgba(124,58,237,.12);border-color:rgba(124,58,237,.26);}
+.tcf-v58-user-card select{min-height:42px!important;border-radius:12px!important;}
+.tcf-v58-actions{display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-end;}
+.tcf-v58-actions button{padding:9px 10px!important;border-radius:11px!important;font-size:12px!important;}
+.tcf-v58-perms{display:none;grid-column:2 / -1;margin-top:8px;padding:12px;border-radius:14px;background:rgba(148,163,184,.10);border:1px solid rgba(148,163,184,.18);}
+.tcf-v58-perms.open{display:block;}
+.tcf-v58-perm-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;}
+.tcf-v58-perm-grid label{display:flex!important;gap:8px;align-items:center;margin:0!important;font-size:12px;font-weight:800;color:inherit!important;}
+.tcf-v58-perm-grid input{width:auto!important;min-height:auto!important;}
+@media(max-width:1300px){.tcf-v58-user-card{grid-template-columns:54px 1fr}.tcf-v58-actions{justify-content:flex-start}.tcf-v58-perms{grid-column:1 / -1}.tcf-v58-access-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:700px){.tcf-v58-access-grid,.tcf-v58-perm-grid{grid-template-columns:1fr}}
+</style>
+<script id="v058-controle-acesso-sidebar-fixa-script">
+(function(){
+  const USERS_KEY="usuarios_senhas_v21";
+  const PROFILE_KEY="usuarios_perfis_v42";
+  const FIRST_KEY="usuarios_primeiro_acesso_v29";
+  const LOGINS_KEY="usuarios_logins_v42";
+  const PERMS_KEY="usuarios_permissoes_v57";
+  const ADMIN_USER="Victor";
+  const ADMIN_PASS="vi20081997";
+  const TELAS=["dashboard","cadastro","registros","graficos","indicadores","usuarios","perfil","configuracoes"];
+  const PERFIS={
+    "Administrador":TELAS,
+    "Supervisor":["dashboard","cadastro","registros","graficos","indicadores","usuarios","perfil"],
+    "Operador":["dashboard","cadastro","registros","graficos","perfil"],
+    "Atendente":["dashboard","cadastro","registros","graficos","perfil"],
+    "Suporte":["dashboard","cadastro","registros","graficos","indicadores","perfil"],
+    "Técnico":["dashboard","cadastro","registros","perfil"]
+  };
+  function read(k,f){try{return JSON.parse(localStorage.getItem(k)||JSON.stringify(f));}catch(e){return f;}}
+  function write(k,v){localStorage.setItem(k,JSON.stringify(v));}
+  function lower(v){return String(v||"").trim().toLowerCase();}
+  function esc(v){return String(v??"").replace(/[&<>'"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[c]));}
+  function idSafe(v){return btoa(unescape(encodeURIComponent(String(v)))).replace(/=/g,"");}
+  function initials(n){return String(n||"U").split(/\s+/).map(x=>x[0]).join("").slice(0,2).toUpperCase();}
+  function nowBR(){return new Date().toLocaleString("pt-BR",{dateStyle:"short",timeStyle:"short"});}
+  function currentUser(){return localStorage.getItem("sistema_login_v29")||localStorage.getItem("sistema_login_v21")||"";}
+  function findKey(obj,nome){return Object.keys(obj||{}).find(k=>lower(k)===lower(nome));}
+  function ensureAdmin(){
+    const users=read(USERS_KEY,{}), profiles=read(PROFILE_KEY,{}), first=read(FIRST_KEY,{}), perms=read(PERMS_KEY,{});
+    if(!findKey(users,ADMIN_USER)) users[ADMIN_USER]=ADMIN_PASS;
+    profiles[ADMIN_USER]=Object.assign({nome:ADMIN_USER,email:"",perfil:"Administrador",criadoEm:nowBR(),bloqueado:false},profiles[ADMIN_USER]||{});
+    first[ADMIN_USER]=false; perms[ADMIN_USER]=TELAS;
+    write(USERS_KEY,users); write(PROFILE_KEY,profiles); write(FIRST_KEY,first); write(PERMS_KEY,perms);
+  }
+  function getAll(){
+    ensureAdmin();
+    const users=read(USERS_KEY,{}), profiles=read(PROFILE_KEY,{}), hist=read(LOGINS_KEY,[]), perms=read(PERMS_KEY,{}), first=read(FIRST_KEY,{});
+    const nomes=new Set([...Object.keys(users),...Object.keys(profiles),...hist.map(h=>h.usuario).filter(Boolean)]);
+    return [...nomes].map(nome=>{
+      const p=profiles[nome]||{};
+      const h=hist.find(x=>lower(x.usuario)===lower(nome))||{};
+      const perfil=p.perfil||(lower(nome)===lower(ADMIN_USER)?"Administrador":"Atendente");
+      return {nome,email:p.email||"",perfil,bloqueado:p.bloqueado===true,criadoEm:p.criadoEm||"",ultimoLogin:p.ultimoLogin||h.ultimoLogin||"",ultimoDispositivo:p.ultimoDispositivo||h.dispositivo||"",online:h.online===true,primeiro:first[nome]===true,permissoes:perms[nome]||PERFIS[perfil]||PERFIS.Atendente};
+    }).sort((a,b)=>lower(a.nome)===lower(ADMIN_USER)?-1:lower(b.nome)===lower(ADMIN_USER)?1:a.nome.localeCompare(b.nome,"pt-BR"));
+  }
+  function saveProfile(nome,changes){const p=read(PROFILE_KEY,{});p[nome]=Object.assign({nome,perfil:"Atendente",criadoEm:nowBR()},p[nome]||{},changes);write(PROFILE_KEY,p);}
+  function savePerms(nome,arr){const p=read(PERMS_KEY,{});p[nome]=arr;write(PERMS_KEY,p);}
+  function registrarLogin(nome){
+    if(!nome)return;
+    const device=(navigator.userAgent||"Navegador").slice(0,90);
+    saveProfile(nome,{ultimoLogin:nowBR(),ultimoDispositivo:device,bloqueado:read(PROFILE_KEY,{})[nome]?.bloqueado===true});
+    const hist=read(LOGINS_KEY,[]).filter(x=>lower(x.usuario)!==lower(nome));
+    hist.unshift({usuario:nome,ultimoLogin:nowBR(),online:true,dispositivo:device});
+    write(LOGINS_KEY,hist.slice(0,120));
+  }
+  function marcarOffline(nome){
+    if(!nome)return;
+    const hist=read(LOGINS_KEY,[]).map(x=>lower(x.usuario)===lower(nome)?Object.assign({},x,{online:false,ultimoLogout:nowBR()}):x);
+    write(LOGINS_KEY,hist);
+  }
+  function userBlocked(nome){const p=read(PROFILE_KEY,{});const k=findKey(p,nome)||nome;return p[k]?.bloqueado===true && lower(k)!==lower(ADMIN_USER);}
+  function msg(texto){const el=document.getElementById("authMessage")||document.getElementById("loginErro"); if(el){el.className="auth-message show auth-error";el.style.display="block";el.textContent=texto;}else alert(texto);}
+
+  const oldEntrar=window.entrarSistema;
+  window.entrarSistema=function(){
+    const usuario=(document.getElementById("loginUsuario")?.value||"").trim();
+    if(usuario && userBlocked(usuario)){msg("Este usuário está bloqueado pelo administrador.");return false;}
+    const r=typeof oldEntrar==="function"?oldEntrar.apply(this,arguments):undefined;
+    setTimeout(()=>{const u=currentUser(); if(u){registrarLogin(u); aplicarPermissoesV58(); renderUsuariosAdmin();}},500);
+    return r;
+  };
+
+  const oldSair=window.sairSistemaFinal;
+  window.sairSistemaFinal=function(){marcarOffline(currentUser()); if(typeof oldSair==="function")return oldSair.apply(this,arguments); location.reload();};
+
+  function instalarPainel(){
+    const alvo=document.querySelector("#usuarios .panel");
+    if(!alvo||document.getElementById("tcfV58AccessPanel"))return;
+    const div=document.createElement("div");
+    div.id="tcfV58AccessPanel";
+    div.className="tcf-v58-access-panel";
+    div.innerHTML=`<h3>Controle de acessos</h3><p>Administre quem acessa o sistema, bloqueie usuários, redefina senhas e ajuste permissões por tela.</p><div class="tcf-v58-access-grid"><div class="tcf-v58-mini-card"><strong id="v58TotalUsuarios">0</strong><span>Usuários cadastrados</span></div><div class="tcf-v58-mini-card"><strong id="v58UsuariosOnline">0</strong><span>Online agora</span></div><div class="tcf-v58-mini-card"><strong id="v58UsuariosBloqueados">0</strong><span>Bloqueados</span></div><div class="tcf-v58-mini-card"><strong id="v58UltimosAcessos">0</strong><span>Histórico de acessos</span></div></div>`;
+    const grid=alvo.querySelector(".users-kpi-grid")||alvo.querySelector(".grid");
+    alvo.insertBefore(div,grid||alvo.children[2]||null);
+  }
+  function setText(id,v){const el=document.getElementById(id); if(el)el.textContent=v;}
+  window.renderUsuariosAdmin=function(){
+    ensureAdmin(); instalarPainel();
+    const lista=getAll(), hist=read(LOGINS_KEY,[]);
+    setText("kpiUsuariosTotal",lista.length); setText("kpiUsuariosAdmin",lista.filter(u=>u.perfil==="Administrador").length); setText("kpiUsuariosOperador",lista.filter(u=>u.perfil!=="Administrador").length); setText("kpiUsuariosLogins",hist.length);
+    setText("v58TotalUsuarios",lista.length); setText("v58UsuariosOnline",lista.filter(u=>u.online).length); setText("v58UsuariosBloqueados",lista.filter(u=>u.bloqueado).length); setText("v58UltimosAcessos",hist.length);
+    const html=lista.map(u=>{
+      const id=idSafe(u.nome); const perms=u.permissoes||PERFIS[u.perfil]||[];
+      return `<div class="tcf-v58-user-card"><div class="tcf-v58-avatar">${esc(initials(u.nome))}</div><div class="tcf-v58-info"><strong>${esc(u.nome)}</strong><span>${esc(u.email||"sem e-mail")} • Criado: ${esc(u.criadoEm||"-")}</span><span>Último acesso: ${esc(u.ultimoLogin||"sem login registrado")}</span><span>Dispositivo: ${esc(u.ultimoDispositivo||"não registrado")}</span><div class="tcf-v58-badges"><b class="tcf-v58-badge ${u.online?"online":"offline"}">${u.online?"Online":"Offline"}</b>${u.bloqueado?`<b class="tcf-v58-badge block">Bloqueado</b>`:""}<b class="tcf-v58-badge admin">${esc(u.perfil)}</b></div></div><select id="v58perfil_${id}">${Object.keys(PERFIS).map(p=>`<option ${p===u.perfil?"selected":""}>${p}</option>`).join("")}</select><select id="v58status_${id}"><option value="ativo" ${!u.bloqueado?"selected":""}>Ativo</option><option value="bloqueado" ${u.bloqueado?"selected":""}>Bloqueado</option></select><div class="tcf-v58-actions"><button class="primary" onclick="salvarPerfilAdminV58('${esc(u.nome)}')">Salvar</button><button class="secondary" onclick="togglePermissoesV58('${esc(u.nome)}')">Permissões</button><button class="warning" onclick="redefinirSenhaV58('${esc(u.nome)}')">Senha</button><button class="secondary" onclick="copiarLinkV58('${esc(u.nome)}')">Link</button><button class="danger" onclick="removerUsuarioV58('${esc(u.nome)}')">Remover</button></div><div id="v58perms_${id}" class="tcf-v58-perms"><strong>Permissões por tela</strong><div class="tcf-v58-perm-grid">${TELAS.map(t=>`<label><input type="checkbox" data-v58-perm-user="${esc(u.nome)}" value="${t}" ${perms.includes(t)?"checked":""}> ${t}</label>`).join("")}</div></div></div>`;
+    }).join("");
+    ["usuariosAdminListaPage","usuariosAdminLista"].forEach(id=>{const el=document.getElementById(id); if(el)el.innerHTML=html||`<div class="empty">Nenhum usuário cadastrado.</div>`;});
+    aplicarPermissoesV58();
+  };
+  window.salvarPerfilAdminV58=function(nome){
+    const id=idSafe(nome); const perfil=document.getElementById("v58perfil_"+id)?.value||"Atendente"; const status=document.getElementById("v58status_"+id)?.value||"ativo";
+    if(lower(nome)===lower(ADMIN_USER)&&status==="bloqueado"){alert("O administrador principal não pode ser bloqueado.");renderUsuariosAdmin();return;}
+    saveProfile(nome,{perfil,bloqueado:status==="bloqueado"});
+    const checks=[...document.querySelectorAll(`input[data-v58-perm-user="${CSS.escape(nome)}"]:checked`)].map(x=>x.value);
+    savePerms(nome,checks.length?checks:(PERFIS[perfil]||PERFIS.Atendente));
+    alert("Usuário atualizado com sucesso."); renderUsuariosAdmin();
+  };
+  window.togglePermissoesV58=function(nome){const el=document.getElementById("v58perms_"+idSafe(nome)); if(el)el.classList.toggle("open");};
+  window.redefinirSenhaV58=function(nome){const nova=prompt("Nova senha para " + nome + ":"); if(nova===null)return; if(nova.trim().length<4){alert("A senha precisa ter pelo menos 4 caracteres.");return;} const users=read(USERS_KEY,{}); const k=findKey(users,nome)||nome; users[k]=nova.trim(); write(USERS_KEY,users); const first=read(FIRST_KEY,{}); first[k]=false; write(FIRST_KEY,first); alert("Senha redefinida.");};
+  window.removerUsuarioV58=function(nome){if(lower(nome)===lower(ADMIN_USER)){alert("O administrador principal não pode ser removido.");return;} if(!confirm("Remover usuário " + nome + "?"))return; [USERS_KEY,PROFILE_KEY,FIRST_KEY,PERMS_KEY].forEach(k=>{const obj=read(k,{}); const key=findKey(obj,nome)||nome; delete obj[key]; write(k,obj);}); write(LOGINS_KEY,read(LOGINS_KEY,[]).filter(x=>lower(x.usuario)!==lower(nome))); renderUsuariosAdmin();};
+  window.copiarLinkV58=function(nome){const base=(localStorage.getItem("site_public_url_v30")||location.origin+location.pathname).replace(/\/$/,""); const url=base+"?usuario="+encodeURIComponent(nome); navigator.clipboard?.writeText(url).then(()=>alert("Link copiado."),()=>prompt("Copie o link:",url));};
+  const oldLimpar=window.limparHistoricoLogins;
+  window.limparHistoricoLogins=function(){if(!confirm("Limpar histórico de acessos? Os usuários serão mantidos."))return; write(LOGINS_KEY,[]); renderUsuariosAdmin();};
+  window.aplicarPermissoesV58=function(){
+    const u=currentUser(); const usuario=getAll().find(x=>lower(x.nome)===lower(u)); const admin=lower(u)===lower(ADMIN_USER);
+    if(admin)document.body.classList.add("admin");
+    const perms=admin?TELAS:(usuario?.permissoes||PERFIS.Atendente);
+    document.querySelectorAll(".nav button").forEach(btn=>{
+      const m=(btn.getAttribute("onclick")||"").match(/abrirTela\('([^']+)'/);
+      if(!m)return; const tela=m[1]; btn.style.display=perms.includes(tela)?"":"none";
+    });
+  };
+  const oldAbrir=window.abrirTela;
+  window.abrirTela=function(id,botao){aplicarPermissoesV58(); if(!getAll().find(x=>lower(x.nome)===lower(currentUser()))&&currentUser()){return typeof oldAbrir==="function"?oldAbrir(id,botao):undefined;} const usuario=getAll().find(x=>lower(x.nome)===lower(currentUser())); const admin=lower(currentUser())===lower(ADMIN_USER); const perms=admin?TELAS:(usuario?.permissoes||PERFIS.Atendente); if(!perms.includes(id)){alert("Seu perfil não tem permissão para acessar esta tela."); return;} if(typeof oldAbrir==="function")oldAbrir(id,botao); if(id==="usuarios"||id==="configuracoes")setTimeout(renderUsuariosAdmin,80);};
+  window.addEventListener("load",function(){ensureAdmin(); setTimeout(()=>{const u=currentUser(); if(u)registrarLogin(u); instalarPainel(); renderUsuariosAdmin(); aplicarPermissoesV58();},700);});
+  window.addEventListener("beforeunload",function(){marcarOffline(currentUser());});
+})();
+</script>
+
 </body>
 </html>
 
