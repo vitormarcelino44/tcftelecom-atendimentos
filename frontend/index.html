@@ -9072,7 +9072,338 @@ body:not(.light-mode):not(.light) .tcf-v58-mini-card{background:rgba(15,23,42,.5
     const rows = lista.map(i => `<tr>${linhaExportacao(i).map(v => `<td>${String(v ?? "").replace(/[&<>]/g, s => ({"&":"&amp;","<":"&lt;",">":"&gt;"}[s]))}</td>`).join("")}</tr>`).join("");
     const html = `<!doctype html><html><head><meta charset="utf-8"><title>TCFTELECOM - Relatório PDF</title><style>
       body{font-family:Arial,sans-serif;margin:24px;color:#0f172a} h1{margin:0 0 4px;font-size:22px} .meta{color:#475569;margin-bottom:18px;font-size:12px} table{width:100%;border-collapse:collapse;font-size:10px} th{background:#0f2f4d;color:white;padding:8px;border:1px solid #173a59;text-align:left} td{padding:7px;border:1px solid #dbe3ef;vertical-align:top} tr:nth-child(even)td{background:#f8fafc}@media print{body{margin:12mm} button{display:none}}
-    </style></head><body><button onclick="window.print()" style="margin-bottom:12px;padding:10px 14px;border:0;border-radius:8px;background:#0284c7;color:#fff;font-weight:bold">Imprimir / salvar PDF</button><h1>TCFTELECOM — Relatório de Atendimentos</h1><div class="meta">Filtro: ${tecnico} • Registros: ${lista.length} • Gerado em ${new Date().toLocaleString("pt-BR")}</div><table><thead><tr>${cabecalhoExportacao().map(h=>`<th>${h}</th>`).join("")}</tr></thead><tbody>${rows}</tbody></table><script>setTimeout(()=>window.print(),400)<\/script></body></html>`;
+    </style></head><body><button onclick="window.print()" style="margin-bottom:12px;padding:10px 14px;border:0;border-radius:8px;background:#0284c7;color:#fff;font-weight:bold">Imprimir / salvar PDF</button><h1>TCFTELECOM — Relatório de Atendimentos</h1><div class="meta">Filtro: ${tecnico} • Registros: ${lista.length} • Gerado em ${new Date().toLocaleString("pt-BR")}</div><table><thead><tr>${cabecalhoExportacao().map(h=>`<th>${h}</th>`).join("")}</tr></thead><tbody>${rows}</tbody></table><script>setTimeout(()=>window.print(),400)<\/script>
+
+<!-- PATCH TCF v0.67 - Usuários no Supabase/PostgreSQL -->
+<script id="v067-usuarios-supabase">
+(function(){
+  const API = window.API_URL || "https://tcftelecom-atendimentos-production.up.railway.app";
+  const DEV_USER = "Victor";
+  const DEV_PASS = "vi20081997";
+  const LOGIN_KEYS = ["sistema_login_v29","sistema_login_v21","sistema_login_v14","sistema_login_v28","sistema_auto_login_v29","token"];
+  const PROFILE_KEY = "usuarios_perfis_v42";
+  const USERS_KEY = "usuarios_senhas_v21";
+  const PERMS_KEY = "usuarios_permissoes_v57";
+  const LOGINS_KEY = "usuarios_logins_v42";
+  const MIGRATION_KEY = "usuarios_migrados_supabase_v067";
+  const PERFIS = ["Atendente","Suporte","Técnico","Supervisor","Administrador"];
+
+  function norm(v){ return String(v || "").trim(); }
+  function lower(v){ return norm(v).toLowerCase(); }
+  function isDev(nome){ return lower(nome || currentUser()) === lower(DEV_USER); }
+  function isAdminProfile(perfil){ return lower(perfil) === "administrador" || lower(perfil) === "admin"; }
+  function currentUser(){ for(const k of LOGIN_KEYS){ const v = localStorage.getItem(k); if(v) return v; } return ""; }
+  function read(key, fallback){ try { return JSON.parse(localStorage.getItem(key) || JSON.stringify(fallback)); } catch(e){ return fallback; } }
+  function write(key, value){ localStorage.setItem(key, JSON.stringify(value)); }
+  function nowBR(){ return new Date().toLocaleString("pt-BR", {dateStyle:"short", timeStyle:"short"}); }
+  function esc(v){ return String(v ?? "").replace(/[&<>'"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[c])); }
+  function idSafe(v){ return "u67_" + String(v || "").replace(/[^a-zA-Z0-9]/g,"_"); }
+  function initials(nome){ return String(nome || "U").split(/\s+/).filter(Boolean).slice(0,2).map(x=>x[0]).join("").toUpperCase() || "U"; }
+  function msg(text, ok){
+    const el = document.getElementById("authMessage") || document.getElementById("loginErro");
+    if(!el){ alert(text); return; }
+    el.textContent = text;
+    el.className = "auth-message show " + (ok ? "auth-success" : "auth-error");
+  }
+  function clearMsg(){
+    const el = document.getElementById("authMessage") || document.getElementById("loginErro");
+    if(el){ el.textContent = ""; el.className = "auth-message"; }
+  }
+  async function api(path, options={}){
+    const res = await fetch(API + path, {
+      ...options,
+      headers: { "Content-Type":"application/json", ...(options.headers || {}) }
+    });
+    let data = null;
+    try { data = await res.json(); } catch(e){ data = {}; }
+    if(!res.ok){ throw new Error(data.erro || data.message || `Erro HTTP ${res.status}`); }
+    return data;
+  }
+  function perfilNormalizado(u){
+    const p = u?.perfil || (lower(u?.login || u?.nome) === lower(DEV_USER) ? "Administrador" : "Atendente");
+    if(lower(p)==="admin") return "Administrador";
+    if(lower(p)==="atendente") return "Atendente";
+    if(lower(p)==="suporte") return "Suporte";
+    if(lower(p)==="técnico" || lower(p)==="tecnico") return "Técnico";
+    if(lower(p)==="supervisor") return "Supervisor";
+    if(lower(p)==="administrador") return "Administrador";
+    return p;
+  }
+  function persistirCompat(usuario){
+    if(!usuario) return;
+    const nome = usuario.login || usuario.nome || DEV_USER;
+    LOGIN_KEYS.slice(0,2).forEach(k => localStorage.setItem(k, nome));
+    localStorage.setItem("usuario_banco_v067", JSON.stringify(usuario));
+
+    const profiles = read(PROFILE_KEY, {});
+    profiles[nome] = Object.assign({}, profiles[nome] || {}, {
+      nome,
+      email: usuario.email || profiles[nome]?.email || "",
+      perfil: perfilNormalizado(usuario),
+      bloqueado: usuario.ativo === false,
+      ultimoLogin: usuario.ultimoLogin ? new Date(usuario.ultimoLogin).toLocaleString("pt-BR") : nowBR(),
+      origem: "Supabase"
+    });
+    write(PROFILE_KEY, profiles);
+
+    const users = read(USERS_KEY, {});
+    if(usuario.senha) users[nome] = usuario.senha;
+    write(USERS_KEY, users);
+
+    const hist = read(LOGINS_KEY, []).filter(x => lower(x.usuario) !== lower(nome));
+    hist.unshift({ usuario:nome, ultimoLogin:nowBR(), online:true, origem:"Supabase", navegador:navigator.userAgent });
+    write(LOGINS_KEY, hist.slice(0,100));
+  }
+  function liberar(usuario){
+    persistirCompat(usuario);
+    const nome = usuario.login || usuario.nome || DEV_USER;
+    const admin = isAdminProfile(usuario.perfil) || isDev(nome);
+    document.body.classList.toggle("admin", admin);
+    const overlay = document.getElementById("loginOverlay");
+    if(overlay) overlay.style.display = "none";
+    if(typeof window.aplicarUsuarioLogado === "function") window.aplicarUsuarioLogado(nome);
+    if(typeof window.carregarPerfilUsuario === "function") window.carregarPerfilUsuario();
+    setTimeout(()=>{ window.renderUsuariosAdmin?.(); window.aplicarPermissoesTCF?.(); window.aplicarControleMenuV59?.(); }, 250);
+  }
+  async function ensureDevBanco(){
+    try{
+      await api("/usuarios", { method:"POST", body:JSON.stringify({ nome:DEV_USER, login:DEV_USER, email:"victor@tcftelecom.local", senha:DEV_PASS, perfil:"Administrador" }) });
+    }catch(e){ /* 409 já existe; sem problema */ }
+  }
+  async function migrarUsuariosLocais(){
+    if(localStorage.getItem(MIGRATION_KEY) === "sim") return;
+    const users = read(USERS_KEY, {});
+    const profiles = read(PROFILE_KEY, {});
+    for(const login of Object.keys(users || {})){
+      const p = profiles[login] || {};
+      if(!users[login]) continue;
+      try{
+        await api("/usuarios", { method:"POST", body:JSON.stringify({
+          nome: p.nome || login,
+          login,
+          email: p.email || `${login.toLowerCase().replace(/[^a-z0-9]/g,".")}@tcftelecom.local`,
+          senha: users[login],
+          perfil: p.perfil || (isDev(login) ? "Administrador" : "Atendente")
+        })});
+      }catch(e){ /* já existe ou inválido; ignora para não travar */ }
+    }
+    localStorage.setItem(MIGRATION_KEY, "sim");
+  }
+  function modoCadastroAtivo(){
+    return document.body.classList.contains("tcf-cadastro-mode") ||
+      document.body.classList.contains("tcf-register-mode") ||
+      document.body.classList.contains("invite-mode") ||
+      (document.querySelector(".login-card-top strong")?.textContent || "").toLowerCase().includes("cadastrar");
+  }
+  function setModoCadastro(ativo){
+    document.body.classList.toggle("tcf-cadastro-mode", !!ativo);
+    document.body.classList.toggle("tcf-register-mode", !!ativo);
+    document.body.classList.toggle("invite-mode", !!ativo);
+    const titulo = document.querySelector(".login-card-top strong");
+    if(titulo) titulo.textContent = ativo ? "Cadastrar usuário" : "Entrar no Sistema";
+    const btn = document.querySelector(".login-main-btn");
+    if(btn) btn.textContent = ativo ? "Cadastrar e acessar" : "Acessar sistema";
+    const emailLabel = document.getElementById("loginEmailLabel");
+    const email = document.getElementById("loginEmail");
+    const confLabel = document.getElementById("confirmSenhaLabel");
+    const conf = document.getElementById("loginSenhaConfirmar");
+    [emailLabel,email,confLabel,conf].forEach(el => { if(el) el.style.display = ativo ? "block" : "none"; });
+    const b1 = document.getElementById("btnModoLogin") || document.getElementById("tcfTabEntrar");
+    const b2 = document.getElementById("btnModoCadastro") || document.getElementById("tcfTabCadastrar");
+    if(b1) b1.classList.toggle("active", !ativo);
+    if(b2) b2.classList.toggle("active", !!ativo);
+    clearMsg();
+  }
+
+  window.mudarModoLogin = function(modo){ setModoCadastro(modo === "cadastro"); };
+
+  window.entrarSistema = async function(){
+    const login = norm(document.getElementById("loginUsuario")?.value);
+    const senha = norm(document.getElementById("loginSenha")?.value);
+    const email = norm(document.getElementById("loginEmail")?.value);
+    const confirmar = norm(document.getElementById("loginSenhaConfirmar")?.value);
+    if(!login || !senha){ msg("Preencha usuário e senha.", false); return; }
+    try{
+      await ensureDevBanco();
+      if(modoCadastroAtivo()){
+        if(!email || !email.includes("@")){ msg("Digite um e-mail válido.", false); return; }
+        if(senha.length < 4){ msg("A senha precisa ter pelo menos 4 caracteres.", false); return; }
+        if(senha !== confirmar){ msg("As senhas não conferem.", false); return; }
+        const criado = await api("/usuarios", { method:"POST", body:JSON.stringify({ nome:login, login, email, senha, perfil:"Atendente" }) });
+        msg("Cadastro salvo no banco. Entrando...", true);
+        liberar(criado);
+        return;
+      }
+      const data = await api("/login", { method:"POST", body:JSON.stringify({ login, senha }) });
+      const usuario = data.usuario || data;
+      msg("Login autorizado.", true);
+      liberar(usuario);
+    }catch(e){
+      if(lower(login) === lower(DEV_USER) && senha === DEV_PASS){
+        const fallback = {nome:DEV_USER, login:DEV_USER, email:"victor@tcftelecom.local", perfil:"Administrador", ativo:true, senha:DEV_PASS};
+        liberar(fallback);
+        return;
+      }
+      msg(e.message || "Usuário ou senha incorretos.", false);
+    }
+  };
+
+  async function usuariosBanco(){
+    await ensureDevBanco();
+    const lista = await api("/usuarios");
+    return (Array.isArray(lista) ? lista : []).map(u => ({...u, perfil:perfilNormalizado(u)}))
+      .sort((a,b)=> isDev(a.login||a.nome) ? -1 : isDev(b.login||b.nome) ? 1 : String(a.nome||a.login).localeCompare(String(b.nome||b.login), "pt-BR"));
+  }
+
+  window.renderUsuariosAdmin = async function(){
+    const alvos = [document.getElementById("usuariosAdminListaPage"), document.getElementById("usuariosAdminLista")].filter(Boolean);
+    try{
+      const lista = await usuariosBanco();
+      const admins = lista.filter(u => isAdminProfile(u.perfil)).length;
+      const ops = lista.length - admins;
+      const hist = lista.filter(u => !!u.ultimoLogin).length;
+      const set=(id,v)=>{ const el=document.getElementById(id); if(el) el.textContent=v; };
+      set("kpiUsuariosTotal", lista.length); set("kpiUsuariosAdmin", admins); set("kpiUsuariosOperador", ops); set("kpiUsuariosLogins", hist);
+      const html = lista.map(u => {
+        const nome = u.login || u.nome || "Usuário";
+        const id = idSafe(u.id || nome);
+        const dev = isDev(nome);
+        const travado = dev && !isDev(currentUser());
+        const status = u.ativo !== false;
+        const ultimo = u.ultimoLogin ? new Date(u.ultimoLogin).toLocaleString("pt-BR") : "sem login registrado";
+        return `<div class="tcf-admin-user-card user-card-pro" data-user-id="${esc(u.id)}">
+          <div class="tcf-admin-user-avatar user-avatar-mini">${esc(initials(nome))}</div>
+          <div class="tcf-admin-user-info user-meta">
+            <strong>${esc(nome)} ${dev ? "• DEV" : ""}</strong>
+            <span>${esc(u.email || "sem e-mail")} • ${esc(u.perfil)} • ID ${esc(u.id)}</span>
+            <span>Último acesso: ${esc(ultimo)} • ${status ? "Ativo" : "Bloqueado"}</span>
+          </div>
+          <select id="perfil_${id}" ${travado ? "disabled" : ""}>${PERFIS.map(p=>`<option value="${p}" ${p===u.perfil?"selected":""}>${p}</option>`).join("")}</select>
+          <select id="status_${id}" ${travado ? "disabled" : ""}><option value="true" ${status?"selected":""}>Ativo</option><option value="false" ${!status?"selected":""}>Bloqueado</option></select>
+          <div class="tcf-admin-user-actions row-actions">
+            <button class="primary small-btn" onclick="salvarPerfilAdminTCF('${esc(u.id)}')" ${travado ? "disabled" : ""}>Salvar</button>
+            <button class="warning small-btn" onclick="redefinirSenhaUsuarioTCF('${esc(u.id)}')" ${travado ? "disabled" : ""}>Senha</button>
+            <button class="secondary small-btn" onclick="copiarLinkLoginUsuarioTCF('${esc(nome)}')">Link</button>
+            <button class="danger small-btn" onclick="removerUsuarioTCF('${esc(u.id)}')" ${dev ? "disabled" : ""}>Remover</button>
+          </div>
+        </div>`;
+      }).join("") || `<div class="empty">Nenhum usuário cadastrado no banco.</div>`;
+      alvos.forEach(el => el.innerHTML = html);
+    }catch(e){
+      alvos.forEach(el => el.innerHTML = `<div class="empty">Erro ao carregar usuários do banco: ${esc(e.message)}</div>`);
+    }
+  };
+
+  window.salvarPerfilAdminTCF = async function(id){
+    try{
+      const lista = await usuariosBanco();
+      const u = lista.find(x => String(x.id) === String(id));
+      if(!u) return alert("Usuário não encontrado.");
+      const nome = u.login || u.nome;
+      if(isDev(nome) && !isDev(currentUser())) return alert("O DEV protegido não pode ser alterado por outro administrador.");
+      const safe = idSafe(u.id || nome);
+      const perfil = document.getElementById("perfil_"+safe)?.value || u.perfil;
+      if(perfil === "Administrador" && !isDev(currentUser())) return alert("Somente o DEV pode promover outro usuário para Administrador.");
+      const ativo = (document.getElementById("status_"+safe)?.value || "true") === "true";
+      await api(`/usuarios/${u.id}`, { method:"PUT", body:JSON.stringify({ perfil, ativo }) });
+      alert("Usuário atualizado no banco.");
+      renderUsuariosAdmin();
+    }catch(e){ alert("Erro ao salvar usuário: " + e.message); }
+  };
+
+  window.redefinirSenhaUsuarioTCF = async function(id){
+    try{
+      const lista = await usuariosBanco();
+      const u = lista.find(x => String(x.id) === String(id));
+      if(!u) return alert("Usuário não encontrado.");
+      const nome = u.login || u.nome;
+      if(isDev(nome) && !isDev(currentUser())) return alert("A senha do DEV protegido não pode ser redefinida por outro administrador.");
+      const nova = prompt(`Nova senha para ${nome}:`);
+      if(!nova) return;
+      if(nova.length < 4) return alert("A senha precisa ter pelo menos 4 caracteres.");
+      await api(`/usuarios/${u.id}`, { method:"PUT", body:JSON.stringify({ senha:nova }) });
+      alert("Senha redefinida no banco.");
+    }catch(e){ alert("Erro ao redefinir senha: " + e.message); }
+  };
+
+  window.removerUsuarioTCF = async function(id){
+    try{
+      const lista = await usuariosBanco();
+      const u = lista.find(x => String(x.id) === String(id));
+      if(!u) return alert("Usuário não encontrado.");
+      const nome = u.login || u.nome;
+      if(isDev(nome)) return alert("O DEV protegido não pode ser removido.");
+      if(!confirm(`Remover ${nome} do banco?`)) return;
+      await api(`/usuarios/${u.id}`, { method:"DELETE" });
+      alert("Usuário removido do banco.");
+      renderUsuariosAdmin();
+    }catch(e){ alert("Erro ao remover usuário: " + e.message); }
+  };
+
+  window.cadastrarNovoUsuarioTCF = async function(){
+    const nome = norm(document.getElementById("novoUsuarioNome")?.value || document.getElementById("dashUsuarioNome")?.value || document.getElementById("tcfNovoUsuarioNome")?.value);
+    const email = norm(document.getElementById("novoUsuarioEmail")?.value || document.getElementById("dashUsuarioEmail")?.value || document.getElementById("tcfNovoUsuarioEmail")?.value) || `${nome.toLowerCase().replace(/[^a-z0-9]/g,".")}@tcftelecom.local`;
+    const senha = norm(document.getElementById("novoUsuarioSenha")?.value || document.getElementById("dashUsuarioSenha")?.value || document.getElementById("tcfNovoUsuarioSenha")?.value) || "12345678";
+    const perfil = norm(document.getElementById("novoUsuarioPerfil")?.value || document.getElementById("dashUsuarioPerfil")?.value || document.getElementById("tcfNovoUsuarioPerfil")?.value) || "Atendente";
+    if(!nome) return alert("Digite o login/nome do usuário.");
+    try{
+      await api("/usuarios", { method:"POST", body:JSON.stringify({ nome, login:nome, email, senha, perfil }) });
+      alert("Usuário criado no banco.");
+      renderUsuariosAdmin();
+    }catch(e){ alert("Erro ao criar usuário: " + e.message); }
+  };
+  window.criarUsuarioDashboardTCF = window.cadastrarNovoUsuarioTCF;
+  window.criarUsuarioDiretoTCF = window.cadastrarNovoUsuarioTCF;
+
+  window.copiarLinkLoginUsuarioTCF = function(nome){
+    const base = (localStorage.getItem("site_public_url_v30") || window.SITE_PUBLIC_URL || "https://tcftelecom-atendimentos-48fp.vercel.app").replace(/\/$/,"");
+    const url = `${base}?convite=${encodeURIComponent(nome)}`;
+    navigator.clipboard?.writeText(url).then(()=>alert("Link copiado."),()=>prompt("Copie o link:", url));
+  };
+
+  const oldGerar = window.gerarConvite;
+  window.gerarConvite = async function(){
+    const nome = norm(document.getElementById("conviteNome")?.value);
+    const perfil = norm(document.getElementById("convitePerfil")?.value) || "Atendente";
+    if(!nome) return alert("Digite o nome do atendente.");
+    try{
+      const email = `${nome.toLowerCase().replace(/[^a-z0-9]/g,".")}@tcftelecom.local`;
+      await api("/usuarios", { method:"POST", body:JSON.stringify({ nome, login:nome, email, senha:"12345678", perfil }) });
+    }catch(e){ /* usuário já pode existir */ }
+    const base = (localStorage.getItem("site_public_url_v30") || window.SITE_PUBLIC_URL || "https://tcftelecom-atendimentos-48fp.vercel.app").replace(/\/$/,"");
+    const url = `${base}?convite=${encodeURIComponent(nome)}`;
+    const out = document.getElementById("linkConvite");
+    if(out) out.textContent = url + " | Senha inicial: 12345678";
+    renderUsuariosAdmin();
+  };
+
+  window.sairSistemaFinal = function(){
+    LOGIN_KEYS.forEach(k => localStorage.removeItem(k));
+    localStorage.removeItem("usuario_banco_v067");
+    document.body.classList.remove("admin");
+    const overlay = document.getElementById("loginOverlay");
+    if(overlay) overlay.style.display = "";
+    setModoCadastro(false);
+  };
+
+  window.addEventListener("load", async function(){
+    const btn = document.querySelector(".login-main-btn");
+    if(btn) btn.onclick = function(ev){ ev.preventDefault(); window.entrarSistema(); return false; };
+    const bLogin = document.getElementById("btnModoLogin") || document.getElementById("tcfTabEntrar");
+    const bCad = document.getElementById("btnModoCadastro") || document.getElementById("tcfTabCadastrar");
+    if(bLogin) bLogin.onclick = () => setModoCadastro(false);
+    if(bCad) bCad.onclick = () => setModoCadastro(true);
+    try{ await ensureDevBanco(); await migrarUsuariosLocais(); }catch(e){ console.warn("Usuários banco indisponível:", e); }
+    const atual = currentUser();
+    if(atual){
+      document.body.classList.toggle("admin", isDev(atual));
+      setTimeout(()=>renderUsuariosAdmin(), 500);
+    }
+  });
+})();
+</script>
+
+</body></html>`;
     const w = window.open("", "_blank");
     if(!w){ alert("O navegador bloqueou a janela do PDF. Libere pop-ups para este site."); return; }
     w.document.open(); w.document.write(html); w.document.close();
@@ -10119,529 +10450,3 @@ body:not(.light-mode):not(.light) .tcf-link-output{background:rgba(2,6,23,.55);c
   document.addEventListener('click',function(){setTimeout(()=>{aplicarControleMenuV59(); protegerCardDev();},120);},true);
 })();
 </script>
-
-
-<!-- PATCH TCF v0.66 - Limpeza técnica e travas de segurança -->
-<style id="v066-limpeza-tecnica-style">
-  .tcf-v066-safe-note{
-    display:inline-flex;
-    align-items:center;
-    gap:8px;
-    padding:9px 12px;
-    border-radius:999px;
-    background:rgba(56,189,248,.10);
-    border:1px solid rgba(56,189,248,.22);
-    color:#0284c7;
-    font-size:12px;
-    font-weight:900;
-  }
-  body:not(.light):not(.light-mode) .tcf-v066-safe-note{color:#7dd3fc;}
-  .tcf-v066-dev-only{
-    outline:1px dashed rgba(239,68,68,.35);
-    outline-offset:2px;
-  }
-</style>
-
-<script id="v066-limpeza-tecnica-script">
-(function(){
-  "use strict";
-
-  const API = "https://tcftelecom-atendimentos-production.up.railway.app";
-  const DEV_USER = "Victor";
-  const DEFAULT_SITE_URL = "https://tcftelecom-atendimentos-48fp.vercel.app";
-
-  function escapeHTML(value){
-    return String(value ?? "").replace(/[&<>"']/g, function(ch){
-      return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch];
-    });
-  }
-
-  function somenteNumero(value){
-    return String(value || "").replace(/\D/g, "");
-  }
-
-  function usuarioAtual(){
-    const keys = ["sistema_login_v29","sistema_login_v21","sistema_auto_login_v29","sistema_login_v28","sistema_login_v14"];
-    for(const key of keys){
-      const val = localStorage.getItem(key);
-      if(val) return val;
-    }
-    return "";
-  }
-
-  function isDev(){
-    return String(usuarioAtual()).trim().toLowerCase() === DEV_USER.toLowerCase();
-  }
-
-  async function apiJSON(url, options){
-    const response = await fetch(url, options);
-    if(!response.ok){
-      let details = "";
-      try{ details = await response.text(); }catch(e){}
-      throw new Error("HTTP " + response.status + (details ? " - " + details.slice(0,180) : ""));
-    }
-    if(response.status === 204) return null;
-    const txt = await response.text();
-    return txt ? JSON.parse(txt) : null;
-  }
-
-  function listaLocal(){
-    try{
-      if(typeof carregar === "function") return carregar() || [];
-      return JSON.parse(localStorage.getItem("atendimentos_v0_5") || "[]");
-    }catch(e){
-      return [];
-    }
-  }
-
-  function filtrosAtivos(){
-    return {
-      busca: (document.getElementById("busca")?.value || "").toLowerCase().trim(),
-      atendente: (document.getElementById("filtroAtendente")?.value || "").trim(),
-      critico: (document.getElementById("filtroCritico")?.value || "").trim()
-    };
-  }
-
-  function listaFiltrada(){
-    const f = filtrosAtivos();
-    return listaLocal().filter(function(item){
-      const texto = [
-        item.cliente, item.contato, item.telefone, item.observacoes,
-        item.tecnico, item.tipo, item.status, item.data
-      ].map(x => String(x || "").toLowerCase()).join(" ");
-      return (!f.busca || texto.includes(f.busca)) &&
-             (!f.atendente || String(item.tecnico || "").trim() === f.atendente) &&
-             (!f.critico || String(item.critico || "").trim() === f.critico);
-    });
-  }
-
-  function td(text){
-    const cell = document.createElement("td");
-    cell.textContent = text ?? "";
-    return cell;
-  }
-
-  // Corrige risco de innerHTML com dados digitados e mantém edição/exclusão por ID do banco.
-  window.atualizarTabela = function(){
-    const tbody = document.getElementById("tabelaAtendimentos");
-    if(!tbody) return;
-
-    const lista = listaFiltrada();
-    tbody.innerHTML = "";
-
-    if(lista.length === 0){
-      const tr = document.createElement("tr");
-      const cell = document.createElement("td");
-      cell.colSpan = 12;
-      cell.style.textAlign = "center";
-      cell.style.padding = "22px";
-      cell.textContent = "Nenhum atendimento encontrado.";
-      tr.appendChild(cell);
-      tbody.appendChild(tr);
-      return;
-    }
-
-    lista.forEach(function(item){
-      const id = Number(item.id || 0);
-      const tr = document.createElement("tr");
-
-      [
-        item.data || "",
-        item.tecnico || "",
-        item.cliente || "",
-        item.contato || item.telefone || "",
-        item.tipo || "",
-        item.osAberta || "Não",
-        item.resolvidoRemoto || "Não",
-        item.critico || "Não",
-        item.posSuporte || "Não",
-        item.status || "",
-        item.observacoes || ""
-      ].forEach(v => tr.appendChild(td(v)));
-
-      const actionCell = document.createElement("td");
-      const actions = document.createElement("div");
-      actions.className = "row-actions";
-
-      const btnEditar = document.createElement("button");
-      btnEditar.className = "warning small-btn";
-      btnEditar.type = "button";
-      btnEditar.textContent = "Editar";
-      btnEditar.onclick = function(){ window.editarRegistro?.(id); };
-
-      const btnExcluir = document.createElement("button");
-      btnExcluir.className = "danger small-btn";
-      btnExcluir.type = "button";
-      btnExcluir.textContent = "Excluir";
-      btnExcluir.onclick = function(){ window.excluirRegistro?.(id); };
-
-      actions.appendChild(btnEditar);
-      actions.appendChild(btnExcluir);
-
-      if(typeof window.gerarOSPDF === "function"){
-        const btnOS = document.createElement("button");
-        btnOS.className = "secondary small-btn";
-        btnOS.type = "button";
-        btnOS.textContent = "OS PDF";
-        btnOS.onclick = function(){ window.gerarOSPDF(id); };
-        actions.appendChild(btnOS);
-      }
-
-      const contato = somenteNumero(item.contato || item.telefone || "");
-      if(contato.length >= 10){
-        const btnWhats = document.createElement("button");
-        btnWhats.className = "success small-btn";
-        btnWhats.type = "button";
-        btnWhats.textContent = "WhatsApp";
-        btnWhats.onclick = function(){
-          const numero = contato.startsWith("55") ? contato : "55" + contato;
-          const msg = encodeURIComponent("Olá, somos da TCF Telecom. Estamos entrando em contato referente ao seu atendimento.");
-          window.open("https://wa.me/" + numero + "?text=" + msg, "_blank");
-        };
-        actions.appendChild(btnWhats);
-      }
-
-      actionCell.appendChild(actions);
-      tr.appendChild(actionCell);
-      tbody.appendChild(tr);
-    });
-  };
-
-  // Excluir individual continua permitido, mas agora valida ID real.
-  window.excluirRegistro = async function(id){
-    id = Number(id || 0);
-    if(!id){
-      alert("ID inválido para exclusão.");
-      return;
-    }
-    if(!confirm("Deseja excluir este atendimento?")) return;
-
-    try{
-      await apiJSON(API + "/atendimentos/" + id, { method:"DELETE" });
-      if(typeof carregarDoBanco === "function") await carregarDoBanco();
-      if(typeof mostrarMensagem === "function") mostrarMensagem("Atendimento excluído com sucesso.");
-      if(typeof atualizarTudo === "function") atualizarTudo();
-    }catch(err){
-      console.error("Erro ao excluir atendimento:", err);
-      alert("Erro ao excluir atendimento: " + err.message);
-    }
-  };
-
-  // Botão perigoso: só DEV e exige digitar APAGAR.
-  window.apagarRegistros = async function(){
-    if(!isDev()){
-      alert("Ação restrita ao desenvolvedor/administrador principal.");
-      return;
-    }
-
-    const lista = listaLocal().filter(item => item.id);
-    if(lista.length === 0){
-      alert("Nenhum atendimento do banco para apagar.");
-      return;
-    }
-
-    const confirmacao = prompt("Atenção: isso apagará TODOS os atendimentos do banco.\nDigite APAGAR para confirmar.");
-    if(confirmacao !== "APAGAR"){
-      alert("Operação cancelada.");
-      return;
-    }
-
-    const segunda = confirm("Confirma definitivamente apagar " + lista.length + " atendimento(s)?");
-    if(!segunda) return;
-
-    try{
-      for(const item of lista){
-        await apiJSON(API + "/atendimentos/" + item.id, { method:"DELETE" });
-      }
-      if(typeof carregarDoBanco === "function") await carregarDoBanco();
-      if(typeof atualizarTudo === "function") atualizarTudo();
-      alert("Todos os atendimentos foram apagados.");
-    }catch(err){
-      console.error("Erro ao apagar registros:", err);
-      alert("Erro ao apagar registros: " + err.message);
-    }
-  };
-
-  function cabecalhoExportacao(){
-    return ["Data","Técnico/Atendente","Cliente","Contato","Tipo de Atendimento","OS Aberta?","Resolvido Remoto?","Resolvido Internamente?","Crítico?","Pós Suporte Realizado?","Status","Observações"];
-  }
-
-  function linhaExportacao(item){
-    return [
-      item.data || "",
-      item.tecnico || "",
-      item.cliente || "",
-      item.contato || item.telefone || "",
-      item.tipo || "",
-      item.osAberta || "",
-      item.resolvidoRemoto || "",
-      item.resolvidoInternamente || item.resolvidoRemoto || "",
-      item.critico || "",
-      item.posSuporte || "",
-      item.status || "",
-      item.observacoes || ""
-    ];
-  }
-
-  function tecnicoSelecionado(){
-    return (document.getElementById("filtroAtendente")?.value || "").trim();
-  }
-
-  function listaExportar(){
-    return listaFiltrada();
-  }
-
-  function nomeArquivo(ext){
-    const tecnico = tecnicoSelecionado();
-    const pessoa = tecnico ? tecnico.normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/gi,"_") : "todos";
-    const d = new Date();
-    const p = n => String(n).padStart(2,"0");
-    return "TCFTELECOM_atendimentos_" + pessoa + "_" + d.getFullYear() + "-" + p(d.getMonth()+1) + "-" + p(d.getDate()) + "_" + p(d.getHours()) + "-" + p(d.getMinutes()) + "." + ext;
-  }
-
-  function validarExportacao(lista){
-    if(lista.length) return true;
-    const tecnico = tecnicoSelecionado();
-    alert(tecnico ? "Nenhum atendimento encontrado para " + tecnico + "." : "Nenhum atendimento para exportar.");
-    return false;
-  }
-
-  window.exportarCSV = function(){
-    const lista = listaExportar();
-    if(!validarExportacao(lista)) return;
-
-    const limpar = v => '"' + String(v ?? "").replace(/"/g,'""') + '"';
-    const csv = [cabecalhoExportacao(), ...lista.map(linhaExportacao)]
-      .map(row => row.map(limpar).join(";")).join("\n");
-
-    const blob = new Blob(["\ufeff" + csv], {type:"text/csv;charset=utf-8;"});
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = nomeArquivo("csv");
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
-  };
-
-  window.exportarPDF = function(){
-    const lista = listaExportar();
-    if(!validarExportacao(lista)) return;
-
-    const filtro = tecnicoSelecionado() || "Todos os atendentes";
-    const rows = lista.map(item => "<tr>" + linhaExportacao(item).map(v => "<td>" + escapeHTML(v) + "</td>").join("") + "</tr>").join("");
-    const html = `<!doctype html><html><head><meta charset="utf-8"><title>TCFTELECOM - Atendimentos</title>
-      <style>
-        body{font-family:Arial,sans-serif;margin:22px;color:#111827}
-        h1{font-size:22px;margin:0 0 6px}
-        .meta{font-size:12px;color:#475569;margin-bottom:14px}
-        table{width:100%;border-collapse:collapse;font-size:10px}
-        th{background:#1f4e79;color:#fff;border:1px solid #173a59;padding:7px;text-align:left}
-        td{border:1px solid #d9e2ef;padding:6px;vertical-align:top}
-        tr:nth-child(even) td{background:#f8fafc}
-        button{margin-bottom:12px;padding:10px 14px;border:0;border-radius:8px;background:#0284c7;color:#fff;font-weight:bold}
-        @media print{button{display:none} body{margin:10mm}}
-      </style></head><body>
-      <button onclick="window.print()">Imprimir / Salvar PDF</button>
-      <h1>TCFTELECOM — Registro de Atendimentos</h1>
-      <div class="meta">Filtro: ${escapeHTML(filtro)} • Registros: ${lista.length} • Gerado em ${new Date().toLocaleString("pt-BR")}</div>
-      <table><thead><tr>${cabecalhoExportacao().map(h=>"<th>"+escapeHTML(h)+"</th>").join("")}</tr></thead><tbody>${rows}</tbody></table>
-      <script>setTimeout(()=>window.print(),450)<\/script></body></html>`;
-
-    const w = window.open("", "_blank");
-    if(!w){
-      alert("O navegador bloqueou a janela do PDF. Libere pop-ups para este site.");
-      return;
-    }
-    w.document.open();
-    w.document.write(html);
-    w.document.close();
-  };
-
-  // Excel corrigido para o formato da planilha modelo: cabeçalho na linha 1 e dados na linha 2.
-  window.exportarXLSX = async function(){
-    const lista = listaExportar();
-    if(!validarExportacao(lista)) return;
-
-    let XLSXLib = window.XLSX;
-    if(!XLSXLib && typeof carregarBibliotecaExcel === "function"){
-      try{ XLSXLib = await carregarBibliotecaExcel(); }catch(e){ console.error(e); }
-    }
-    if(!XLSXLib){
-      alert("Não foi possível gerar Excel agora. Use CSV ou tente novamente com internet ativa.");
-      return;
-    }
-
-    const wb = XLSXLib.utils.book_new();
-    wb.Props = { Title:"TCFTELECOM - Registro de Atendimentos", Author:"Sistema TCFTELECOM", CreatedDate:new Date() };
-
-    const dados = [cabecalhoExportacao(), ...lista.map(linhaExportacao)];
-    const ws = XLSXLib.utils.aoa_to_sheet(dados);
-
-    ws["!cols"] = [
-      {wch:13},{wch:22},{wch:28},{wch:18},{wch:24},{wch:14},
-      {wch:18},{wch:24},{wch:12},{wch:22},{wch:20},{wch:46}
-    ];
-    ws["!autofilter"] = { ref: "A1:L" + Math.max(1, dados.length) };
-    ws["!freeze"] = { xSplit:0, ySplit:1 };
-
-    const headerStyle = {
-      font:{bold:true,color:{rgb:"FFFFFF"}},
-      fill:{fgColor:{rgb:"1F4E79"}},
-      alignment:{horizontal:"center",vertical:"center",wrapText:true},
-      border:{
-        top:{style:"thin",color:{rgb:"173A59"}},
-        bottom:{style:"thin",color:{rgb:"173A59"}},
-        left:{style:"thin",color:{rgb:"173A59"}},
-        right:{style:"thin",color:{rgb:"173A59"}}
-      }
-    };
-    const rowStyleA = {
-      fill:{fgColor:{rgb:"FFFFFF"}},
-      alignment:{vertical:"top",wrapText:true},
-      border:{bottom:{style:"thin",color:{rgb:"E5E7EB"}},right:{style:"thin",color:{rgb:"E5E7EB"}}}
-    };
-    const rowStyleB = {
-      fill:{fgColor:{rgb:"F2F6FB"}},
-      alignment:{vertical:"top",wrapText:true},
-      border:{bottom:{style:"thin",color:{rgb:"E5E7EB"}},right:{style:"thin",color:{rgb:"E5E7EB"}}}
-    };
-    function applyRange(rangeA1, style){
-      const range = XLSXLib.utils.decode_range(rangeA1);
-      for(let R=range.s.r; R<=range.e.r; R++){
-        for(let C=range.s.c; C<=range.e.c; C++){
-          const ref = XLSXLib.utils.encode_cell({r:R,c:C});
-          if(!ws[ref]) ws[ref] = {t:"s",v:""};
-          ws[ref].s = JSON.parse(JSON.stringify(style));
-        }
-      }
-    }
-    applyRange("A1:L1", headerStyle);
-    for(let r=2; r<=dados.length; r++){
-      applyRange("A"+r+":L"+r, r % 2 === 0 ? rowStyleA : rowStyleB);
-    }
-
-    const total = lista.length;
-    const resumo = [
-      ["Indicador","Valor"],
-      ["Total de Atendimentos", total],
-      ["Atendimentos Críticos", lista.filter(x=>x.critico==="Sim").length],
-      ["Resolvidos Remoto", lista.filter(x=>x.resolvidoRemoto==="Sim").length],
-      ["Com OS Aberta", lista.filter(x=>x.osAberta==="Sim").length],
-      ["Pós Suporte Realizado", lista.filter(x=>x.posSuporte==="Sim").length],
-      ["Filtro Atendente", tecnicoSelecionado() || "Todos"]
-    ];
-    const dash = XLSXLib.utils.aoa_to_sheet(resumo);
-    dash["!cols"] = [{wch:32},{wch:22}];
-
-    const listas = XLSXLib.utils.aoa_to_sheet([
-      ["Atendentes","Tipos de Atendimento","Status","Sim/Não"],
-      ["Victor","Suporte","Concluído","Sim"],
-      ["Hiago","Verificação da Conexão","Pendente","Não"],
-      ["Higor","Mudança de Cômodo","Em andamento",""],
-      ["Odair","Instabilidade","Aguardando técnico",""],
-      ["Otavio","LOS","Aguardando cliente",""],
-      ["Gustavo","Sinal Alto","",""],
-      ["Cleiton","Problema na ONU","",""],
-      ["","Fonte com Defeito","",""]
-    ]);
-    listas["!cols"] = [{wch:20},{wch:28},{wch:24},{wch:12}];
-
-    XLSXLib.utils.book_append_sheet(wb, ws, "Registro de Atendimentos");
-    XLSXLib.utils.book_append_sheet(wb, dash, "Dashboard");
-    XLSXLib.utils.book_append_sheet(wb, listas, "Listas");
-    XLSXLib.writeFile(wb, nomeArquivo("xlsx"));
-  };
-
-  function siteBaseSeguro(){
-    const salvo = String(localStorage.getItem("site_public_url_v30") || window.SITE_PUBLIC_URL || "").trim();
-    const invalido = !salvo || /tcftelecomatendimentos\.com|seudominio|localhost|127\.0\.0\.1|file:\/\//i.test(salvo);
-    if(!invalido) return salvo.replace(/\/$/,"");
-    if(location.hostname && location.hostname.includes("vercel.app")) return (location.origin + location.pathname).replace(/\/$/,"");
-    return DEFAULT_SITE_URL;
-  }
-
-  window.salvarUrlPublica = function(){
-    const input = document.getElementById("sitePublicUrl") || document.getElementById("sitePublicUrlV57");
-    const url = (input?.value || DEFAULT_SITE_URL).trim().replace(/\/$/,"");
-    localStorage.setItem("site_public_url_v30", url);
-    window.SITE_PUBLIC_URL = url;
-    ["sitePublicUrl","sitePublicUrlV57"].forEach(id => { const el = document.getElementById(id); if(el) el.value = url; });
-    const out = document.getElementById("linkPublicoAtualV57");
-    if(out) out.textContent = url;
-    alert("Link público salvo.");
-  };
-
-  window.gerarConvite = function(){
-    const nome = (document.getElementById("conviteNome")?.value || document.getElementById("tcfNovoUsuarioNome")?.value || "").trim();
-    const perfil = document.getElementById("convitePerfil")?.value || document.getElementById("tcfNovoUsuarioPerfil")?.value || "Atendente";
-    if(!nome){
-      alert("Digite o nome do atendente.");
-      return;
-    }
-
-    const token = "tcf_" + Date.now().toString(36) + Math.random().toString(36).slice(2,8);
-    const url = siteBaseSeguro() + "?token=" + encodeURIComponent(token) + "&convite=" + encodeURIComponent(nome) + "&perfil=" + encodeURIComponent(perfil);
-
-    try{
-      const convites = JSON.parse(localStorage.getItem("convites_v21") || "{}");
-      convites[token] = { token, nome, perfil, criadoEm:new Date().toLocaleString("pt-BR"), usado:false, link:url };
-      localStorage.setItem("convites_v21", JSON.stringify(convites));
-    }catch(e){}
-
-    const out = document.getElementById("linkConvite");
-    if(out) out.textContent = url;
-    if(typeof renderUsuariosAdmin === "function") renderUsuariosAdmin();
-  };
-
-  window.copiarConvite = function(){
-    const texto = (document.getElementById("linkConvite")?.textContent || "").replace(/ \| Senha padrão:.*/,"").trim();
-    if(!texto || texto.includes("Nenhum")){
-      alert("Gere o link primeiro.");
-      return;
-    }
-    navigator.clipboard?.writeText(texto).then(function(){
-      alert("Link copiado.");
-    }, function(){
-      prompt("Copie o link:", texto);
-    });
-  };
-
-  function instalarAviso(){
-    const filters = document.querySelector("#registros .filters");
-    if(filters && !document.getElementById("tcfV066SafeNote")){
-      const note = document.createElement("span");
-      note.id = "tcfV066SafeNote";
-      note.className = "tcf-v066-safe-note";
-      note.textContent = "v066: exportação usa os filtros ativos";
-      filters.appendChild(note);
-    }
-
-    const apagar = Array.from(document.querySelectorAll("button")).find(b => (b.textContent || "").trim().toLowerCase() === "apagar todos");
-    if(apagar) apagar.classList.add("tcf-v066-dev-only");
-  }
-
-  window.__TCF_V066_STATUS__ = {
-    versao:"v066-limpeza-tecnica",
-    tabela:"sanitizada",
-    apagarTodos:"restrito-dev-com-confirmacao-APAGAR",
-    exportacao:"filtrada-e-modelo-excel-linha-1",
-    links:"dominio-vercel-seguro",
-    observacao:"usuarios ainda locais; migracao Supabase exige backend/schema"
-  };
-
-  window.addEventListener("load", function(){
-    setTimeout(function(){
-      instalarAviso();
-      if(typeof atualizarTabela === "function") atualizarTabela();
-      console.info("TCFTELECOM v066 limpeza técnica carregada.", window.__TCF_V066_STATUS__);
-    }, 600);
-  });
-
-  document.addEventListener("click", function(){
-    setTimeout(instalarAviso, 100);
-  }, true);
-})();
-</script>
-
