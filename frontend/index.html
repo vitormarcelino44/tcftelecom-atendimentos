@@ -10121,146 +10121,527 @@ body:not(.light-mode):not(.light) .tcf-link-output{background:rgba(2,6,23,.55);c
 </script>
 
 
-<!-- PATCH TCF v0.65 - melhorias operacionais no index: usuários, auditoria, busca avançada, tempo real e OS PDF -->
-<style id="v065-operacional-style">
-  .v065-audit-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;margin-bottom:18px}
-  .v065-mini-card{padding:18px;border-radius:22px;background:rgba(100,116,139,.12);border:1px solid var(--panel-border)}
-  .v065-mini-card strong{display:block;font-size:24px;margin-top:6px}.v065-mini-card span{color:var(--muted);font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.4px}
-  .v065-advanced{display:grid;grid-template-columns:repeat(5,minmax(150px,1fr));gap:10px;width:100%;margin-top:12px;padding:12px;border-radius:20px;background:rgba(100,116,139,.09);border:1px dashed rgba(148,163,184,.28)}
-  .v065-advanced input,.v065-advanced select{min-height:46px!important;border-radius:14px!important}.v065-advanced small{display:block;color:var(--muted);font-weight:900;margin-bottom:5px}
-  .v065-live-pill{display:inline-flex;align-items:center;gap:8px;margin-left:8px;padding:7px 10px;border-radius:999px;background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.28);color:#22c55e;font-weight:900;font-size:12px}.v065-live-dot{width:8px;height:8px;border-radius:50%;background:#22c55e;box-shadow:0 0 12px rgba(34,197,94,.8)}
-  .v065-audit-list{display:grid;gap:10px;max-height:520px;overflow:auto;padding-right:6px}.v065-audit-item{display:grid;grid-template-columns:170px 180px 1fr auto;gap:12px;align-items:center;padding:13px 14px;border-radius:16px;background:rgba(100,116,139,.10);border:1px solid rgba(148,163,184,.18)}
-  .v065-audit-item b{color:var(--text)}.v065-audit-item span{color:var(--muted);font-size:13px}.v065-tag{padding:6px 9px;border-radius:999px;font-size:11px;font-weight:900;background:rgba(56,189,248,.12);color:#38bdf8;border:1px solid rgba(56,189,248,.28);white-space:nowrap}
-  .v065-user-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.v065-chip{display:inline-flex;align-items:center;gap:6px;padding:6px 9px;border-radius:999px;background:rgba(100,116,139,.12);border:1px solid rgba(148,163,184,.18);font-size:11px;font-weight:900;color:var(--muted)}
-  .v065-os{background:rgba(14,165,233,.12)!important;color:#38bdf8!important;border:1px solid rgba(14,165,233,.30)!important}.v065-filter-note{color:var(--muted);font-size:13px;margin-top:10px;font-weight:800}
-  body.light .v065-mini-card,body.light-mode .v065-mini-card,body.light .v065-advanced,body.light-mode .v065-advanced,body.light .v065-audit-item,body.light-mode .v065-audit-item{background:#fff!important;border-color:#e2e8f0!important}
-  @media(max-width:1100px){.v065-audit-grid,.v065-advanced{grid-template-columns:1fr 1fr}.v065-audit-item{grid-template-columns:1fr}}
-  @media(max-width:620px){.v065-audit-grid,.v065-advanced{grid-template-columns:1fr}}
+<!-- PATCH TCF v0.66 - Limpeza técnica e travas de segurança -->
+<style id="v066-limpeza-tecnica-style">
+  .tcf-v066-safe-note{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    padding:9px 12px;
+    border-radius:999px;
+    background:rgba(56,189,248,.10);
+    border:1px solid rgba(56,189,248,.22);
+    color:#0284c7;
+    font-size:12px;
+    font-weight:900;
+  }
+  body:not(.light):not(.light-mode) .tcf-v066-safe-note{color:#7dd3fc;}
+  .tcf-v066-dev-only{
+    outline:1px dashed rgba(239,68,68,.35);
+    outline-offset:2px;
+  }
 </style>
-<script id="v065-operacional-script">
+
+<script id="v066-limpeza-tecnica-script">
 (function(){
-  const AUDIT_KEY='tcf_auditoria_v065';
-  const LAST_REFRESH_KEY='tcf_ultimo_refresh_v065';
-  const LOGIN_KEYS=['sistema_login_v29','sistema_login_v21','sistema_auto_login_v29','sistema_login_v28','sistema_login_v14'];
-  const SAFE_SITE='https://tcftelecom-atendimentos-48fp.vercel.app';
-  function $(id){return document.getElementById(id)}
-  function esc(v){return String(v??'').replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]))}
-  function actor(){try{if(typeof usuarioLogado==='function' && usuarioLogado())return usuarioLogado()}catch(e){} for(const k of LOGIN_KEYS){const v=localStorage.getItem(k); if(v)return v} return 'Sistema'}
-  function read(k,f=[]){try{return JSON.parse(localStorage.getItem(k)||JSON.stringify(f))}catch(e){return f}}
-  function write(k,v){localStorage.setItem(k,JSON.stringify(v))}
-  function addAudit(acao,detalhe,tipo='Sistema'){
-    const lista=read(AUDIT_KEY,[]); lista.unshift({quando:new Date().toLocaleString('pt-BR'),usuario:actor(),acao,detalhe,tipo});
-    write(AUDIT_KEY,lista.slice(0,500)); renderAuditoria();
-  }
-  window.registrarAuditoriaTCF=addAudit;
+  "use strict";
 
-  function listaFiltradaAtual(){try{return (typeof filtrarListaComIndice==='function'?filtrarListaComIndice().map(x=>x.item):carregar())}catch(e){return carregar?carregar():[]}}
-  function dataNumBR(v){if(!v)return 0; const p=String(v).split('/'); if(p.length!==3)return 0; return Number(p[2]+p[1]+p[0])}
-  function dataInputNum(v){if(!v)return 0; return Number(String(v).replaceAll('-',''))}
+  const API = "https://tcftelecom-atendimentos-production.up.railway.app";
+  const DEV_USER = "Victor";
+  const DEFAULT_SITE_URL = "https://tcftelecom-atendimentos-48fp.vercel.app";
 
-  function criarTelaAuditoria(){
-    if($('auditoria')) return;
-    const main=document.querySelector('main.content'); if(!main) return;
-    const sec=document.createElement('section'); sec.id='auditoria'; sec.className='screen';
-    sec.innerHTML=`<div class="panel"><h2>Histórico e Auditoria</h2><p class="panel-desc">Registro local das principais ações feitas no sistema: login, criação, edição, exclusão, exportações e geração de OS.</p><div class="v065-audit-grid"><div class="v065-mini-card"><span>Total de eventos</span><strong id="v065AuditTotal">0</strong></div><div class="v065-mini-card"><span>Usuário atual</span><strong id="v065AuditUser">-</strong></div><div class="v065-mini-card"><span>Última ação</span><strong id="v065AuditLast">-</strong></div><div class="v065-mini-card"><span>Atualização</span><strong id="v065AuditRefresh">-</strong></div></div><div class="actions" style="margin-top:0"><button class="secondary" type="button" onclick="renderAuditoriaTCF()">Atualizar histórico</button><button class="danger" type="button" onclick="limparAuditoriaTCF()">Limpar auditoria</button></div><div id="v065AuditList" class="v065-audit-list"></div></div>`;
-    main.appendChild(sec);
-  }
-  function inserirBotaoAuditoria(){
-    const nav=document.querySelector('.nav'); if(!nav || document.querySelector('[data-v065-audit]')) return;
-    const btn=document.createElement('button'); btn.type='button'; btn.setAttribute('data-v065-audit','1'); btn.setAttribute('data-role','admin'); btn.innerHTML='🧾 <span>Auditoria</span>'; btn.onclick=function(){abrirAuditoriaTCF(this)};
-    const usuarios=[...nav.querySelectorAll('button')].find(b=>(b.textContent||'').includes('Usuários'));
-    if(usuarios) usuarios.after(btn); else nav.appendChild(btn);
-  }
-  window.abrirAuditoriaTCF=function(botao){
-    criarTelaAuditoria(); document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active')); $('auditoria').classList.add('active');
-    document.querySelectorAll('.nav button').forEach(b=>b.classList.remove('active')); if(botao)botao.classList.add('active');
-    if($('tituloTela'))$('tituloTela').textContent='Auditoria'; if($('subtituloTela'))$('subtituloTela').textContent='Histórico de ações, acessos e controles operacionais.'; renderAuditoria();
-  }
-  function renderAuditoria(){
-    const lista=read(AUDIT_KEY,[]); const el=$('v065AuditList'); if(!el)return;
-    if($('v065AuditTotal'))$('v065AuditTotal').textContent=lista.length; if($('v065AuditUser'))$('v065AuditUser').textContent=actor(); if($('v065AuditLast'))$('v065AuditLast').textContent=lista[0]?.acao||'-'; if($('v065AuditRefresh'))$('v065AuditRefresh').textContent=localStorage.getItem(LAST_REFRESH_KEY)||'-';
-    el.innerHTML=lista.length?lista.map(a=>`<div class="v065-audit-item"><span>${esc(a.quando)}</span><b>${esc(a.usuario)}</b><span>${esc(a.detalhe)}</span><em class="v065-tag">${esc(a.acao)}</em></div>`).join(''):'<div class="empty">Nenhum evento registrado ainda.</div>';
-  }
-  window.renderAuditoriaTCF=renderAuditoria;
-  window.limparAuditoriaTCF=function(){if(confirm('Limpar histórico de auditoria deste navegador?')){localStorage.removeItem(AUDIT_KEY);renderAuditoria();}}
-
-  function inserirBuscaAvancada(){
-    const filters=document.querySelector('#registros .filters'); if(!filters || $('v065FiltroBox')) return;
-    const box=document.createElement('div'); box.id='v065FiltroBox'; box.className='v065-advanced';
-    box.innerHTML=`<div><small>Tipo</small><select id="v065FiltroTipo" onchange="atualizarTudo()"><option value="">Todos</option><option>Suporte</option><option>Verificação da Conexão</option><option>Mudança de Cômodo</option><option>Instabilidade</option><option>LOS</option><option>Sinal Alto</option><option>Problema na ONU</option><option>Fonte com Defeito</option></select></div><div><small>Status</small><select id="v065FiltroStatus" onchange="atualizarTudo()"><option value="">Todos</option><option>Concluído</option><option>Pendente</option><option>Em andamento</option><option>Aguardando técnico</option><option>Aguardando cliente</option></select></div><div><small>OS Aberta</small><select id="v065FiltroOS" onchange="atualizarTudo()"><option value="">Todas</option><option>Sim</option><option>Não</option></select></div><div><small>Data inicial</small><input type="date" id="v065DataIni" onchange="atualizarTudo()"></div><div><small>Data final</small><input type="date" id="v065DataFim" onchange="atualizarTudo()"></div><div style="display:flex;align-items:end"><button class="secondary" type="button" onclick="limparFiltrosAvancadosTCF()">Limpar filtros</button></div>`;
-    filters.appendChild(box);
-    const note=document.createElement('div'); note.className='v065-filter-note'; note.id='v065FilterNote'; filters.appendChild(note);
-  }
-  window.limparFiltrosAvancadosTCF=function(){['v065FiltroTipo','v065FiltroStatus','v065FiltroOS','v065DataIni','v065DataFim'].forEach(id=>{const e=$(id); if(e)e.value=''}); if(typeof atualizarTudo==='function')atualizarTudo();}
-
-  const oldFiltro=window.filtrarListaComIndice;
-  window.filtrarListaComIndice=function(){
-    let base=typeof oldFiltro==='function'?oldFiltro():((carregar?carregar():[]).map((item,index)=>({item,index})));
-    const tipo=$('v065FiltroTipo')?.value||'', status=$('v065FiltroStatus')?.value||'', os=$('v065FiltroOS')?.value||'';
-    const di=dataInputNum($('v065DataIni')?.value), df=dataInputNum($('v065DataFim')?.value);
-    const out=base.filter(({item})=>{const dn=dataNumBR(item.data); return (!tipo||item.tipo===tipo)&&(!status||item.status===status)&&(!os||item.osAberta===os)&&(!di||dn>=di)&&(!df||dn<=df)});
-    setTimeout(()=>{const n=$('v065FilterNote'); if(n)n.textContent=`Exibindo ${out.length} atendimento(s) conforme os filtros selecionados. As exportações Excel, CSV e PDF usam essa mesma seleção.`},0);
-    return out;
+  function escapeHTML(value){
+    return String(value ?? "").replace(/[&<>"']/g, function(ch){
+      return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch];
+    });
   }
 
-  function painelTempoReal(){
-    const grid=document.querySelector('#dashboard .grid'); if(!grid || $('v065CardHoje')) return;
-    const c=document.createElement('div'); c.className='card'; c.id='v065CardHoje'; c.innerHTML='<div class="card-title">Atendimentos Hoje</div><div class="value blue" id="v065Hoje">0</div><div class="trend">Atualização automática <span class="v065-live-pill"><span class="v065-live-dot"></span>ao vivo</span></div>'; grid.appendChild(c);
-    const c2=document.createElement('div'); c2.className='card'; c2.id='v065CardOnline'; c2.innerHTML='<div class="card-title">Usuário Logado</div><div class="value green" id="v065UsuarioAtual">-</div><div class="trend">Controle de acesso ativo</div>'; grid.appendChild(c2);
-  }
-  function atualizarTempoReal(){
-    const hoje=new Date().toLocaleDateString('pt-BR'); const lista=carregar?carregar():[];
-    if($('v065Hoje'))$('v065Hoje').textContent=lista.filter(x=>x.data===hoje).length; if($('v065UsuarioAtual'))$('v065UsuarioAtual').textContent=actor();
-    localStorage.setItem(LAST_REFRESH_KEY,new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit',second:'2-digit'})); renderAuditoria();
+  function somenteNumero(value){
+    return String(value || "").replace(/\D/g, "");
   }
 
-  function prepararDadosExportacao(){return listaFiltradaAtual();}
-  function nomeFiltro(){const a=$('filtroAtendente')?.value||'todos'; return String(a).normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/gi,'_').toLowerCase();}
-  function downloadBlob(blob,nome){const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=nome; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url)}
-  function csvCell(v){return '"'+String(v??'').replace(/"/g,'""')+'"'}
-  window.exportarCSV=function(){const lista=prepararDadosExportacao(); if(!lista.length){alert('Nenhum atendimento para exportar neste filtro.');return;} const h=['Data','Técnico/Atendente','Cliente','Contato','Tipo de Atendimento','OS Aberta?','Resolvido Remoto?','Resolvido Internamente?','Crítico?','Pós Suporte Realizado?','Status','Observações']; const linhas=lista.map(i=>[i.data,i.tecnico,i.cliente,i.contato||i.telefone,i.tipo,i.osAberta,i.resolvidoRemoto,i.resolvidoInternamente||i.resolvidoRemoto,i.critico,i.posSuporte,i.status,i.observacoes]); const csv=[h,...linhas].map(r=>r.map(csvCell).join(';')).join('\n'); downloadBlob(new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'}),`TCFTELECOM_${nomeFiltro()}_atendimentos.csv`); addAudit('Exportação CSV',`Exportou ${lista.length} atendimento(s) filtrado(s).`,'Exportação')}
-  window.exportarPDF=function(){const lista=prepararDadosExportacao(); if(!lista.length){alert('Nenhum atendimento para exportar neste filtro.');return;} const rows=lista.map(i=>`<tr><td>${esc(i.data)}</td><td>${esc(i.tecnico)}</td><td>${esc(i.cliente)}</td><td>${esc(i.contato||i.telefone||'')}</td><td>${esc(i.tipo)}</td><td>${esc(i.status)}</td><td>${esc(i.observacoes||'')}</td></tr>`).join(''); const w=window.open('','_blank'); w.document.write(`<html><head><title>TCFTELECOM PDF</title><style>body{font-family:Arial;padding:24px}h1{margin:0 0 6px}table{width:100%;border-collapse:collapse;font-size:12px}th{background:#1f4e79;color:white}th,td{border:1px solid #ccc;padding:7px;text-align:left;vertical-align:top}</style></head><body><h1>TCFTELECOM — Relatório de Atendimentos</h1><p>Filtro atendente: ${esc($('filtroAtendente')?.value||'Todos')} | Total: ${lista.length}</p><table><thead><tr><th>Data</th><th>Técnico</th><th>Cliente</th><th>Contato</th><th>Tipo</th><th>Status</th><th>Observações</th></tr></thead><tbody>${rows}</tbody></table><script>window.onload=()=>{window.print()}<\/script></body></html>`); w.document.close(); addAudit('Exportação PDF',`Exportou ${lista.length} atendimento(s) filtrado(s).`,'Exportação')}
-
-  window.exportarXLSX=async function(){
-    const lista=prepararDadosExportacao(); if(!lista.length){alert('Nenhum atendimento para exportar neste filtro.');return;}
-    let XLSXLib; try{XLSXLib=await carregarBibliotecaExcel()}catch(e){alert('Não foi possível carregar a biblioteca Excel. Use CSV ou tente com internet ativa.');return;}
-    const wb=XLSXLib.utils.book_new(); const header=['Data','Técnico/Atendente','Cliente','Contato','Tipo de Atendimento','OS Aberta?','Resolvido Remoto?','Resolvido Internamente?','Crítico?','Pós Suporte Realizado?','Status','Observações'];
-    const data=[header,...lista.map(i=>[i.data||'',i.tecnico||'',i.cliente||'',i.contato||i.telefone||'',i.tipo||'',i.osAberta||'',i.resolvidoRemoto||'',i.resolvidoInternamente||i.resolvidoRemoto||'',i.critico||'',i.posSuporte||'',i.status||'',i.observacoes||''])];
-    const ws=XLSXLib.utils.aoa_to_sheet(data); ws['!cols']=[{wch:13},{wch:22},{wch:28},{wch:18},{wch:25},{wch:14},{wch:20},{wch:24},{wch:12},{wch:24},{wch:20},{wch:50}]; ws['!autofilter']={ref:`A1:L${data.length}`}; ws['!freeze']={xSplit:0,ySplit:1};
-    const headerStyle={font:{bold:true,color:{rgb:'FFFFFF'}},fill:{fgColor:{rgb:'1F4E79'}},alignment:{horizontal:'center',vertical:'center',wrapText:true},border:{top:{style:'thin',color:{rgb:'BFBFBF'}},bottom:{style:'thin',color:{rgb:'BFBFBF'}},left:{style:'thin',color:{rgb:'BFBFBF'}},right:{style:'thin',color:{rgb:'BFBFBF'}}}};
-    const even={fill:{fgColor:{rgb:'D9EAF7'}},alignment:{vertical:'top',wrapText:true},border:{bottom:{style:'thin',color:{rgb:'D9D9D9'}},right:{style:'thin',color:{rgb:'D9D9D9'}}}}; const odd={fill:{fgColor:{rgb:'FFFFFF'}},alignment:{vertical:'top',wrapText:true},border:{bottom:{style:'thin',color:{rgb:'D9D9D9'}},right:{style:'thin',color:{rgb:'D9D9D9'}}}};
-    for(let c=0;c<12;c++){const ref=XLSXLib.utils.encode_cell({r:0,c}); if(ws[ref])ws[ref].s=headerStyle}
-    for(let r=1;r<data.length;r++){for(let c=0;c<12;c++){const ref=XLSXLib.utils.encode_cell({r,c}); if(ws[ref])ws[ref].s=(r%2?odd:even)}}
-    const resumo=[['Indicador','Valor'],['Filtro atendente',$('filtroAtendente')?.value||'Todos'],['Total exportado',lista.length],['Críticos',lista.filter(x=>x.critico==='Sim').length],['Com OS aberta',lista.filter(x=>x.osAberta==='Sim').length],['Pós suporte',lista.filter(x=>x.posSuporte==='Sim').length],['Gerado em',new Date().toLocaleString('pt-BR')]];
-    const wsDash=XLSXLib.utils.aoa_to_sheet(resumo); wsDash['!cols']=[{wch:28},{wch:24}];
-    const wsList=XLSXLib.utils.aoa_to_sheet([['Atendentes','Tipos de Atendimento','Status','Sim/Não'],['Victor','Suporte','Concluído','Sim'],['Hiago','Verificação da Conexão','Pendente','Não'],['Higor','Mudança de Cômodo','Em andamento',''],['Odair','Instabilidade','Aguardando técnico',''],['Otavio','LOS','Aguardando cliente',''],['Gustavo','Sinal Alto','',''],['Cleiton','Problema na ONU','',''],['','Fonte com Defeito','','']]); wsList['!cols']=[{wch:20},{wch:28},{wch:24},{wch:12}];
-    XLSXLib.utils.book_append_sheet(wb,ws,'Registro de Atendimentos'); XLSXLib.utils.book_append_sheet(wb,wsDash,'Dashboard'); XLSXLib.utils.book_append_sheet(wb,wsList,'Listas');
-    const d=new Date(),pad=n=>String(n).padStart(2,'0'); XLSXLib.writeFile(wb,`TCFTELECOM_${nomeFiltro()}_${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}.xlsx`); addAudit('Exportação Excel',`Exportou ${lista.length} atendimento(s) filtrado(s).`,'Exportação')
+  function usuarioAtual(){
+    const keys = ["sistema_login_v29","sistema_login_v21","sistema_auto_login_v29","sistema_login_v28","sistema_login_v14"];
+    for(const key of keys){
+      const val = localStorage.getItem(key);
+      if(val) return val;
+    }
+    return "";
   }
 
-  window.gerarOSPDF=function(index){const item=(carregar?carregar():[])[index]; if(!item){alert('Atendimento não encontrado.');return;} const numero=String(item.id||index+1).padStart(6,'0'); const w=window.open('','_blank'); w.document.write(`<html><head><title>OS ${numero}</title><style>body{font-family:Arial;padding:34px;color:#111}.box{border:2px solid #1f4e79;border-radius:14px;padding:22px}h1{margin:0;color:#1f4e79}.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:18px}.field{border:1px solid #ddd;padding:10px;border-radius:8px}.full{grid-column:1/-1}small{display:block;color:#666;font-weight:bold;margin-bottom:5px}@media print{button{display:none}}</style></head><body><div class="box"><h1>TCFTELECOM — Ordem de Serviço</h1><p><b>OS Nº ${numero}</b> | Gerada em ${new Date().toLocaleString('pt-BR')}</p><div class="grid"><div class="field"><small>Data</small>${esc(item.data)}</div><div class="field"><small>Técnico/Atendente</small>${esc(item.tecnico)}</div><div class="field"><small>Cliente</small>${esc(item.cliente)}</div><div class="field"><small>Contato</small>${esc(item.contato||item.telefone||'')}</div><div class="field"><small>Tipo</small>${esc(item.tipo)}</div><div class="field"><small>Status</small>${esc(item.status)}</div><div class="field"><small>OS Aberta?</small>${esc(item.osAberta)}</div><div class="field"><small>Crítico?</small>${esc(item.critico)}</div><div class="field full"><small>Descrição / Observações</small>${esc(item.observacoes||'')}</div><div class="field full"><small>Assinatura do cliente</small><br><br>________________________________________</div></div></div><button onclick="window.print()" style="margin-top:18px;padding:12px 18px">Imprimir / Salvar PDF</button><script>window.onload=()=>setTimeout(()=>window.print(),300)<\/script></body></html>`); w.document.close(); addAudit('OS PDF',`Gerou OS PDF para cliente ${item.cliente||'-'}.`,'OS')}
-  function inserirBotoesOS(){const tbody=$('tabelaAtendimentos'); if(!tbody)return; [...tbody.querySelectorAll('tr')].forEach(tr=>{const ac=tr.querySelector('.row-actions'); if(!ac || ac.querySelector('.v065-os'))return; const edit=ac.querySelector('button[onclick^="editarRegistro"]'); const m=(edit?.getAttribute('onclick')||'').match(/\((\d+)\)/); if(!m)return; const b=document.createElement('button'); b.className='secondary small-btn v065-os'; b.type='button'; b.textContent='OS PDF'; b.onclick=()=>window.gerarOSPDF(Number(m[1])); ac.appendChild(b);});}
-
-  function reforcarUsuarios(){
-    ['usuariosAdminListaPage','usuariosAdminLista'].forEach(id=>{const el=$(id); if(!el)return; [...el.querySelectorAll('.user-card-pro,.tcf-admin-user-card,.tcf-v58-user-card')].forEach(card=>{if(card.querySelector('.v065-user-actions'))return; const nome=(card.querySelector('strong')?.childNodes?.[0]?.textContent||card.querySelector('strong')?.textContent||'').trim(); const box=document.createElement('div'); box.className='v065-user-actions'; box.innerHTML=`<span class="v065-chip">Último acesso monitorado</span><span class="v065-chip">Permissões ativas</span>`; card.appendChild(box);});});
+  function isDev(){
+    return String(usuarioAtual()).trim().toLowerCase() === DEV_USER.toLowerCase();
   }
 
-  const oldAtualizarTudo=window.atualizarTudo; window.atualizarTudo=function(){if(typeof oldAtualizarTudo==='function')oldAtualizarTudo(); inserirBuscaAvancada(); painelTempoReal(); atualizarTempoReal(); setTimeout(()=>{inserirBotoesOS(); reforcarUsuarios();},80)}
-  const oldTabela=window.atualizarTabela; window.atualizarTabela=function(){if(typeof oldTabela==='function')oldTabela(); setTimeout(inserirBotoesOS,40)}
-  const oldEditar=window.editarRegistro; window.editarRegistro=function(index){const item=(carregar?carregar():[])[index]; addAudit('Edição iniciada',`Abriu edição do atendimento ${item?.cliente||index}.`,'Atendimento'); if(typeof oldEditar==='function')oldEditar(index)}
-  const oldExcluir=window.excluirRegistro; window.excluirRegistro=function(index){const item=(carregar?carregar():[])[index]; addAudit('Exclusão',`Excluiu atendimento ${item?.cliente||index}.`,'Atendimento'); if(typeof oldExcluir==='function')oldExcluir(index)}
-  const oldConcluir=window.concluirLogin; if(typeof oldConcluir==='function'){window.concluirLogin=function(usuario,isAdmin){addAudit('Login',`Usuário ${usuario} acessou o sistema.`,'Acesso'); return oldConcluir.apply(this,arguments)}}
-  const form=$('formAtendimento'); if(form){form.addEventListener('submit',()=>{setTimeout(()=>addAudit('Cadastro de atendimento','Salvou ou tentou salvar um atendimento.','Atendimento'),500)},true)}
-
-  function init(){
-    document.querySelectorAll('.version-box strong,.sidebar-final-version strong').forEach(e=>e.textContent='v0.65');
-    document.querySelectorAll('.version-box .trend,.sidebar-final-version small').forEach(e=>e.textContent='Melhorias operacionais');
-    criarTelaAuditoria(); inserirBotaoAuditoria(); inserirBuscaAvancada(); painelTempoReal(); atualizarTempoReal(); inserirBotoesOS(); reforcarUsuarios();
-    window.SITE_PUBLIC_URL=SAFE_SITE; localStorage.setItem('site_public_url_v30',SAFE_SITE);
-    addAudit('Sistema iniciado','v0.65 carregada no navegador.','Sistema');
+  async function apiJSON(url, options){
+    const response = await fetch(url, options);
+    if(!response.ok){
+      let details = "";
+      try{ details = await response.text(); }catch(e){}
+      throw new Error("HTTP " + response.status + (details ? " - " + details.slice(0,180) : ""));
+    }
+    if(response.status === 204) return null;
+    const txt = await response.text();
+    return txt ? JSON.parse(txt) : null;
   }
-  window.addEventListener('load',()=>setTimeout(init,600));
-  document.addEventListener('click',()=>setTimeout(()=>{inserirBotoesOS(); reforcarUsuarios();},120),true);
-  setInterval(()=>{try{if(typeof carregarDoBanco==='function')carregarDoBanco(); atualizarTempoReal();}catch(e){}},30000);
+
+  function listaLocal(){
+    try{
+      if(typeof carregar === "function") return carregar() || [];
+      return JSON.parse(localStorage.getItem("atendimentos_v0_5") || "[]");
+    }catch(e){
+      return [];
+    }
+  }
+
+  function filtrosAtivos(){
+    return {
+      busca: (document.getElementById("busca")?.value || "").toLowerCase().trim(),
+      atendente: (document.getElementById("filtroAtendente")?.value || "").trim(),
+      critico: (document.getElementById("filtroCritico")?.value || "").trim()
+    };
+  }
+
+  function listaFiltrada(){
+    const f = filtrosAtivos();
+    return listaLocal().filter(function(item){
+      const texto = [
+        item.cliente, item.contato, item.telefone, item.observacoes,
+        item.tecnico, item.tipo, item.status, item.data
+      ].map(x => String(x || "").toLowerCase()).join(" ");
+      return (!f.busca || texto.includes(f.busca)) &&
+             (!f.atendente || String(item.tecnico || "").trim() === f.atendente) &&
+             (!f.critico || String(item.critico || "").trim() === f.critico);
+    });
+  }
+
+  function td(text){
+    const cell = document.createElement("td");
+    cell.textContent = text ?? "";
+    return cell;
+  }
+
+  // Corrige risco de innerHTML com dados digitados e mantém edição/exclusão por ID do banco.
+  window.atualizarTabela = function(){
+    const tbody = document.getElementById("tabelaAtendimentos");
+    if(!tbody) return;
+
+    const lista = listaFiltrada();
+    tbody.innerHTML = "";
+
+    if(lista.length === 0){
+      const tr = document.createElement("tr");
+      const cell = document.createElement("td");
+      cell.colSpan = 12;
+      cell.style.textAlign = "center";
+      cell.style.padding = "22px";
+      cell.textContent = "Nenhum atendimento encontrado.";
+      tr.appendChild(cell);
+      tbody.appendChild(tr);
+      return;
+    }
+
+    lista.forEach(function(item){
+      const id = Number(item.id || 0);
+      const tr = document.createElement("tr");
+
+      [
+        item.data || "",
+        item.tecnico || "",
+        item.cliente || "",
+        item.contato || item.telefone || "",
+        item.tipo || "",
+        item.osAberta || "Não",
+        item.resolvidoRemoto || "Não",
+        item.critico || "Não",
+        item.posSuporte || "Não",
+        item.status || "",
+        item.observacoes || ""
+      ].forEach(v => tr.appendChild(td(v)));
+
+      const actionCell = document.createElement("td");
+      const actions = document.createElement("div");
+      actions.className = "row-actions";
+
+      const btnEditar = document.createElement("button");
+      btnEditar.className = "warning small-btn";
+      btnEditar.type = "button";
+      btnEditar.textContent = "Editar";
+      btnEditar.onclick = function(){ window.editarRegistro?.(id); };
+
+      const btnExcluir = document.createElement("button");
+      btnExcluir.className = "danger small-btn";
+      btnExcluir.type = "button";
+      btnExcluir.textContent = "Excluir";
+      btnExcluir.onclick = function(){ window.excluirRegistro?.(id); };
+
+      actions.appendChild(btnEditar);
+      actions.appendChild(btnExcluir);
+
+      if(typeof window.gerarOSPDF === "function"){
+        const btnOS = document.createElement("button");
+        btnOS.className = "secondary small-btn";
+        btnOS.type = "button";
+        btnOS.textContent = "OS PDF";
+        btnOS.onclick = function(){ window.gerarOSPDF(id); };
+        actions.appendChild(btnOS);
+      }
+
+      const contato = somenteNumero(item.contato || item.telefone || "");
+      if(contato.length >= 10){
+        const btnWhats = document.createElement("button");
+        btnWhats.className = "success small-btn";
+        btnWhats.type = "button";
+        btnWhats.textContent = "WhatsApp";
+        btnWhats.onclick = function(){
+          const numero = contato.startsWith("55") ? contato : "55" + contato;
+          const msg = encodeURIComponent("Olá, somos da TCF Telecom. Estamos entrando em contato referente ao seu atendimento.");
+          window.open("https://wa.me/" + numero + "?text=" + msg, "_blank");
+        };
+        actions.appendChild(btnWhats);
+      }
+
+      actionCell.appendChild(actions);
+      tr.appendChild(actionCell);
+      tbody.appendChild(tr);
+    });
+  };
+
+  // Excluir individual continua permitido, mas agora valida ID real.
+  window.excluirRegistro = async function(id){
+    id = Number(id || 0);
+    if(!id){
+      alert("ID inválido para exclusão.");
+      return;
+    }
+    if(!confirm("Deseja excluir este atendimento?")) return;
+
+    try{
+      await apiJSON(API + "/atendimentos/" + id, { method:"DELETE" });
+      if(typeof carregarDoBanco === "function") await carregarDoBanco();
+      if(typeof mostrarMensagem === "function") mostrarMensagem("Atendimento excluído com sucesso.");
+      if(typeof atualizarTudo === "function") atualizarTudo();
+    }catch(err){
+      console.error("Erro ao excluir atendimento:", err);
+      alert("Erro ao excluir atendimento: " + err.message);
+    }
+  };
+
+  // Botão perigoso: só DEV e exige digitar APAGAR.
+  window.apagarRegistros = async function(){
+    if(!isDev()){
+      alert("Ação restrita ao desenvolvedor/administrador principal.");
+      return;
+    }
+
+    const lista = listaLocal().filter(item => item.id);
+    if(lista.length === 0){
+      alert("Nenhum atendimento do banco para apagar.");
+      return;
+    }
+
+    const confirmacao = prompt("Atenção: isso apagará TODOS os atendimentos do banco.\nDigite APAGAR para confirmar.");
+    if(confirmacao !== "APAGAR"){
+      alert("Operação cancelada.");
+      return;
+    }
+
+    const segunda = confirm("Confirma definitivamente apagar " + lista.length + " atendimento(s)?");
+    if(!segunda) return;
+
+    try{
+      for(const item of lista){
+        await apiJSON(API + "/atendimentos/" + item.id, { method:"DELETE" });
+      }
+      if(typeof carregarDoBanco === "function") await carregarDoBanco();
+      if(typeof atualizarTudo === "function") atualizarTudo();
+      alert("Todos os atendimentos foram apagados.");
+    }catch(err){
+      console.error("Erro ao apagar registros:", err);
+      alert("Erro ao apagar registros: " + err.message);
+    }
+  };
+
+  function cabecalhoExportacao(){
+    return ["Data","Técnico/Atendente","Cliente","Contato","Tipo de Atendimento","OS Aberta?","Resolvido Remoto?","Resolvido Internamente?","Crítico?","Pós Suporte Realizado?","Status","Observações"];
+  }
+
+  function linhaExportacao(item){
+    return [
+      item.data || "",
+      item.tecnico || "",
+      item.cliente || "",
+      item.contato || item.telefone || "",
+      item.tipo || "",
+      item.osAberta || "",
+      item.resolvidoRemoto || "",
+      item.resolvidoInternamente || item.resolvidoRemoto || "",
+      item.critico || "",
+      item.posSuporte || "",
+      item.status || "",
+      item.observacoes || ""
+    ];
+  }
+
+  function tecnicoSelecionado(){
+    return (document.getElementById("filtroAtendente")?.value || "").trim();
+  }
+
+  function listaExportar(){
+    return listaFiltrada();
+  }
+
+  function nomeArquivo(ext){
+    const tecnico = tecnicoSelecionado();
+    const pessoa = tecnico ? tecnico.normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/gi,"_") : "todos";
+    const d = new Date();
+    const p = n => String(n).padStart(2,"0");
+    return "TCFTELECOM_atendimentos_" + pessoa + "_" + d.getFullYear() + "-" + p(d.getMonth()+1) + "-" + p(d.getDate()) + "_" + p(d.getHours()) + "-" + p(d.getMinutes()) + "." + ext;
+  }
+
+  function validarExportacao(lista){
+    if(lista.length) return true;
+    const tecnico = tecnicoSelecionado();
+    alert(tecnico ? "Nenhum atendimento encontrado para " + tecnico + "." : "Nenhum atendimento para exportar.");
+    return false;
+  }
+
+  window.exportarCSV = function(){
+    const lista = listaExportar();
+    if(!validarExportacao(lista)) return;
+
+    const limpar = v => '"' + String(v ?? "").replace(/"/g,'""') + '"';
+    const csv = [cabecalhoExportacao(), ...lista.map(linhaExportacao)]
+      .map(row => row.map(limpar).join(";")).join("\n");
+
+    const blob = new Blob(["\ufeff" + csv], {type:"text/csv;charset=utf-8;"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = nomeArquivo("csv");
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  };
+
+  window.exportarPDF = function(){
+    const lista = listaExportar();
+    if(!validarExportacao(lista)) return;
+
+    const filtro = tecnicoSelecionado() || "Todos os atendentes";
+    const rows = lista.map(item => "<tr>" + linhaExportacao(item).map(v => "<td>" + escapeHTML(v) + "</td>").join("") + "</tr>").join("");
+    const html = `<!doctype html><html><head><meta charset="utf-8"><title>TCFTELECOM - Atendimentos</title>
+      <style>
+        body{font-family:Arial,sans-serif;margin:22px;color:#111827}
+        h1{font-size:22px;margin:0 0 6px}
+        .meta{font-size:12px;color:#475569;margin-bottom:14px}
+        table{width:100%;border-collapse:collapse;font-size:10px}
+        th{background:#1f4e79;color:#fff;border:1px solid #173a59;padding:7px;text-align:left}
+        td{border:1px solid #d9e2ef;padding:6px;vertical-align:top}
+        tr:nth-child(even) td{background:#f8fafc}
+        button{margin-bottom:12px;padding:10px 14px;border:0;border-radius:8px;background:#0284c7;color:#fff;font-weight:bold}
+        @media print{button{display:none} body{margin:10mm}}
+      </style></head><body>
+      <button onclick="window.print()">Imprimir / Salvar PDF</button>
+      <h1>TCFTELECOM — Registro de Atendimentos</h1>
+      <div class="meta">Filtro: ${escapeHTML(filtro)} • Registros: ${lista.length} • Gerado em ${new Date().toLocaleString("pt-BR")}</div>
+      <table><thead><tr>${cabecalhoExportacao().map(h=>"<th>"+escapeHTML(h)+"</th>").join("")}</tr></thead><tbody>${rows}</tbody></table>
+      <script>setTimeout(()=>window.print(),450)<\/script></body></html>`;
+
+    const w = window.open("", "_blank");
+    if(!w){
+      alert("O navegador bloqueou a janela do PDF. Libere pop-ups para este site.");
+      return;
+    }
+    w.document.open();
+    w.document.write(html);
+    w.document.close();
+  };
+
+  // Excel corrigido para o formato da planilha modelo: cabeçalho na linha 1 e dados na linha 2.
+  window.exportarXLSX = async function(){
+    const lista = listaExportar();
+    if(!validarExportacao(lista)) return;
+
+    let XLSXLib = window.XLSX;
+    if(!XLSXLib && typeof carregarBibliotecaExcel === "function"){
+      try{ XLSXLib = await carregarBibliotecaExcel(); }catch(e){ console.error(e); }
+    }
+    if(!XLSXLib){
+      alert("Não foi possível gerar Excel agora. Use CSV ou tente novamente com internet ativa.");
+      return;
+    }
+
+    const wb = XLSXLib.utils.book_new();
+    wb.Props = { Title:"TCFTELECOM - Registro de Atendimentos", Author:"Sistema TCFTELECOM", CreatedDate:new Date() };
+
+    const dados = [cabecalhoExportacao(), ...lista.map(linhaExportacao)];
+    const ws = XLSXLib.utils.aoa_to_sheet(dados);
+
+    ws["!cols"] = [
+      {wch:13},{wch:22},{wch:28},{wch:18},{wch:24},{wch:14},
+      {wch:18},{wch:24},{wch:12},{wch:22},{wch:20},{wch:46}
+    ];
+    ws["!autofilter"] = { ref: "A1:L" + Math.max(1, dados.length) };
+    ws["!freeze"] = { xSplit:0, ySplit:1 };
+
+    const headerStyle = {
+      font:{bold:true,color:{rgb:"FFFFFF"}},
+      fill:{fgColor:{rgb:"1F4E79"}},
+      alignment:{horizontal:"center",vertical:"center",wrapText:true},
+      border:{
+        top:{style:"thin",color:{rgb:"173A59"}},
+        bottom:{style:"thin",color:{rgb:"173A59"}},
+        left:{style:"thin",color:{rgb:"173A59"}},
+        right:{style:"thin",color:{rgb:"173A59"}}
+      }
+    };
+    const rowStyleA = {
+      fill:{fgColor:{rgb:"FFFFFF"}},
+      alignment:{vertical:"top",wrapText:true},
+      border:{bottom:{style:"thin",color:{rgb:"E5E7EB"}},right:{style:"thin",color:{rgb:"E5E7EB"}}}
+    };
+    const rowStyleB = {
+      fill:{fgColor:{rgb:"F2F6FB"}},
+      alignment:{vertical:"top",wrapText:true},
+      border:{bottom:{style:"thin",color:{rgb:"E5E7EB"}},right:{style:"thin",color:{rgb:"E5E7EB"}}}
+    };
+    function applyRange(rangeA1, style){
+      const range = XLSXLib.utils.decode_range(rangeA1);
+      for(let R=range.s.r; R<=range.e.r; R++){
+        for(let C=range.s.c; C<=range.e.c; C++){
+          const ref = XLSXLib.utils.encode_cell({r:R,c:C});
+          if(!ws[ref]) ws[ref] = {t:"s",v:""};
+          ws[ref].s = JSON.parse(JSON.stringify(style));
+        }
+      }
+    }
+    applyRange("A1:L1", headerStyle);
+    for(let r=2; r<=dados.length; r++){
+      applyRange("A"+r+":L"+r, r % 2 === 0 ? rowStyleA : rowStyleB);
+    }
+
+    const total = lista.length;
+    const resumo = [
+      ["Indicador","Valor"],
+      ["Total de Atendimentos", total],
+      ["Atendimentos Críticos", lista.filter(x=>x.critico==="Sim").length],
+      ["Resolvidos Remoto", lista.filter(x=>x.resolvidoRemoto==="Sim").length],
+      ["Com OS Aberta", lista.filter(x=>x.osAberta==="Sim").length],
+      ["Pós Suporte Realizado", lista.filter(x=>x.posSuporte==="Sim").length],
+      ["Filtro Atendente", tecnicoSelecionado() || "Todos"]
+    ];
+    const dash = XLSXLib.utils.aoa_to_sheet(resumo);
+    dash["!cols"] = [{wch:32},{wch:22}];
+
+    const listas = XLSXLib.utils.aoa_to_sheet([
+      ["Atendentes","Tipos de Atendimento","Status","Sim/Não"],
+      ["Victor","Suporte","Concluído","Sim"],
+      ["Hiago","Verificação da Conexão","Pendente","Não"],
+      ["Higor","Mudança de Cômodo","Em andamento",""],
+      ["Odair","Instabilidade","Aguardando técnico",""],
+      ["Otavio","LOS","Aguardando cliente",""],
+      ["Gustavo","Sinal Alto","",""],
+      ["Cleiton","Problema na ONU","",""],
+      ["","Fonte com Defeito","",""]
+    ]);
+    listas["!cols"] = [{wch:20},{wch:28},{wch:24},{wch:12}];
+
+    XLSXLib.utils.book_append_sheet(wb, ws, "Registro de Atendimentos");
+    XLSXLib.utils.book_append_sheet(wb, dash, "Dashboard");
+    XLSXLib.utils.book_append_sheet(wb, listas, "Listas");
+    XLSXLib.writeFile(wb, nomeArquivo("xlsx"));
+  };
+
+  function siteBaseSeguro(){
+    const salvo = String(localStorage.getItem("site_public_url_v30") || window.SITE_PUBLIC_URL || "").trim();
+    const invalido = !salvo || /tcftelecomatendimentos\.com|seudominio|localhost|127\.0\.0\.1|file:\/\//i.test(salvo);
+    if(!invalido) return salvo.replace(/\/$/,"");
+    if(location.hostname && location.hostname.includes("vercel.app")) return (location.origin + location.pathname).replace(/\/$/,"");
+    return DEFAULT_SITE_URL;
+  }
+
+  window.salvarUrlPublica = function(){
+    const input = document.getElementById("sitePublicUrl") || document.getElementById("sitePublicUrlV57");
+    const url = (input?.value || DEFAULT_SITE_URL).trim().replace(/\/$/,"");
+    localStorage.setItem("site_public_url_v30", url);
+    window.SITE_PUBLIC_URL = url;
+    ["sitePublicUrl","sitePublicUrlV57"].forEach(id => { const el = document.getElementById(id); if(el) el.value = url; });
+    const out = document.getElementById("linkPublicoAtualV57");
+    if(out) out.textContent = url;
+    alert("Link público salvo.");
+  };
+
+  window.gerarConvite = function(){
+    const nome = (document.getElementById("conviteNome")?.value || document.getElementById("tcfNovoUsuarioNome")?.value || "").trim();
+    const perfil = document.getElementById("convitePerfil")?.value || document.getElementById("tcfNovoUsuarioPerfil")?.value || "Atendente";
+    if(!nome){
+      alert("Digite o nome do atendente.");
+      return;
+    }
+
+    const token = "tcf_" + Date.now().toString(36) + Math.random().toString(36).slice(2,8);
+    const url = siteBaseSeguro() + "?token=" + encodeURIComponent(token) + "&convite=" + encodeURIComponent(nome) + "&perfil=" + encodeURIComponent(perfil);
+
+    try{
+      const convites = JSON.parse(localStorage.getItem("convites_v21") || "{}");
+      convites[token] = { token, nome, perfil, criadoEm:new Date().toLocaleString("pt-BR"), usado:false, link:url };
+      localStorage.setItem("convites_v21", JSON.stringify(convites));
+    }catch(e){}
+
+    const out = document.getElementById("linkConvite");
+    if(out) out.textContent = url;
+    if(typeof renderUsuariosAdmin === "function") renderUsuariosAdmin();
+  };
+
+  window.copiarConvite = function(){
+    const texto = (document.getElementById("linkConvite")?.textContent || "").replace(/ \| Senha padrão:.*/,"").trim();
+    if(!texto || texto.includes("Nenhum")){
+      alert("Gere o link primeiro.");
+      return;
+    }
+    navigator.clipboard?.writeText(texto).then(function(){
+      alert("Link copiado.");
+    }, function(){
+      prompt("Copie o link:", texto);
+    });
+  };
+
+  function instalarAviso(){
+    const filters = document.querySelector("#registros .filters");
+    if(filters && !document.getElementById("tcfV066SafeNote")){
+      const note = document.createElement("span");
+      note.id = "tcfV066SafeNote";
+      note.className = "tcf-v066-safe-note";
+      note.textContent = "v066: exportação usa os filtros ativos";
+      filters.appendChild(note);
+    }
+
+    const apagar = Array.from(document.querySelectorAll("button")).find(b => (b.textContent || "").trim().toLowerCase() === "apagar todos");
+    if(apagar) apagar.classList.add("tcf-v066-dev-only");
+  }
+
+  window.__TCF_V066_STATUS__ = {
+    versao:"v066-limpeza-tecnica",
+    tabela:"sanitizada",
+    apagarTodos:"restrito-dev-com-confirmacao-APAGAR",
+    exportacao:"filtrada-e-modelo-excel-linha-1",
+    links:"dominio-vercel-seguro",
+    observacao:"usuarios ainda locais; migracao Supabase exige backend/schema"
+  };
+
+  window.addEventListener("load", function(){
+    setTimeout(function(){
+      instalarAviso();
+      if(typeof atualizarTabela === "function") atualizarTabela();
+      console.info("TCFTELECOM v066 limpeza técnica carregada.", window.__TCF_V066_STATUS__);
+    }, 600);
+  });
+
+  document.addEventListener("click", function(){
+    setTimeout(instalarAviso, 100);
+  }, true);
 })();
 </script>
+
