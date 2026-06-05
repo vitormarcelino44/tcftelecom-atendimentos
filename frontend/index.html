@@ -9403,6 +9403,463 @@ body:not(.light-mode):not(.light) .tcf-v58-mini-card{background:rgba(15,23,42,.5
 })();
 </script>
 
+
+
+<!-- PATCH TCF v068 - Usuários 100% Supabase/PostgreSQL - sobrescreve localStorage de usuários -->
+<script id="v068-usuarios-supabase-final">
+(function(){
+  const API = (window.API_URL || "https://tcftelecom-atendimentos-production.up.railway.app").replace(/\/$/, "");
+  const DEV_USER = "Victor";
+  const DEV_PASS = "vi20081997";
+  const LOGIN_KEYS = ["sistema_login_v29","sistema_login_v21","sistema_auto_login_v29","sistema_login_v28","sistema_login_v14","sistema_login_v068"];
+  const CURRENT_KEY = "tcf_usuario_atual_banco_v068";
+  const PROFILE_KEY = "usuarios_perfis_v42";
+  const TELAS_ADMIN = ["dashboard","cadastro","registros","graficos","indicadores","usuarios","perfil","configuracoes"];
+  const TELAS_OPERADOR = ["dashboard","cadastro","registros","graficos","perfil"];
+  const PERFIS = ["Atendente","Operador","Suporte","Técnico","Supervisor","Administrador"];
+
+  function norm(v){ return String(v ?? "").trim(); }
+  function lower(v){ return norm(v).toLowerCase(); }
+  function esc(v){ return String(v ?? "").replace(/[&<>'"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[c])); }
+  function initials(nome){ return (norm(nome)||"U").split(/\s+/).slice(0,2).map(p=>p[0]).join("").toUpperCase(); }
+  function idSafe(v){ return String(v ?? "").replace(/[^a-zA-Z0-9_-]/g,"_"); }
+  function isDevName(nome){ return lower(nome) === lower(DEV_USER); }
+  function isAdminProfile(perfil){ return ["administrador","desenvolvedor","admin","dev"].includes(lower(perfil)); }
+
+  async function api(path, options={}){
+    const res = await fetch(API + path, {
+      ...options,
+      headers: { "Content-Type":"application/json", ...(options.headers || {}) }
+    });
+    let data = null;
+    try { data = await res.json(); } catch(e) {}
+    if(!res.ok){ throw new Error(data?.erro || data?.message || `Erro HTTP ${res.status}`); }
+    return data;
+  }
+
+  function readJSON(key, fallback){
+    try { return JSON.parse(localStorage.getItem(key) || JSON.stringify(fallback)); }
+    catch(e){ return fallback; }
+  }
+  function writeJSON(key, value){ localStorage.setItem(key, JSON.stringify(value)); }
+
+  function setMsg(texto, ok=false){
+    const erro = document.getElementById("loginErro");
+    if(erro) erro.textContent = texto || "";
+    const auth = document.getElementById("authMessage");
+    if(auth){
+      auth.className = texto ? "auth-message show " + (ok ? "auth-success" : "auth-error") : "auth-message";
+      auth.textContent = texto || "";
+    }
+  }
+
+  function getCurrentUserObj(){ return readJSON(CURRENT_KEY, null); }
+  function getCurrentName(){
+    const obj = getCurrentUserObj();
+    if(obj?.login || obj?.nome) return obj.login || obj.nome;
+    for(const k of LOGIN_KEYS){ const v = localStorage.getItem(k); if(v) return v; }
+    return "";
+  }
+  function currentIsDev(){ return isDevName(getCurrentName()); }
+  function currentIsAdmin(){
+    const u = getCurrentUserObj();
+    return currentIsDev() || isAdminProfile(u?.perfil);
+  }
+
+  function salvarCompatibilidadeLocal(usuario){
+    const nome = usuario?.login || usuario?.nome || DEV_USER;
+    LOGIN_KEYS.forEach(k => localStorage.setItem(k, nome));
+    localStorage.setItem(CURRENT_KEY, JSON.stringify(usuario));
+
+    // Mantém compatibilidade com scripts antigos que ainda verificam PROFILE_KEY.
+    const profiles = readJSON(PROFILE_KEY, {});
+    profiles[nome] = Object.assign({}, profiles[nome] || {}, {
+      nome,
+      email: usuario?.email || profiles[nome]?.email || "",
+      perfil: isDevName(nome) ? "Desenvolvedor" : (usuario?.perfil || "Atendente"),
+      bloqueado: usuario?.ativo === false,
+      protegido: isDevName(nome),
+      ultimoLogin: usuario?.ultimoLogin || new Date().toISOString()
+    });
+    writeJSON(PROFILE_KEY, profiles);
+  }
+
+  function aplicarUsuarioBanco(usuario){
+    const nome = usuario?.login || usuario?.nome || DEV_USER;
+    const normalizado = {
+      id: usuario?.id || null,
+      nome: usuario?.nome || nome,
+      login: usuario?.login || nome,
+      email: usuario?.email || "",
+      perfil: isDevName(nome) ? "Administrador" : (usuario?.perfil || "Atendente"),
+      ativo: usuario?.ativo !== false,
+      ultimoLogin: usuario?.ultimoLogin || new Date().toISOString()
+    };
+
+    salvarCompatibilidadeLocal(normalizado);
+    const overlay = document.getElementById("loginOverlay");
+    if(overlay) overlay.style.display = "none";
+    document.body.classList.toggle("admin", isDevName(nome) || isAdminProfile(normalizado.perfil));
+    document.body.classList.remove("tcf-register-mode","tcf-cadastro-mode","invite-mode");
+
+    if(typeof window.aplicarUsuarioLogado === "function"){
+      try { window.aplicarUsuarioLogado(nome); } catch(e) {}
+    }
+    preencherPerfilAtual(normalizado);
+    aplicarControleMenuBanco();
+    setTimeout(() => { window.renderUsuariosAdmin?.(); }, 250);
+  }
+
+  function preencherPerfilAtual(usuario){
+    const set = (id,v)=>{ const el=document.getElementById(id); if(el && v !== undefined) el.value = v || ""; };
+    set("perfilNome", usuario?.login || usuario?.nome || "");
+    set("perfilEmail", usuario?.email || "");
+    const av = document.getElementById("perfilAvatarPreview");
+    if(av) av.textContent = initials(usuario?.login || usuario?.nome || "U");
+  }
+
+  async function ensureDevBanco(){
+    try{
+      await api("/usuarios", { method:"POST", body: JSON.stringify({
+        nome: DEV_USER,
+        login: DEV_USER,
+        email: "victor@tcftelecom.local",
+        senha: DEV_PASS,
+        perfil: "Administrador"
+      })});
+    }catch(e){
+      // 409 significa que já existe. Outros erros não devem travar o sistema.
+    }
+  }
+
+  function modoCadastroAtivo(){
+    return document.body.classList.contains("tcf-register-mode") ||
+           document.body.classList.contains("tcf-cadastro-mode") ||
+           document.body.classList.contains("invite-mode") ||
+           String(window.modoLoginAtual || "login") === "cadastro";
+  }
+
+  window.mudarModoLogin = function(modo){
+    const ativo = modo === "cadastro";
+    window.modoLoginAtual = ativo ? "cadastro" : "login";
+    document.body.classList.toggle("tcf-register-mode", ativo);
+    document.body.classList.toggle("tcf-cadastro-mode", ativo);
+    document.body.classList.toggle("invite-mode", ativo);
+    const bLogin = document.getElementById("btnModoLogin") || document.getElementById("tcfTabEntrar");
+    const bCad = document.getElementById("btnModoCadastro") || document.getElementById("tcfTabCadastrar");
+    if(bLogin) bLogin.classList.toggle("active", !ativo);
+    if(bCad) bCad.classList.toggle("active", ativo);
+    const titulo = document.querySelector(".login-card-top strong");
+    if(titulo) titulo.textContent = ativo ? "Cadastrar usuário" : "Entrar no Sistema";
+    const btn = document.querySelector(".login-main-btn");
+    if(btn) btn.textContent = ativo ? "Cadastrar e acessar" : "Acessar sistema";
+    ["loginEmailLabel","loginEmail","confirmSenhaLabel","loginSenhaConfirmar"].forEach(id=>{
+      const el = document.getElementById(id);
+      if(el) el.style.display = ativo ? "block" : "none";
+    });
+    setMsg("");
+  };
+
+  window.entrarSistema = async function(){
+    const login = norm(document.getElementById("loginUsuario")?.value);
+    const senha = norm(document.getElementById("loginSenha")?.value);
+    const email = norm(document.getElementById("loginEmail")?.value);
+    const confirmar = norm(document.getElementById("loginSenhaConfirmar")?.value);
+
+    if(!login || !senha){ setMsg("Preencha usuário e senha."); return; }
+
+    try{
+      if(modoCadastroAtivo()){
+        if(!email || !email.includes("@")){ setMsg("Digite um e-mail válido."); return; }
+        if(senha.length < 4){ setMsg("A senha precisa ter pelo menos 4 caracteres."); return; }
+        if(senha !== confirmar){ setMsg("As senhas não conferem."); return; }
+
+        const criado = await api("/usuarios", { method:"POST", body: JSON.stringify({
+          nome: login,
+          login,
+          email,
+          senha,
+          perfil: "Atendente"
+        })});
+        setMsg("Cadastro salvo no banco. Entrando...", true);
+        aplicarUsuarioBanco(criado);
+        return;
+      }
+
+      if(isDevName(login)) await ensureDevBanco();
+      const data = await api("/login", { method:"POST", body: JSON.stringify({ login, senha }) });
+      const usuario = data?.usuario || data;
+      setMsg("Login autorizado.", true);
+      aplicarUsuarioBanco(usuario);
+    }catch(e){
+      // Fallback seguro para a conta DEV, caso Railway/Supabase esteja fora temporariamente.
+      if(isDevName(login) && senha === DEV_PASS){
+        aplicarUsuarioBanco({ nome:DEV_USER, login:DEV_USER, email:"victor@tcftelecom.local", perfil:"Administrador", ativo:true });
+        return;
+      }
+      setMsg(e.message || "Usuário ou senha incorretos.");
+    }
+  };
+
+  window.usuarioLogado = function(){ return getCurrentName(); };
+
+  window.sairSistemaFinal = function(){
+    LOGIN_KEYS.forEach(k => localStorage.removeItem(k));
+    localStorage.removeItem(CURRENT_KEY);
+    document.body.classList.remove("admin");
+    window.mudarModoLogin("login");
+    const overlay = document.getElementById("loginOverlay");
+    if(overlay) overlay.style.display = "flex";
+    setMsg("");
+  };
+  window.voltarLoginTCF = window.sairSistemaFinal;
+
+  function aplicarControleMenuBanco(){
+    const admin = currentIsAdmin();
+    document.body.classList.toggle("admin", admin);
+    document.querySelectorAll(".nav button").forEach(btn=>{
+      const onclick = btn.getAttribute("onclick") || "";
+      const m = onclick.match(/abrirTela\('([^']+)'/);
+      const tela = m ? m[1] : "";
+      if(!tela) return;
+      if(admin){ btn.style.display = ""; return; }
+      btn.style.display = TELAS_OPERADOR.includes(tela) ? "" : "none";
+    });
+  }
+  window.aplicarControleMenuV59 = aplicarControleMenuBanco;
+
+  const abrirTelaBase = window.abrirTela;
+  window.abrirTela = function(id, botao){
+    aplicarControleMenuBanco();
+    if((id === "usuarios" || id === "configuracoes" || id === "indicadores") && !currentIsAdmin()){
+      alert("Acesso restrito. Apenas administradores autorizados podem acessar esta aba.");
+      return;
+    }
+    if(typeof abrirTelaBase === "function") abrirTelaBase(id, botao);
+    if(id === "usuarios") setTimeout(()=>window.renderUsuariosAdmin?.(), 120);
+    setTimeout(aplicarControleMenuBanco, 80);
+  };
+
+  async function listarUsuariosBanco(){
+    if(currentIsDev()) await ensureDevBanco();
+    const lista = await api("/usuarios");
+    return (Array.isArray(lista) ? lista : []).sort((a,b)=>{
+      const an = a.login || a.nome || "";
+      const bn = b.login || b.nome || "";
+      if(isDevName(an)) return -1;
+      if(isDevName(bn)) return 1;
+      return an.localeCompare(bn,"pt-BR");
+    });
+  }
+
+  window.renderUsuariosAdmin = async function(){
+    const containers = [document.getElementById("usuariosAdminListaPage"), document.getElementById("usuariosAdminLista")].filter(Boolean);
+    if(!containers.length) return;
+    if(!currentIsAdmin()){
+      containers.forEach(el => el.innerHTML = '<div class="empty">Acesso restrito aos administradores.</div>');
+      return;
+    }
+    try{
+      const lista = await listarUsuariosBanco();
+      const admins = lista.filter(u => isAdminProfile(u.perfil) || isDevName(u.login || u.nome)).length;
+      const set = (id,v)=>{ const el=document.getElementById(id); if(el) el.textContent = v; };
+      set("kpiUsuariosTotal", lista.length);
+      set("kpiUsuariosAdmin", admins);
+      set("kpiUsuariosOperador", Math.max(lista.length - admins, 0));
+      set("kpiUsuariosLogins", lista.filter(u => !!u.ultimoLogin).length);
+
+      const html = lista.map(u=>{
+        const nome = u.login || u.nome || "Usuário";
+        const dev = isDevName(nome);
+        const protegido = dev && !currentIsDev();
+        const ativo = u.ativo !== false;
+        const sid = idSafe(u.id || nome);
+        const ultimo = u.ultimoLogin ? new Date(u.ultimoLogin).toLocaleString("pt-BR") : "sem login registrado";
+        return `<div class="tcf-admin-user-card user-card-pro ${dev ? 'tcf-protected-user' : ''}" data-user-id="${esc(u.id)}">
+          <div class="user-avatar-mini">${esc(initials(nome))}</div>
+          <div class="user-meta">
+            <strong>${esc(nome)}${dev ? ' <span class="tcf-dev-lock">DEV protegido</span>' : ''}</strong>
+            <span>${esc(u.email || 'sem e-mail')} • ${esc(dev ? 'Administrador' : (u.perfil || 'Atendente'))} • ID ${esc(u.id || '-')}</span>
+            <span>Último acesso: ${esc(ultimo)} • ${ativo ? 'Ativo' : 'Bloqueado'}</span>
+          </div>
+          <select id="perfil_${sid}" ${protegido ? 'disabled' : ''}>${PERFIS.map(p=>`<option value="${p}" ${p===(u.perfil||'Atendente')?'selected':''}>${p}</option>`).join('')}</select>
+          <select id="status_${sid}" ${protegido ? 'disabled' : ''}>
+            <option value="true" ${ativo?'selected':''}>Ativo</option>
+            <option value="false" ${!ativo?'selected':''}>Bloqueado</option>
+          </select>
+          <div class="row-actions">
+            <button class="primary small-btn" onclick="salvarPerfilAdminTCF('${esc(u.id)}')" ${protegido ? 'disabled' : ''}>Salvar</button>
+            <button class="warning small-btn" onclick="redefinirSenhaUsuarioTCF('${esc(u.id)}')" ${protegido ? 'disabled' : ''}>Senha</button>
+            <button class="secondary small-btn" onclick="copiarLinkLoginUsuarioTCF('${esc(nome)}')">Link</button>
+            <button class="danger small-btn" onclick="removerUsuarioTCF('${esc(u.id)}')" ${dev ? 'disabled' : ''}>Remover</button>
+          </div>
+        </div>`;
+      }).join("") || '<div class="empty">Nenhum usuário cadastrado no banco.</div>';
+      containers.forEach(el => el.innerHTML = html);
+    }catch(e){
+      containers.forEach(el => el.innerHTML = `<div class="empty">Erro ao carregar usuários do banco: ${esc(e.message)}</div>`);
+    }
+  };
+
+  window.salvarPerfilAdminTCF = async function(id){
+    try{
+      const lista = await listarUsuariosBanco();
+      const u = lista.find(x => String(x.id) === String(id));
+      if(!u) return alert("Usuário não encontrado.");
+      const nome = u.login || u.nome;
+      if(isDevName(nome) && !currentIsDev()) return alert("O DEV protegido não pode ser alterado.");
+      const sid = idSafe(u.id || nome);
+      const perfil = document.getElementById("perfil_"+sid)?.value || u.perfil || "Atendente";
+      if(perfil === "Administrador" && !currentIsDev()) return alert("Somente o DEV pode promover outro usuário para Administrador.");
+      const ativo = (document.getElementById("status_"+sid)?.value || "true") === "true";
+      await api(`/usuarios/${u.id}`, { method:"PUT", body: JSON.stringify({ perfil, ativo }) });
+      alert("Usuário atualizado no banco.");
+      window.renderUsuariosAdmin();
+    }catch(e){ alert("Erro ao salvar usuário: " + e.message); }
+  };
+
+  window.redefinirSenhaUsuarioTCF = async function(id){
+    try{
+      const lista = await listarUsuariosBanco();
+      const u = lista.find(x => String(x.id) === String(id));
+      if(!u) return alert("Usuário não encontrado.");
+      const nome = u.login || u.nome;
+      if(isDevName(nome) && !currentIsDev()) return alert("A senha do DEV protegido não pode ser redefinida.");
+      const senha = prompt(`Digite a nova senha para ${nome}:`);
+      if(!senha) return;
+      if(senha.length < 4) return alert("A senha precisa ter pelo menos 4 caracteres.");
+      await api(`/usuarios/${u.id}`, { method:"PUT", body: JSON.stringify({ senha }) });
+      alert("Senha redefinida no banco.");
+    }catch(e){ alert("Erro ao redefinir senha: " + e.message); }
+  };
+
+  window.removerUsuarioTCF = async function(id){
+    try{
+      const lista = await listarUsuariosBanco();
+      const u = lista.find(x => String(x.id) === String(id));
+      if(!u) return alert("Usuário não encontrado.");
+      const nome = u.login || u.nome;
+      if(isDevName(nome)) return alert("O DEV protegido não pode ser removido.");
+      if(!confirm(`Remover usuário ${nome} do banco?`)) return;
+      await api(`/usuarios/${u.id}`, { method:"DELETE" });
+      alert("Usuário removido do banco.");
+      window.renderUsuariosAdmin();
+    }catch(e){ alert("Erro ao remover usuário: " + e.message); }
+  };
+
+  window.copiarLinkLoginUsuarioTCF = function(nome){
+    const base = (window.SITE_PUBLIC_URL && String(window.SITE_PUBLIC_URL).startsWith("http"))
+      ? window.SITE_PUBLIC_URL
+      : "https://tcftelecom-atendimentos-48fp.vercel.app";
+    const url = base.replace(/\/$/,"") + "?convite=" + encodeURIComponent(nome);
+    navigator.clipboard?.writeText(url);
+    alert("Link copiado: " + url);
+  };
+
+  window.gerarConvite = function(){
+    const nome = norm(document.getElementById("conviteNome")?.value);
+    const perfil = norm(document.getElementById("convitePerfil")?.value) || "Atendente";
+    if(!nome) return alert("Digite o nome do atendente.");
+    const base = (window.SITE_PUBLIC_URL && String(window.SITE_PUBLIC_URL).startsWith("http"))
+      ? window.SITE_PUBLIC_URL
+      : "https://tcftelecom-atendimentos-48fp.vercel.app";
+    const url = base.replace(/\/$/,"") + "?convite=" + encodeURIComponent(nome) + "&perfil=" + encodeURIComponent(perfil);
+    const out = document.getElementById("linkConvite");
+    if(out) out.textContent = url;
+  };
+
+  window.copiarConvite = function(){
+    const texto = document.getElementById("linkConvite")?.textContent || "";
+    if(!texto || texto.includes("Nenhum")) return alert("Gere um link primeiro.");
+    navigator.clipboard?.writeText(texto);
+    alert("Link copiado.");
+  };
+
+  window.salvarPerfilUsuario = async function(){
+    const atual = getCurrentUserObj();
+    if(!atual?.id) return alert("Usuário atual ainda não está vinculado ao banco. Faça login novamente.");
+    const nome = norm(document.getElementById("perfilNome")?.value) || atual.login || atual.nome;
+    const email = norm(document.getElementById("perfilEmail")?.value) || atual.email;
+    const senha = norm(document.getElementById("perfilSenha")?.value);
+    try{
+      const payload = { nome, login:nome, email };
+      if(senha) payload.senha = senha;
+      const atualizado = await api(`/usuarios/${atual.id}`, { method:"PUT", body: JSON.stringify(payload) });
+      aplicarUsuarioBanco(atualizado);
+      const msg = document.getElementById("perfilMensagem");
+      if(msg){ msg.textContent = "Perfil salvo no banco."; msg.style.display="block"; setTimeout(()=>msg.style.display="none",2500); }
+    }catch(e){ alert("Erro ao salvar perfil: " + e.message); }
+  };
+
+  window.cadastrarNovoUsuarioTCF = async function(){ await criarUsuarioAdmin("novoUsuarioNome","novoUsuarioEmail","novoUsuarioSenha","novoUsuarioPerfil","novoUsuarioMsg"); };
+  window.criarUsuarioDiretoTCF = async function(){ await criarUsuarioAdmin("tcfNovoUsuarioNome","tcfNovoUsuarioEmail","tcfNovoUsuarioSenha","tcfNovoUsuarioPerfil","tcfNovoUsuarioMsg"); };
+  window.criarUsuarioDashboardTCF = async function(){ await criarUsuarioAdmin("dashUsuarioNome","dashUsuarioEmail","dashUsuarioSenha","dashUsuarioPerfil","dashUsuarioMsg"); };
+
+  async function criarUsuarioAdmin(nomeId,emailId,senhaId,perfilId,msgId){
+    const nome = norm(document.getElementById(nomeId)?.value);
+    const email = norm(document.getElementById(emailId)?.value);
+    const senha = norm(document.getElementById(senhaId)?.value) || "123456";
+    const perfil = norm(document.getElementById(perfilId)?.value) || "Atendente";
+    const msgEl = document.getElementById(msgId);
+    try{
+      if(!nome) throw new Error("Digite o nome/login do usuário.");
+      if(!email || !email.includes("@")) throw new Error("Digite um e-mail válido.");
+      const criado = await api("/usuarios", { method:"POST", body: JSON.stringify({ nome, login:nome, email, senha, perfil }) });
+      if(msgEl) msgEl.textContent = "Usuário criado no banco.";
+      alert(`Usuário ${criado.login || criado.nome} criado no banco.`);
+      window.renderUsuariosAdmin();
+    }catch(e){ if(msgEl) msgEl.textContent = e.message; else alert(e.message); }
+  }
+
+  // Intercepta cliques antigos no botão principal para garantir que use esta versão.
+  document.addEventListener("click", function(e){
+    const btn = e.target.closest("button");
+    if(!btn) return;
+    if(btn.classList.contains("login-main-btn")){
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      window.entrarSistema();
+    }
+  }, true);
+
+  document.addEventListener("keydown", function(e){
+    if(e.key === "Enter" && document.getElementById("loginOverlay")?.style.display !== "none"){
+      const ids = ["loginUsuario","loginSenha","loginEmail","loginSenhaConfirmar"];
+      if(ids.includes(document.activeElement?.id)){
+        e.preventDefault();
+        window.entrarSistema();
+      }
+    }
+  }, true);
+
+  window.addEventListener("load", async function(){
+    const btnLogin = document.getElementById("btnModoLogin");
+    const btnCad = document.getElementById("btnModoCadastro");
+    if(btnLogin) btnLogin.onclick = () => window.mudarModoLogin("login");
+    if(btnCad) btnCad.onclick = () => window.mudarModoLogin("cadastro");
+    const main = document.querySelector(".login-main-btn");
+    if(main) main.onclick = (e)=>{ e?.preventDefault?.(); window.entrarSistema(); return false; };
+
+    const params = new URLSearchParams(window.location.search);
+    const convite = params.get("convite");
+    if(convite && !getCurrentName()){
+      document.getElementById("loginUsuario").value = convite;
+      window.mudarModoLogin("cadastro");
+    }
+
+    const atual = getCurrentUserObj();
+    if(atual?.login || atual?.nome){
+      aplicarUsuarioBanco(atual);
+    }else{
+      aplicarControleMenuBanco();
+      window.mudarModoLogin("login");
+    }
+
+    setTimeout(()=>window.renderUsuariosAdmin?.(), 500);
+  });
+})();
+</script>
+
 </body></html>`;
     const w = window.open("", "_blank");
     if(!w){ alert("O navegador bloqueou a janela do PDF. Libere pop-ups para este site."); return; }
