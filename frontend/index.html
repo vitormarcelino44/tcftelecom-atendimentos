@@ -9072,8 +9072,17 @@ body:not(.light-mode):not(.light) .tcf-v58-mini-card{background:rgba(15,23,42,.5
     const rows = lista.map(i => `<tr>${linhaExportacao(i).map(v => `<td>${String(v ?? "").replace(/[&<>]/g, s => ({"&":"&amp;","<":"&lt;",">":"&gt;"}[s]))}</td>`).join("")}</tr>`).join("");
     const html = `<!doctype html><html><head><meta charset="utf-8"><title>TCFTELECOM - Relatório PDF</title><style>
       body{font-family:Arial,sans-serif;margin:24px;color:#0f172a} h1{margin:0 0 4px;font-size:22px} .meta{color:#475569;margin-bottom:18px;font-size:12px} table{width:100%;border-collapse:collapse;font-size:10px} th{background:#0f2f4d;color:white;padding:8px;border:1px solid #173a59;text-align:left} td{padding:7px;border:1px solid #dbe3ef;vertical-align:top} tr:nth-child(even)td{background:#f8fafc}@media print{body{margin:12mm} button{display:none}}
-    </style></head><body><button onclick="window.print()" style="margin-bottom:12px;padding:10px 14px;border:0;border-radius:8px;background:#0284c7;color:#fff;font-weight:bold">Imprimir / salvar PDF</button><h1>TCFTELECOM — Relatório de Atendimentos</h1><div class="meta">Filtro: ${tecnico} • Registros: ${lista.length} • Gerado em ${new Date().toLocaleString("pt-BR")}</div><table><thead><tr>${cabecalhoExportacao().map(h=>`<th>${h}</th>`).join("")}</tr></thead><tbody>${rows}</tbody></table><script>setTimeout(()=>window.print(),400)<\/script>
+    </style></head><body><button onclick="window.print()" style="margin-bottom:12px;padding:10px 14px;border:0;border-radius:8px;background:#0284c7;color:#fff;font-weight:bold">Imprimir / salvar PDF</button><h1>TCFTELECOM — Relatório de Atendimentos</h1><div class="meta">Filtro: ${tecnico} • Registros: ${lista.length} • Gerado em ${new Date().toLocaleString("pt-BR")}</div><table><thead><tr>${cabecalhoExportacao().map(h=>`<th>${h}</th>`).join("")}</tr></thead><tbody>${rows}</tbody></table><script>setTimeout(()=>window.print(),400)<\/script></body></html>`;
+    const w = window.open("", "_blank");
+    if(!w){ alert("Permita pop-ups para gerar o PDF."); return; }
+    w.document.open();
+    w.document.write(html);
+    w.document.close();
+  };
 
+  setLinkPublicoPadrao();
+})();
+</script>
 <!-- PATCH TCF v0.67 - Usuários no Supabase/PostgreSQL -->
 <script id="v067-usuarios-supabase">
 (function(){
@@ -9256,43 +9265,67 @@ body:not(.light-mode):not(.light) .tcf-v58-mini-card{background:rgba(15,23,42,.5
   }
 
   window.renderUsuariosAdmin = async function(){
-    const alvos = [document.getElementById("usuariosAdminListaPage"), document.getElementById("usuariosAdminLista")].filter(Boolean);
-    try{
-      const lista = await usuariosBanco();
-      const admins = lista.filter(u => isAdminProfile(u.perfil)).length;
-      const ops = lista.length - admins;
-      const hist = lista.filter(u => !!u.ultimoLogin).length;
-      const set=(id,v)=>{ const el=document.getElementById(id); if(el) el.textContent=v; };
-      set("kpiUsuariosTotal", lista.length); set("kpiUsuariosAdmin", admins); set("kpiUsuariosOperador", ops); set("kpiUsuariosLogins", hist);
-      const html = lista.map(u => {
-        const nome = u.login || u.nome || "Usuário";
-        const id = idSafe(u.id || nome);
-        const dev = isDev(nome);
-        const travado = dev && !isDev(currentUser());
-        const status = u.ativo !== false;
-        const ultimo = u.ultimoLogin ? new Date(u.ultimoLogin).toLocaleString("pt-BR") : "sem login registrado";
-        return `<div class="tcf-admin-user-card user-card-pro" data-user-id="${esc(u.id)}">
-          <div class="tcf-admin-user-avatar user-avatar-mini">${esc(initials(nome))}</div>
-          <div class="tcf-admin-user-info user-meta">
-            <strong>${esc(nome)} ${dev ? "• DEV" : ""}</strong>
-            <span>${esc(u.email || "sem e-mail")} • ${esc(u.perfil)} • ID ${esc(u.id)}</span>
-            <span>Último acesso: ${esc(ultimo)} • ${status ? "Ativo" : "Bloqueado"}</span>
-          </div>
-          <select id="perfil_${id}" ${travado ? "disabled" : ""}>${PERFIS.map(p=>`<option value="${p}" ${p===u.perfil?"selected":""}>${p}</option>`).join("")}</select>
-          <select id="status_${id}" ${travado ? "disabled" : ""}><option value="true" ${status?"selected":""}>Ativo</option><option value="false" ${!status?"selected":""}>Bloqueado</option></select>
-          <div class="tcf-admin-user-actions row-actions">
-            <button class="primary small-btn" onclick="salvarPerfilAdminTCF('${esc(u.id)}')" ${travado ? "disabled" : ""}>Salvar</button>
-            <button class="warning small-btn" onclick="redefinirSenhaUsuarioTCF('${esc(u.id)}')" ${travado ? "disabled" : ""}>Senha</button>
-            <button class="secondary small-btn" onclick="copiarLinkLoginUsuarioTCF('${esc(nome)}')">Link</button>
-            <button class="danger small-btn" onclick="removerUsuarioTCF('${esc(u.id)}')" ${dev ? "disabled" : ""}>Remover</button>
-          </div>
-        </div>`;
-      }).join("") || `<div class="empty">Nenhum usuário cadastrado no banco.</div>`;
-      alvos.forEach(el => el.innerHTML = html);
-    }catch(e){
-      alvos.forEach(el => el.innerHTML = `<div class="empty">Erro ao carregar usuários do banco: ${esc(e.message)}</div>`);
-    }
-  };
+  const alvos = [
+    document.getElementById("usuariosAdminListaPage"),
+    document.getElementById("usuariosAdminLista")
+  ].filter(Boolean);
+
+  try {
+    const lista = await usuariosBanco();
+
+    const admins = lista.filter(u => isAdminProfile(u.perfil)).length;
+    const ops = lista.length - admins;
+    const hist = lista.filter(u => u.ultimoLogin && !isNaN(new Date(u.ultimoLogin).getTime())).length;
+
+    const set = (id, v) => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = v;
+    };
+
+    set("kpiUsuariosTotal", lista.length);
+    set("kpiUsuariosAdmin", admins);
+    set("kpiUsuariosOperador", ops);
+    set("kpiUsuariosLogins", hist);
+
+    const html = lista.map(u => {
+      const nome = u.login || u.nome || "Usuário";
+      const id = idSafe(u.id || u.login || u.email || nome);
+      const dev = isDev(nome);
+      const travado = dev && !isDev(currentUser());
+      const status = u.ativo !== false;
+      const ultimo = u.ultimoLogin && !isNaN(new Date(u.ultimoLogin).getTime())
+        ? new Date(u.ultimoLogin).toLocaleString("pt-BR")
+        : "sem login registrado";
+
+      return `<div class="tcf-admin-user-card user-card-pro" data-user-id="${esc(u.id)}">
+        <div class="tcf-admin-user-avatar user-avatar-mini">${esc(initials(nome))}</div>
+        <div class="tcf-admin-user-info user-meta">
+          <strong>${esc(nome)} ${dev ? "• DEV" : ""}</strong>
+          <span>${esc(u.email || "sem e-mail")} • ${esc(u.perfil)} • ID ${esc(u.id)}</span>
+          <span>Último acesso: ${esc(ultimo)} • ${status ? "Ativo" : "Bloqueado"}</span>
+        </div>
+        <select id="perfil_${id}" ${travado ? "disabled" : ""}>
+          ${PERFIS.map(p => `<option value="${p}" ${p === u.perfil ? "selected" : ""}>${p}</option>`).join("")}
+        </select>
+        <select id="status_${id}" ${travado ? "disabled" : ""}>
+          <option value="true" ${status ? "selected" : ""}>Ativo</option>
+          <option value="false" ${!status ? "selected" : ""}>Bloqueado</option>
+        </select>
+        <div class="tcf-admin-user-actions row-actions">
+          <button class="primary small-btn" onclick="salvarPerfilAdminTCF('${esc(u.id)}')" ${travado ? "disabled" : ""}>Salvar</button>
+          <button class="warning small-btn" onclick="redefinirSenhaUsuarioTCF('${esc(u.id)}')" ${travado ? "disabled" : ""}>Senha</button>
+          <button class="secondary small-btn" onclick="copiarLinkLoginUsuarioTCF('${esc(nome)}')">Link</button>
+          <button class="danger small-btn" onclick="removerUsuarioTCF('${esc(u.id)}')" ${dev ? "disabled" : ""}>Remover</button>
+        </div>
+      </div>`;
+    }).join("") || `<div class="empty">Nenhum usuário cadastrado no banco.</div>`;
+
+    alvos.forEach(el => el.innerHTML = html);
+
+  } catch (e) {
+    alvos.forEach(el => el.innerHTML = `<div class="empty">Erro ao carregar usuários do banco: ${esc(e.message)}</div>`);
+  }
+};
 
   window.salvarPerfilAdminTCF = async function(id){
     try{
@@ -9399,6 +9432,450 @@ body:not(.light-mode):not(.light) .tcf-v58-mini-card{background:rgba(15,23,42,.5
       document.body.classList.toggle("admin", isDev(atual));
       setTimeout(()=>renderUsuariosAdmin(), 500);
     }
+  });
+})();
+</script>
+
+
+<!-- PATCH TCF v070 - Gestão de Usuários Completa Supabase -->
+<style id="v070-usuarios-completa-css">
+.users-kpi-grid .card .trend,
+#usuarios .panel-desc,
+#configuracoes .panel-desc { opacity:.9; }
+
+.tcf-v070-user-card{
+  display:grid;
+  grid-template-columns:52px minmax(220px,1fr) 160px 140px auto;
+  gap:14px;
+  align-items:center;
+  padding:16px;
+  border-radius:20px;
+  background:rgba(100,116,139,.12);
+  border:1px solid var(--panel-border);
+  margin-bottom:12px;
+}
+.tcf-v070-user-card.dev{
+  border-color:rgba(56,189,248,.42);
+  box-shadow:0 0 0 1px rgba(56,189,248,.10) inset;
+}
+.tcf-v070-avatar{
+  width:52px;
+  height:52px;
+  border-radius:16px;
+  display:grid;
+  place-items:center;
+  font-weight:950;
+  color:#fff;
+  background:linear-gradient(135deg,#0284c7,#7c3aed);
+}
+.tcf-v070-meta strong{
+  display:block;
+  font-size:15px;
+}
+.tcf-v070-meta span{
+  display:block;
+  color:var(--muted);
+  font-size:12px;
+  margin-top:4px;
+  line-height:1.35;
+}
+.tcf-v070-badge{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  width:max-content;
+  padding:6px 10px;
+  border-radius:999px;
+  font-size:11px;
+  font-weight:900;
+  background:rgba(34,197,94,.12);
+  color:#22c55e;
+  border:1px solid rgba(34,197,94,.24);
+}
+.tcf-v070-badge.off{
+  background:rgba(239,68,68,.10);
+  color:#ef4444;
+  border-color:rgba(239,68,68,.24);
+}
+.tcf-v070-actions{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+  justify-content:flex-end;
+}
+.tcf-v070-actions button{
+  padding:9px 11px!important;
+  font-size:12px!important;
+}
+.tcf-v070-links{
+  display:grid;
+  gap:12px;
+  margin-top:16px;
+}
+.tcf-v070-link-card{
+  padding:15px;
+  border-radius:18px;
+  background:rgba(100,116,139,.12);
+  border:1px solid var(--panel-border);
+}
+.tcf-v070-link-card strong{display:block;margin-bottom:6px;}
+.tcf-v070-link-card code{
+  display:block;
+  white-space:normal;
+  word-break:break-all;
+  padding:10px;
+  border-radius:12px;
+  margin:10px 0;
+  background:rgba(15,23,42,.18);
+  color:inherit;
+}
+body.light .tcf-v070-link-card code,
+body.light-mode .tcf-v070-link-card code{background:#f1f5f9;}
+@media(max-width:1050px){
+  .tcf-v070-user-card{grid-template-columns:52px 1fr;}
+  .tcf-v070-user-card select,
+  .tcf-v070-actions{grid-column:1 / -1;}
+  .tcf-v070-actions{justify-content:flex-start;}
+}
+</style>
+
+<script id="v070-usuarios-completa-js">
+(function(){
+  const API = "https://tcftelecom-atendimentos-production.up.railway.app";
+  const SITE_PADRAO = "https://tcftelecom-atendimentos.vercel.app";
+  const DEV_LOGIN = "Victor";
+
+  function esc(v){
+    return String(v ?? "").replace(/[&<>"']/g, s => ({
+      "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+    }[s]));
+  }
+
+  function norm(v){ return String(v ?? "").trim(); }
+
+  function normPerfil(perfil, usuario){
+    const p = norm(perfil || usuario?.perfil || "");
+    const base = p || (ehDev(usuario?.login || usuario?.nome) ? "Administrador" : "Atendente");
+    const low = base.toLowerCase();
+    if(low.includes("admin")) return "Administrador";
+    if(low.includes("supervisor")) return "Supervisor";
+    if(low.includes("suporte")) return "Suporte";
+    if(low.includes("técnico") || low.includes("tecnico")) return "Técnico";
+    return "Atendente";
+  }
+
+  function ehAdmin(perfil){ return normPerfil(perfil).toLowerCase().includes("administrador"); }
+
+  function ehDev(nome){
+    const n = norm(nome).toLowerCase();
+    return n === "victor" || n === "administrador" || n.includes("victor");
+  }
+
+  function usuarioAtual(){
+    const chaves = ["usuario_banco_v067","sistema_login_v29","sistema_login_v21","sistema_login_v14","sistema_login_v28","token"];
+    for(const k of chaves){
+      const v = localStorage.getItem(k);
+      if(!v) continue;
+      try{
+        const obj = JSON.parse(v);
+        if(obj?.login || obj?.nome) return obj.login || obj.nome;
+      }catch(e){}
+      if(v && !v.startsWith("{")) return v;
+    }
+    return "";
+  }
+
+  function idSafe(v){ return String(v ?? "").replace(/[^a-zA-Z0-9_-]/g, "_"); }
+
+  function iniciais(nome){
+    const partes = norm(nome).split(/\s+/).filter(Boolean);
+    return (partes[0]?.[0] || "U").toUpperCase() + (partes[1]?.[0] || "").toUpperCase();
+  }
+
+  async function apiUsuarios(path="", options={}){
+    const res = await fetch(API + "/usuarios" + path, {
+      ...options,
+      headers: { "Content-Type":"application/json", ...(options.headers || {}) }
+    });
+    let data = null;
+    try{ data = await res.json(); }catch(e){ data = null; }
+    if(!res.ok){
+      throw new Error((data && (data.erro || data.message)) || "Erro HTTP " + res.status);
+    }
+    return data;
+  }
+
+  function listaFromResposta(data){
+    if(Array.isArray(data)) return data;
+    if(Array.isArray(data?.usuarios)) return data.usuarios;
+    if(Array.isArray(data?.dados)) return data.dados;
+    if(Array.isArray(data?.data)) return data.data;
+    return [];
+  }
+
+  async function buscarUsuariosBancoV070(){
+    const data = await apiUsuarios("");
+    const lista = listaFromResposta(data).map(u => ({
+      ...u,
+      nome: norm(u.nome || u.login || "Usuário"),
+      login: norm(u.login || u.nome || "usuario"),
+      email: norm(u.email || ""),
+      perfil: normPerfil(u.perfil, u),
+      ativo: u.ativo !== false
+    }));
+
+    const vistos = new Set();
+    return lista
+      .filter(u => {
+        const chave = String(u.id || u.login || u.email);
+        if(vistos.has(chave)) return false;
+        vistos.add(chave);
+        return true;
+      })
+      .sort((a,b)=>{
+        if(ehDev(a.login || a.nome)) return -1;
+        if(ehDev(b.login || b.nome)) return 1;
+        return String(a.nome || a.login).localeCompare(String(b.nome || b.login), "pt-BR");
+      });
+  }
+
+  function formatarUltimoLogin(v){
+    if(!v) return "Sem login registrado";
+    const d = new Date(v);
+    if(Number.isNaN(d.getTime())) return String(v);
+    return d.toLocaleString("pt-BR", {
+      day:"2-digit", month:"2-digit", year:"numeric",
+      hour:"2-digit", minute:"2-digit"
+    });
+  }
+
+  function setTxt(id, valor){
+    const el = document.getElementById(id);
+    if(el) el.textContent = valor;
+  }
+
+  function baseSite(){
+    return (localStorage.getItem("site_public_url_v30") || window.SITE_PUBLIC_URL || SITE_PADRAO).replace(/\/$/,"");
+  }
+
+  function linkUsuario(login){
+    return `${baseSite()}?convite=${encodeURIComponent(login)}`;
+  }
+
+  function htmlUsuario(u){
+    const nome = u.nome || u.login || "Usuário";
+    const login = u.login || nome;
+    const id = u.id;
+    const sid = idSafe(id || login);
+    const dev = ehDev(login || nome);
+    const travado = dev && !ehDev(usuarioAtual());
+    const status = u.ativo !== false;
+    const perfis = ["Administrador","Supervisor","Atendente","Suporte","Técnico"];
+    return `
+      <div class="tcf-v070-user-card ${dev ? "dev" : ""}" data-user-id="${esc(id)}">
+        <div class="tcf-v070-avatar">${esc(iniciais(nome))}</div>
+        <div class="tcf-v070-meta">
+          <strong>${esc(nome)} ${dev ? "• DEV protegido" : ""}</strong>
+          <span>Login: ${esc(login)} • E-mail: ${esc(u.email || "sem e-mail")} • ID: ${esc(id ?? "-")}</span>
+          <span>Último acesso: ${esc(formatarUltimoLogin(u.ultimoLogin))}</span>
+          <span class="tcf-v070-badge ${status ? "" : "off"}">${status ? "● Ativo" : "● Bloqueado"}</span>
+        </div>
+        <select id="perfil_v070_${sid}" ${travado ? "disabled" : ""}>
+          ${perfis.map(p => `<option value="${p}" ${p===u.perfil ? "selected" : ""}>${p}</option>`).join("")}
+        </select>
+        <select id="status_v070_${sid}" ${travado ? "disabled" : ""}>
+          <option value="true" ${status ? "selected" : ""}>Ativo</option>
+          <option value="false" ${!status ? "selected" : ""}>Bloqueado</option>
+        </select>
+        <div class="tcf-v070-actions">
+          <button class="primary small-btn" type="button" onclick="salvarUsuarioV070('${esc(id)}')" ${travado ? "disabled" : ""}>Salvar</button>
+          <button class="warning small-btn" type="button" onclick="redefinirSenhaUsuarioV070('${esc(id)}')" ${travado ? "disabled" : ""}>Senha</button>
+          <button class="secondary small-btn" type="button" onclick="copiarLinkUsuarioV070('${esc(login)}')">Copiar</button>
+          <button class="danger small-btn" type="button" onclick="removerUsuarioV070('${esc(id)}')" ${dev ? "disabled" : ""}>Remover</button>
+        </div>
+      </div>`;
+  }
+
+  function htmlLinks(lista){
+    if(!lista.length) return `<div class="empty">Nenhum usuário para gerar links.</div>`;
+    return lista.map(u => {
+      const login = u.login || u.nome;
+      const url = linkUsuario(login);
+      return `
+        <div class="tcf-v070-link-card">
+          <strong>${esc(u.nome || login)} • ${esc(u.perfil)}</strong>
+          <span class="trend">Criado em: ${esc(formatarUltimoLogin(u.createdAt))} • Status: ${u.ativo !== false ? "Ativo" : "Bloqueado"}</span>
+          <code>${esc(url)}</code>
+          <div class="actions" style="margin-top:8px;">
+            <button class="secondary small-btn" type="button" onclick="copiarLinkUsuarioV070('${esc(login)}')">Copiar</button>
+            <button class="warning small-btn" type="button" onclick="revogarUsuarioV070('${esc(u.id)}')" ${ehDev(login) ? "disabled" : ""}>Revogar</button>
+          </div>
+        </div>`;
+    }).join("");
+  }
+
+  window.renderUsuariosAdmin = async function(){
+    const alvos = [
+      document.getElementById("usuariosAdminListaPage"),
+      document.getElementById("usuariosAdminLista")
+    ].filter(Boolean);
+
+    alvos.forEach(el => el.innerHTML = `<div class="empty">Carregando usuários do banco...</div>`);
+
+    try{
+      const lista = await buscarUsuariosBancoV070();
+      const admins = lista.filter(u => ehAdmin(u.perfil)).length;
+      const operadores = lista.filter(u => !ehAdmin(u.perfil)).length;
+      const ultimos = lista.filter(u => !!u.ultimoLogin).length;
+
+      setTxt("kpiUsuariosTotal", lista.length);
+      setTxt("kpiUsuariosAdmin", admins);
+      setTxt("kpiUsuariosOperador", operadores);
+      setTxt("kpiUsuariosLogins", ultimos);
+
+      document.querySelectorAll("#usuarios .users-kpi-grid .card .trend").forEach((el, i) => {
+        const textos = [
+          "Total real do Supabase",
+          "Perfil Administrador",
+          "Demais perfis operacionais",
+          "Com último login salvo"
+        ];
+        el.textContent = textos[i] || el.textContent;
+      });
+
+      const html = lista.map(htmlUsuario).join("") || `<div class="empty">Nenhum usuário cadastrado no banco.</div>`;
+      alvos.forEach(el => el.innerHTML = html);
+
+      const linkBox = document.getElementById("gerenciadorLinksV070");
+      if(linkBox) linkBox.innerHTML = htmlLinks(lista);
+
+      return lista;
+    }catch(e){
+      const msg = `<div class="empty">Erro ao carregar usuários do banco: ${esc(e.message)}</div>`;
+      alvos.forEach(el => el.innerHTML = msg);
+      console.error("TCF v070 usuários:", e);
+      return [];
+    }
+  };
+
+  window.salvarUsuarioV070 = async function(id){
+    const lista = await buscarUsuariosBancoV070();
+    const u = lista.find(x => String(x.id) === String(id));
+    if(!u) return alert("Usuário não encontrado.");
+    if(ehDev(u.login || u.nome) && !ehDev(usuarioAtual())) return alert("DEV protegido não pode ser alterado por outro usuário.");
+
+    const sid = idSafe(u.id || u.login || u.nome);
+    const perfil = document.getElementById("perfil_v070_"+sid)?.value || u.perfil;
+    const ativo = (document.getElementById("status_v070_"+sid)?.value || "true") === "true";
+
+    if(perfil === "Administrador" && !ehDev(usuarioAtual())){
+      return alert("Somente o DEV protegido pode promover usuário para Administrador.");
+    }
+
+    await apiUsuarios("/" + encodeURIComponent(id), {
+      method:"PUT",
+      body:JSON.stringify({ perfil, ativo })
+    });
+    alert("Usuário atualizado no Supabase.");
+    renderUsuariosAdmin();
+  };
+
+  window.redefinirSenhaUsuarioV070 = async function(id){
+    const lista = await buscarUsuariosBancoV070();
+    const u = lista.find(x => String(x.id) === String(id));
+    if(!u) return alert("Usuário não encontrado.");
+    if(ehDev(u.login || u.nome) && !ehDev(usuarioAtual())) return alert("Senha do DEV protegido não pode ser redefinida por outro usuário.");
+
+    const nova = prompt("Nova senha para " + (u.nome || u.login) + ":");
+    if(!nova) return;
+    if(nova.length < 4) return alert("A senha precisa ter pelo menos 4 caracteres.");
+
+    await apiUsuarios("/" + encodeURIComponent(id), {
+      method:"PUT",
+      body:JSON.stringify({ senha:nova })
+    });
+    alert("Senha redefinida.");
+  };
+
+  window.removerUsuarioV070 = async function(id){
+    const lista = await buscarUsuariosBancoV070();
+    const u = lista.find(x => String(x.id) === String(id));
+    if(!u) return alert("Usuário não encontrado.");
+    if(ehDev(u.login || u.nome)) return alert("O DEV protegido não pode ser removido.");
+    if(!confirm("Remover usuário " + (u.nome || u.login) + "?")) return;
+
+    await apiUsuarios("/" + encodeURIComponent(id), { method:"DELETE" });
+    alert("Usuário removido.");
+    renderUsuariosAdmin();
+  };
+
+  window.revogarUsuarioV070 = async function(id){
+    if(!confirm("Revogar este acesso? O usuário será bloqueado.")) return;
+    await apiUsuarios("/" + encodeURIComponent(id), {
+      method:"PUT",
+      body:JSON.stringify({ ativo:false })
+    });
+    alert("Acesso revogado.");
+    renderUsuariosAdmin();
+  };
+
+  window.copiarLinkUsuarioV070 = function(login){
+    const url = linkUsuario(login);
+    navigator.clipboard?.writeText(url).then(
+      () => alert("Link copiado."),
+      () => prompt("Copie o link:", url)
+    );
+  };
+
+  window.gerarConvite = async function(){
+    const nome = norm(document.getElementById("conviteNome")?.value);
+    const perfil = norm(document.getElementById("convitePerfil")?.value) || "Atendente";
+    if(!nome) return alert("Digite o nome do atendente.");
+
+    const email = `${nome.toLowerCase().replace(/[^a-z0-9]+/g,".").replace(/^\.+|\.+$/g,"")}@tcftelecom.local`;
+    try{
+      await apiUsuarios("", {
+        method:"POST",
+        body:JSON.stringify({ nome, login:nome, email, senha:"12345678", perfil, ativo:true })
+      });
+    }catch(e){
+      console.warn("Usuário já pode existir:", e.message);
+    }
+
+    const url = linkUsuario(nome);
+    const out = document.getElementById("linkConvite");
+    if(out) out.textContent = `${url} | Senha inicial: 12345678`;
+    await renderUsuariosAdmin();
+  };
+
+  function instalarGerenciadorLinks(){
+    const configAdmin = document.querySelector("#configuracoes .config-item.admin-only");
+    if(configAdmin && !document.getElementById("gerenciadorLinksV070")){
+      const bloco = document.createElement("div");
+      bloco.className = "invite-card";
+      bloco.innerHTML = `
+        <strong>Gerenciador de Links</strong>
+        <div class="trend">Links gerados a partir dos usuários reais do Supabase. Use Copiar ou Revogar.</div>
+        <div id="gerenciadorLinksV070" class="tcf-v070-links"></div>
+      `;
+      configAdmin.appendChild(bloco);
+    }
+  }
+
+  const abrirTelaOriginal = window.abrirTela;
+  if(typeof abrirTelaOriginal === "function"){
+    window.abrirTela = function(id, botao){
+      abrirTelaOriginal(id, botao);
+      if(id === "usuarios" || id === "configuracoes"){
+        instalarGerenciadorLinks();
+        setTimeout(()=>renderUsuariosAdmin(), 150);
+      }
+    };
+  }
+
+  window.addEventListener("load", function(){
+    instalarGerenciadorLinks();
+    setTimeout(()=>renderUsuariosAdmin(), 700);
   });
 })();
 </script>
@@ -10570,32 +11047,35 @@ body:not(.light-mode):not(.light) .tcf-link-output{background:rgba(2,6,23,.55);c
       const lista = listaRaw.map(u => Object.assign({}, u, {perfil: perfilNorm(u)}));
       const admins = lista.filter(u => isAdmin(u)).length;
       const ops = lista.length - admins;
+      const hist = lista.filter(u => u.ultimoLogin && !isNaN(new Date(u.ultimoLogin).getTime())).length;
       const set=(id,val)=>{const el=document.getElementById(id); if(el) el.textContent=val;};
       set("kpiUsuariosTotal", lista.length);
       set("kpiUsuariosAdmin", admins);
       set("kpiUsuariosOperador", ops);
-      set("kpiUsuariosLogins", lista.filter(u=>u.ultimoLogin).length);
+      set("kpiUsuariosLogins", hist);
 
       const html = lista.map(u=>{
-        const nome = u.login || u.nome;
-        const id = idSafe(u.id || nome);
+        const nome = u.login || u.nome || "Usuário";
+        const id = idSafe(u.id || u.login || u.email || nome);
         const protegido = isDev(nome);
         const disabled = protegido ? "disabled" : "";
+        const status = u.ativo !== false;
+        const ultimo = u.ultimoLogin && !isNaN(new Date(u.ultimoLogin).getTime()) ? new Date(u.ultimoLogin).toLocaleString("pt-BR") : "sem login registrado";
         return `<div class="tcf-admin-user-card ${protegido?'tcf-protected-user':''}">
           <div class="tcf-admin-user-avatar">${esc(initials(nome))}</div>
           <div class="tcf-admin-user-info">
             <strong>${esc(nome)} ${protegido?'<span class="tcf-dev-lock">DEV protegido</span>':''}</strong>
             <span>${esc(u.email || 'sem e-mail')} • ${esc(u.perfil)} • ID: ${esc(u.id)}</span>
-            <span>Último acesso: ${u.ultimoLogin ? esc(new Date(u.ultimoLogin).toLocaleString('pt-BR')) : 'sem login registrado'}</span>
+            <span>Último acesso: ${esc(ultimo)} • ${status ? "Ativo" : "Bloqueado"}</span>
           </div>
           <select id="perfil_${id}" ${protegido?'disabled':''}>${Object.keys(PERFIS).map(p=>`<option value="${p}" ${p===u.perfil?'selected':''}>${p}</option>`).join('')}</select>
-          <select id="status_${id}" ${protegido?'disabled':''}><option value="ativo" ${u.ativo!==false?'selected':''}>Ativo</option><option value="bloqueado" ${u.ativo===false?'selected':''}>Bloqueado</option></select>
+          <select id="status_${id}" ${protegido?'disabled':''}><option value="ativo" ${status?'selected':''}>Ativo</option><option value="bloqueado" ${!status?'selected':''}>Bloqueado</option></select>
           <div class="tcf-admin-user-actions">
-            <button class="primary" onclick="salvarPerfilAdminTCF('${u.id}')" ${disabled}>Salvar</button>
+            <button class="primary" onclick="salvarPerfilAdminTCF('${esc(u.id)}')" ${disabled}>Salvar</button>
             <button class="secondary" onclick="togglePermissoesTCF('${esc(nome)}')">Permissões</button>
-            <button class="warning" onclick="redefinirSenhaUsuarioTCF('${u.id}')" ${disabled}>Senha</button>
+            <button class="warning" onclick="redefinirSenhaUsuarioTCF('${esc(u.id)}')" ${disabled}>Senha</button>
             <button class="secondary" onclick="copiarLinkLoginUsuarioTCF('${esc(nome)}')">Link</button>
-            <button class="danger" onclick="removerUsuarioTCF('${u.id}')" ${disabled}>Remover</button>
+            <button class="danger" onclick="removerUsuarioTCF('${esc(u.id)}')" ${disabled}>Remover</button>
           </div>
           <div id="perms_${id}" class="tcf-admin-perm-panel"><strong>Permissões</strong><div class="trend">As permissões atuais são controladas pelo perfil salvo no banco.</div></div>
           ${protegido?'<div class="tcf-protected-note">Conta principal protegida. Não pode ser removida, bloqueada ou alterada.</div>':''}
