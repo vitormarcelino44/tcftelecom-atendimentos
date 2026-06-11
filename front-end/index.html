@@ -8402,21 +8402,30 @@ body:not(.tcf-register-mode) .login-card-top strong::after{
     mudarModoLoginFinal("login");
   }
 
-  function liberar(usuario){
-    const isAdmin = lower(usuario) === lower(ADMIN_USER);
-    localStorage.setItem("sistema_login_v29", usuario);
-    localStorage.setItem("sistema_login_v21", usuario);
-    document.body.classList.toggle("admin", isAdmin);
-    const overlay = document.getElementById("loginOverlay");
-    if(overlay) overlay.style.display = "none";
+function liberar(usuario){
+  const userObj = typeof usuario === "object" ? usuario : { login: usuario, nome: usuario };
+  const loginUser = userObj.login || userObj.nome || "";
+  const perfilUser = userObj.perfil || "";
 
-    const hist = read(LOGINS_KEY, []).filter(x => lower(x.usuario) !== lower(usuario));
-    hist.unshift({usuario, ultimoLogin: nowBR(), online: true});
-    write(LOGINS_KEY, hist.slice(0,80));
+  const isAdmin = lower(perfilUser).includes("admin") || lower(loginUser) === lower(ADMIN_USER);
 
-    if(typeof aplicarUsuarioLogado === "function") aplicarUsuarioLogado(usuario);
-    if(typeof renderUsuariosAdmin === "function") renderUsuariosAdmin();
-    if(typeof carregarPerfilUsuario === "function") carregarPerfilUsuario();
+  localStorage.setItem("sistema_usuario_logado", JSON.stringify(userObj));
+  localStorage.setItem("sistema_login_v29", loginUser);
+  localStorage.setItem("sistema_login_v21", loginUser);
+
+  document.body.classList.toggle("admin", isAdmin);
+
+  const overlay = document.getElementById("loginOverlay");
+  if(overlay) overlay.style.display = "none";
+
+  const hist = read(LOGINS_KEY, []).filter(x => lower(x.usuario) !== lower(loginUser));
+  hist.unshift({usuario: loginUser, ultimoLogin: nowBR(), online: true});
+  write(LOGINS_KEY, hist.slice(0,80));
+
+  if(typeof aplicarUsuarioLogado === "function") aplicarUsuarioLogado(loginUser);
+  if(typeof renderUsuariosAdmin === "function") renderUsuariosAdmin();
+  if(typeof carregarPerfilUsuario === "function") carregarPerfilUsuario();
+}
   }
 
   function mudarModoLoginFinal(novoModo){
