@@ -9079,7 +9079,267 @@ body:not(.light-mode):not(.light) .tcf-v58-mini-card{background:rgba(15,23,42,.5
     const rows = lista.map(i => `<tr>${linhaExportacao(i).map(v => `<td>${String(v ?? "").replace(/[&<>]/g, s => ({"&":"&amp;","<":"&lt;",">":"&gt;"}[s]))}</td>`).join("")}</tr>`).join("");
     const html = `<!doctype html><html><head><meta charset="utf-8"><title>TCFTELECOM - Relatório PDF</title><style>
       body{font-family:Arial,sans-serif;margin:24px;color:#0f172a} h1{margin:0 0 4px;font-size:22px} .meta{color:#475569;margin-bottom:18px;font-size:12px} table{width:100%;border-collapse:collapse;font-size:10px} th{background:#0f2f4d;color:white;padding:8px;border:1px solid #173a59;text-align:left} td{padding:7px;border:1px solid #dbe3ef;vertical-align:top} tr:nth-child(even)td{background:#f8fafc}@media print{body{margin:12mm} button{display:none}}
-    </style></head><body><button onclick="window.print()" style="margin-bottom:12px;padding:10px 14px;border:0;border-radius:8px;background:#0284c7;color:#fff;font-weight:bold">Imprimir / salvar PDF</button><h1>TCFTELECOM — Relatório de Atendimentos</h1><div class="meta">Filtro: ${tecnico} • Registros: ${lista.length} • Gerado em ${new Date().toLocaleString("pt-BR")}</div><table><thead><tr>${cabecalhoExportacao().map(h=>`<th>${h}</th>`).join("")}</tr></thead><tbody>${rows}</tbody></table><script>setTimeout(()=>window.print(),400)<\/script></body></html>`;
+    </style></head><body><button onclick="window.print()" style="margin-bottom:12px;padding:10px 14px;border:0;border-radius:8px;background:#0284c7;color:#fff;font-weight:bold">Imprimir / salvar PDF</button><h1>TCFTELECOM — Relatório de Atendimentos</h1><div class="meta">Filtro: ${tecnico} • Registros: ${lista.length} • Gerado em ${new Date().toLocaleString("pt-BR")}</div><table><thead><tr>${cabecalhoExportacao().map(h=>`<th>${h}</th>`).join("")}</tr></thead><tbody>${rows}</tbody></table><script>setTimeout(()=>window.print(),400)<\/script>
+
+<!-- PATCH TCF v072 - último login, online, recuperação de senha e convite por link -->
+<style id="v072-online-convite-reset-css">
+.tcf-v072-online{display:inline-flex;align-items:center;gap:6px;width:max-content;padding:6px 10px;border-radius:999px;font-size:11px;font-weight:900;border:1px solid rgba(34,197,94,.24);background:rgba(34,197,94,.12);color:#22c55e;margin-top:6px;}
+.tcf-v072-online.off{border-color:rgba(148,163,184,.25);background:rgba(148,163,184,.12);color:#94a3b8;}
+.tcf-v072-user-card{display:grid;grid-template-columns:52px minmax(220px,1fr) 160px 130px auto;gap:14px;align-items:center;padding:16px;border-radius:20px;background:rgba(100,116,139,.12);border:1px solid var(--panel-border);margin-bottom:12px;}
+.tcf-v072-user-card.dev{border-color:rgba(56,189,248,.42);box-shadow:0 0 0 1px rgba(56,189,248,.10) inset;}
+.tcf-v072-avatar{width:52px;height:52px;border-radius:16px;display:grid;place-items:center;font-weight:950;color:#fff;background:linear-gradient(135deg,#0284c7,#7c3aed);}
+.tcf-v072-meta strong{display:block;font-size:15px;}
+.tcf-v072-meta span{display:block;color:var(--muted);font-size:12px;margin-top:4px;line-height:1.35;}
+.tcf-v072-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;}
+.tcf-v072-actions button{padding:9px 11px!important;font-size:12px!important;}
+.tcf-v072-badge{display:inline-flex;align-items:center;width:max-content;padding:6px 10px;border-radius:999px;font-size:11px;font-weight:900;background:rgba(34,197,94,.12);color:#22c55e;border:1px solid rgba(34,197,94,.24);}
+.tcf-v072-badge.off{background:rgba(239,68,68,.10);color:#ef4444;border-color:rgba(239,68,68,.24);}
+.tcf-v072-convite-card{padding:14px;border-radius:16px;background:rgba(100,116,139,.12);border:1px solid var(--panel-border);margin-top:10px;}
+.tcf-v072-convite-card code{display:block;word-break:break-all;margin-top:8px;padding:10px;border-radius:12px;background:rgba(15,23,42,.18);color:inherit;}
+body.invite-mode #loginEmailLabel,body.invite-mode #loginEmail,body.invite-mode #confirmSenhaLabel,body.invite-mode #loginSenhaConfirmar{display:block!important;}
+body.invite-mode .login-card-top strong::after{content:"Convite válido detectado. Preencha seus dados para criar a conta."!important;}
+@media(max-width:1050px){.tcf-v072-user-card{grid-template-columns:52px 1fr}.tcf-v072-user-card select,.tcf-v072-actions{grid-column:1 / -1}.tcf-v072-actions{justify-content:flex-start}}
+</style>
+
+<script id="v072-online-convite-reset-js">
+(function(){
+  const API = (window.API_URL || "https://tcftelecom-atendimentos-production.up.railway.app").replace(/\/$/, "");
+  const SITE_PADRAO = "https://tcftelecom-atendimentos.vercel.app";
+  const LOGIN_KEY = "usuario_banco_v072";
+  const LEGACY_KEYS = ["usuario_banco_v067","sistema_login_v29","sistema_login_v21","sistema_auto_login_v29","sistema_login_v28","sistema_login_v14"];
+
+  function esc(v){return String(v ?? "").replace(/[&<>"']/g,s=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[s]));}
+  function norm(v){return String(v ?? "").trim();}
+  function idSafe(v){return String(v ?? "").replace(/[^a-zA-Z0-9_-]/g,"_");}
+  function iniciais(nome){const p=norm(nome).split(/\s+/).filter(Boolean);return ((p[0]?.[0]||"U")+(p[1]?.[0]||"")).toUpperCase();}
+  function isAdmin(p){return String(p||"").toLowerCase().includes("admin");}
+  function isDev(u){const n=String(u?.login||u?.nome||u||"").toLowerCase();return n==="victor"||n.includes("victor")||n==="administrador";}
+  function siteBase(){return (localStorage.getItem("site_public_url_v30") || window.SITE_PUBLIC_URL || SITE_PADRAO).replace(/\/$/,"");}
+  function tokenURL(){return new URLSearchParams(location.search).get("token") || new URLSearchParams(location.search).get("convite_token") || "";}
+
+  async function api(path, opts={}){
+    const res = await fetch(API + path, Object.assign({headers:{"Content-Type":"application/json"}}, opts, {headers:Object.assign({"Content-Type":"application/json"}, opts.headers||{})}));
+    let data={}; try{data=await res.json();}catch(e){}
+    if(!res.ok) throw new Error(data.erro || data.message || ("Erro HTTP " + res.status));
+    return data;
+  }
+
+  function salvarSessao(usuario){
+    if(!usuario) return;
+    localStorage.setItem(LOGIN_KEY, JSON.stringify(usuario));
+    localStorage.setItem("usuario_banco_v067", JSON.stringify(usuario));
+    localStorage.setItem("sistema_login_v29", JSON.stringify(usuario));
+    document.body.classList.toggle("admin", isAdmin(usuario.perfil) || isDev(usuario));
+  }
+
+  function usuarioAtual(){
+    const chaves=[LOGIN_KEY,...LEGACY_KEYS];
+    for(const k of chaves){
+      const v=localStorage.getItem(k); if(!v) continue;
+      try{const o=JSON.parse(v); if(o && (o.id||o.login||o.nome)) return o;}catch(e){}
+      if(v && !v.startsWith("{")) return {login:v,nome:v};
+    }
+    return null;
+  }
+
+  function mostrarSistema(usuario){
+    salvarSessao(usuario);
+    const overlay=document.getElementById("loginOverlay");
+    if(overlay) overlay.style.display="none";
+    document.body.classList.remove("invite-mode");
+    try{ if(typeof carregarDoBanco==="function") carregarDoBanco(); }catch(e){}
+    try{ if(typeof aplicarPermissoesV59==="function") aplicarPermissoesV59(); }catch(e){}
+    try{ if(typeof aplicarControleMenuV59==="function") aplicarControleMenuV59(); }catch(e){}
+    setTimeout(()=>{ try{window.renderUsuariosAdmin&&window.renderUsuariosAdmin();}catch(e){} },300);
+  }
+
+  function fmtData(v){
+    if(!v) return "Sem login registrado";
+    const d=new Date(v); if(Number.isNaN(d.getTime())) return String(v);
+    return d.toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"});
+  }
+
+  function setTxt(id, valor){const el=document.getElementById(id); if(el) el.textContent=valor;}
+
+  async function carregarUsuarios(){
+    const data=await api("/usuarios");
+    return Array.isArray(data)?data:(data.usuarios||data.dados||[]);
+  }
+
+  function cardUsuario(u){
+    const id=u.id, sid=idSafe(id), nome=u.nome||u.login||"Usuário", login=u.login||nome;
+    const ativo=u.ativo!==false, online=u.online===true, dev=isDev(u);
+    const travado=dev && !isDev(usuarioAtual());
+    const perfis=["Administrador","Supervisor","Atendente","Suporte","Técnico"];
+    return `<div class="tcf-v072-user-card ${dev?'dev':''}">
+      <div class="tcf-v072-avatar">${esc(iniciais(nome))}</div>
+      <div class="tcf-v072-meta">
+        <strong>${esc(nome)} ${dev?'• DEV protegido':''}</strong>
+        <span>Login: ${esc(login)} • E-mail: ${esc(u.email||'sem e-mail')} • ID: ${esc(id)}</span>
+        <span>Último login: ${esc(fmtData(u.ultimoLogin))}</span>
+        <span class="tcf-v072-online ${online?'':'off'}">${online?'● Online':'● Offline'}</span>
+      </div>
+      <select id="perfil_v072_${sid}" ${travado?'disabled':''}>${perfis.map(p=>`<option value="${p}" ${p===u.perfil?'selected':''}>${p}</option>`).join('')}</select>
+      <select id="status_v072_${sid}" ${travado?'disabled':''}><option value="true" ${ativo?'selected':''}>Ativo</option><option value="false" ${!ativo?'selected':''}>Bloqueado</option></select>
+      <div class="tcf-v072-actions">
+        <button class="primary small-btn" type="button" onclick="salvarUsuarioV072('${esc(id)}')" ${travado?'disabled':''}>Salvar</button>
+        <button class="warning small-btn" type="button" onclick="redefinirSenhaUsuarioV072('${esc(id)}')" ${travado?'disabled':''}>Senha</button>
+        <button class="secondary small-btn" type="button" onclick="forcarOfflineV072('${esc(id)}')" ${travado?'disabled':''}>Offline</button>
+        <button class="danger small-btn" type="button" onclick="removerUsuarioV072('${esc(id)}')" ${dev?'disabled':''}>Remover</button>
+      </div>
+    </div>`;
+  }
+
+  async function renderConvites(){
+    let box=document.getElementById("gerenciadorLinksV070");
+    if(!box){
+      const config=document.querySelector("#configuracoes .config-item.admin-only");
+      if(config){
+        const bloco=document.createElement("div");
+        bloco.className="invite-card";
+        bloco.innerHTML='<strong>Convites do banco</strong><div id="gerenciadorLinksV070"></div>';
+        config.appendChild(bloco); box=bloco.querySelector("#gerenciadorLinksV070");
+      }
+    }
+    if(!box) return;
+    try{
+      const convites=await api("/convites");
+      if(!Array.isArray(convites)||!convites.length){box.innerHTML='<div class="empty">Nenhum convite gerado.</div>';return;}
+      box.innerHTML=convites.map(c=>{
+        const link=siteBase()+"?token="+encodeURIComponent(c.token);
+        return `<div class="tcf-v072-convite-card"><strong>${esc(c.nome||c.login||'Convite')} • ${esc(c.perfil||'Atendente')}</strong><span class="trend">${c.usado?'Usado':'Disponível'} • Expira: ${esc(fmtData(c.expiraEm))}</span><code>${esc(link)}</code><button class="secondary small-btn" onclick="copiarTextoV072('${esc(link)}')">Copiar</button></div>`;
+      }).join("");
+    }catch(e){box.innerHTML='<div class="empty">Erro ao carregar convites: '+esc(e.message)+'</div>';}
+  }
+
+  window.renderUsuariosAdmin = async function(){
+    const alvos=[document.getElementById("usuariosAdminListaPage"),document.getElementById("usuariosAdminLista")].filter(Boolean);
+    alvos.forEach(x=>x.innerHTML='<div class="empty">Carregando usuários do banco...</div>');
+    try{
+      const lista=await carregarUsuarios();
+      setTxt("kpiUsuariosTotal", lista.length);
+      setTxt("kpiUsuariosAdmin", lista.filter(u=>isAdmin(u.perfil)).length);
+      setTxt("kpiUsuariosOperador", lista.filter(u=>!isAdmin(u.perfil)).length);
+      setTxt("kpiUsuariosLogins", lista.filter(u=>u.ultimoLogin).length);
+      const html=lista.map(cardUsuario).join("") || '<div class="empty">Nenhum usuário cadastrado.</div>';
+      alvos.forEach(x=>x.innerHTML=html);
+      await renderConvites();
+      return lista;
+    }catch(e){
+      alvos.forEach(x=>x.innerHTML='<div class="empty">Erro ao carregar usuários: '+esc(e.message)+'</div>');
+      console.error(e); return [];
+    }
+  };
+
+  window.salvarUsuarioV072 = async function(id){
+    const perfil=document.getElementById("perfil_v072_"+idSafe(id))?.value;
+    const ativo=(document.getElementById("status_v072_"+idSafe(id))?.value||"true")==="true";
+    try{await api("/usuarios/"+encodeURIComponent(id),{method:"PUT",body:JSON.stringify({perfil,ativo})}); alert("Usuário atualizado."); window.renderUsuariosAdmin();}
+    catch(e){alert(e.message||"Erro ao salvar usuário.");}
+  };
+
+  window.redefinirSenhaUsuarioV072 = async function(id){
+    const senha=prompt("Digite a nova senha:"); if(senha===null) return;
+    if(norm(senha).length<4) return alert("A senha precisa ter pelo menos 4 caracteres.");
+    try{await api("/usuarios/"+encodeURIComponent(id),{method:"PUT",body:JSON.stringify({senha:norm(senha)})}); alert("Senha atualizada.");}
+    catch(e){alert(e.message||"Erro ao redefinir senha.");}
+  };
+
+  window.forcarOfflineV072 = async function(id){
+    try{await api("/usuarios/"+encodeURIComponent(id),{method:"PUT",body:JSON.stringify({online:false})}); window.renderUsuariosAdmin();}
+    catch(e){alert(e.message||"Erro ao marcar offline.");}
+  };
+
+  window.removerUsuarioV072 = async function(id){
+    if(!confirm("Remover este usuário?")) return;
+    try{await api("/usuarios/"+encodeURIComponent(id),{method:"DELETE"}); alert("Usuário removido."); window.renderUsuariosAdmin();}
+    catch(e){alert(e.message||"Erro ao remover usuário.");}
+  };
+
+  window.copiarTextoV072 = function(texto){navigator.clipboard?.writeText(texto).then(()=>alert("Copiado."),()=>prompt("Copie:",texto));};
+
+  window.gerarConvite = async function(){
+    const nome=norm(document.getElementById("conviteNome")?.value);
+    const perfil=norm(document.getElementById("convitePerfil")?.value)||"Atendente";
+    if(!nome) return alert("Digite o nome do atendente.");
+    try{
+      const atual=usuarioAtual();
+      const convite=await api("/convites",{method:"POST",body:JSON.stringify({nome,perfil,criadoPor:atual?.login||atual?.nome||"admin"})});
+      const link=siteBase()+"?token="+encodeURIComponent(convite.token);
+      const out=document.getElementById("linkConvite"); if(out) out.textContent=link;
+      await renderConvites();
+      alert("Convite gerado.");
+    }catch(e){alert(e.message||"Erro ao gerar convite.");}
+  };
+
+  window.copiarConvite = function(){
+    const texto=(document.getElementById("linkConvite")?.textContent||"").trim();
+    if(!texto || texto.includes("Nenhum")) return alert("Gere o link primeiro.");
+    window.copiarTextoV072(texto);
+  };
+
+  window.abrirReset = async function(){
+    const loginOuEmail=prompt("Digite o login ou e-mail do usuário:");
+    if(!loginOuEmail) return;
+    try{
+      const payload=loginOuEmail.includes("@")?{email:loginOuEmail}:{login:loginOuEmail};
+      const resp=await api("/recuperar-senha",{method:"POST",body:JSON.stringify(payload)});
+      const nova=prompt("Token gerado internamente. Digite a nova senha para concluir:");
+      if(!nova) return;
+      await api("/redefinir-senha",{method:"POST",body:JSON.stringify({token:resp.token,senha:nova})});
+      alert("Senha redefinida com sucesso.");
+    }catch(e){alert(e.message||"Erro na recuperação de senha.");}
+  };
+
+  window.entrarSistema = async function(){
+    const login=norm(document.getElementById("loginUsuario")?.value);
+    const senha=norm(document.getElementById("loginSenha")?.value);
+    const email=norm(document.getElementById("loginEmail")?.value);
+    const confirma=norm(document.getElementById("loginSenhaConfirmar")?.value);
+    const token=tokenURL();
+    const erro=document.getElementById("loginErro"); if(erro) erro.textContent="";
+    try{
+      if(token){
+        if(!login||!senha||!email) throw new Error("Preencha usuário, e-mail e senha para criar a conta pelo convite.");
+        if(senha!==confirma) throw new Error("As senhas não conferem.");
+        await api("/convites/usar",{method:"POST",body:JSON.stringify({token,nome:login,login,email,senha})});
+        alert("Conta criada. Agora faça login.");
+        history.replaceState({},document.title,location.pathname);
+        document.body.classList.remove("invite-mode");
+        const emailEl=document.getElementById("loginEmail"); if(emailEl) emailEl.value="";
+        const confEl=document.getElementById("loginSenhaConfirmar"); if(confEl) confEl.value="";
+        return;
+      }
+      const resp=await api("/login",{method:"POST",body:JSON.stringify({login,senha})});
+      mostrarSistema(resp.usuario);
+    }catch(e){ if(erro) erro.textContent=e.message; else alert(e.message); }
+  };
+
+  window.sairSistemaFinal = async function(){
+    const u=usuarioAtual();
+    try{ if(u) await api("/logout",{method:"POST",body:JSON.stringify({id:u.id,login:u.login})}); }catch(e){console.warn(e);}
+    [LOGIN_KEY,...LEGACY_KEYS,"token"].forEach(k=>localStorage.removeItem(k));
+    location.reload();
+  };
+
+  function prepararConvite(){
+    const token=tokenURL();
+    if(!token) return;
+    document.body.classList.add("invite-mode");
+    const overlay=document.getElementById("loginOverlay"); if(overlay) overlay.style.display="flex";
+    const btn=document.querySelector(".login-main-btn"); if(btn) btn.textContent="Criar conta pelo convite";
+  }
+
+  window.addEventListener("load",function(){
+    prepararConvite();
+    const u=usuarioAtual();
+    if(u) document.body.classList.toggle("admin", isAdmin(u.perfil)||isDev(u));
+    setTimeout(()=>{try{window.renderUsuariosAdmin&&window.renderUsuariosAdmin();}catch(e){}},1200);
+  });
+})();
+</script>
+
+</body></html>`;
     const w = window.open("", "_blank");
     if(!w){ alert("Permita pop-ups para gerar o PDF."); return; }
     w.document.open();
@@ -10719,5 +10979,265 @@ body:not(.light-mode):not(.light) .tcf-link-output{background:rgba(2,6,23,.55);c
   };
 })();
 </script>
+
+
+<!-- PATCH TCF v072 - último login, online, recuperação de senha e convite por link -->
+<style id="v072-online-convite-reset-css">
+.tcf-v072-online{display:inline-flex;align-items:center;gap:6px;width:max-content;padding:6px 10px;border-radius:999px;font-size:11px;font-weight:900;border:1px solid rgba(34,197,94,.24);background:rgba(34,197,94,.12);color:#22c55e;margin-top:6px;}
+.tcf-v072-online.off{border-color:rgba(148,163,184,.25);background:rgba(148,163,184,.12);color:#94a3b8;}
+.tcf-v072-user-card{display:grid;grid-template-columns:52px minmax(220px,1fr) 160px 130px auto;gap:14px;align-items:center;padding:16px;border-radius:20px;background:rgba(100,116,139,.12);border:1px solid var(--panel-border);margin-bottom:12px;}
+.tcf-v072-user-card.dev{border-color:rgba(56,189,248,.42);box-shadow:0 0 0 1px rgba(56,189,248,.10) inset;}
+.tcf-v072-avatar{width:52px;height:52px;border-radius:16px;display:grid;place-items:center;font-weight:950;color:#fff;background:linear-gradient(135deg,#0284c7,#7c3aed);}
+.tcf-v072-meta strong{display:block;font-size:15px;}
+.tcf-v072-meta span{display:block;color:var(--muted);font-size:12px;margin-top:4px;line-height:1.35;}
+.tcf-v072-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;}
+.tcf-v072-actions button{padding:9px 11px!important;font-size:12px!important;}
+.tcf-v072-badge{display:inline-flex;align-items:center;width:max-content;padding:6px 10px;border-radius:999px;font-size:11px;font-weight:900;background:rgba(34,197,94,.12);color:#22c55e;border:1px solid rgba(34,197,94,.24);}
+.tcf-v072-badge.off{background:rgba(239,68,68,.10);color:#ef4444;border-color:rgba(239,68,68,.24);}
+.tcf-v072-convite-card{padding:14px;border-radius:16px;background:rgba(100,116,139,.12);border:1px solid var(--panel-border);margin-top:10px;}
+.tcf-v072-convite-card code{display:block;word-break:break-all;margin-top:8px;padding:10px;border-radius:12px;background:rgba(15,23,42,.18);color:inherit;}
+body.invite-mode #loginEmailLabel,body.invite-mode #loginEmail,body.invite-mode #confirmSenhaLabel,body.invite-mode #loginSenhaConfirmar{display:block!important;}
+body.invite-mode .login-card-top strong::after{content:"Convite válido detectado. Preencha seus dados para criar a conta."!important;}
+@media(max-width:1050px){.tcf-v072-user-card{grid-template-columns:52px 1fr}.tcf-v072-user-card select,.tcf-v072-actions{grid-column:1 / -1}.tcf-v072-actions{justify-content:flex-start}}
+</style>
+
+<script id="v072-online-convite-reset-js">
+(function(){
+  const API = (window.API_URL || "https://tcftelecom-atendimentos-production.up.railway.app").replace(/\/$/, "");
+  const SITE_PADRAO = "https://tcftelecom-atendimentos.vercel.app";
+  const LOGIN_KEY = "usuario_banco_v072";
+  const LEGACY_KEYS = ["usuario_banco_v067","sistema_login_v29","sistema_login_v21","sistema_auto_login_v29","sistema_login_v28","sistema_login_v14"];
+
+  function esc(v){return String(v ?? "").replace(/[&<>"']/g,s=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[s]));}
+  function norm(v){return String(v ?? "").trim();}
+  function idSafe(v){return String(v ?? "").replace(/[^a-zA-Z0-9_-]/g,"_");}
+  function iniciais(nome){const p=norm(nome).split(/\s+/).filter(Boolean);return ((p[0]?.[0]||"U")+(p[1]?.[0]||"")).toUpperCase();}
+  function isAdmin(p){return String(p||"").toLowerCase().includes("admin");}
+  function isDev(u){const n=String(u?.login||u?.nome||u||"").toLowerCase();return n==="victor"||n.includes("victor")||n==="administrador";}
+  function siteBase(){return (localStorage.getItem("site_public_url_v30") || window.SITE_PUBLIC_URL || SITE_PADRAO).replace(/\/$/,"");}
+  function tokenURL(){return new URLSearchParams(location.search).get("token") || new URLSearchParams(location.search).get("convite_token") || "";}
+
+  async function api(path, opts={}){
+    const res = await fetch(API + path, Object.assign({headers:{"Content-Type":"application/json"}}, opts, {headers:Object.assign({"Content-Type":"application/json"}, opts.headers||{})}));
+    let data={}; try{data=await res.json();}catch(e){}
+    if(!res.ok) throw new Error(data.erro || data.message || ("Erro HTTP " + res.status));
+    return data;
+  }
+
+  function salvarSessao(usuario){
+    if(!usuario) return;
+    localStorage.setItem(LOGIN_KEY, JSON.stringify(usuario));
+    localStorage.setItem("usuario_banco_v067", JSON.stringify(usuario));
+    localStorage.setItem("sistema_login_v29", JSON.stringify(usuario));
+    document.body.classList.toggle("admin", isAdmin(usuario.perfil) || isDev(usuario));
+  }
+
+  function usuarioAtual(){
+    const chaves=[LOGIN_KEY,...LEGACY_KEYS];
+    for(const k of chaves){
+      const v=localStorage.getItem(k); if(!v) continue;
+      try{const o=JSON.parse(v); if(o && (o.id||o.login||o.nome)) return o;}catch(e){}
+      if(v && !v.startsWith("{")) return {login:v,nome:v};
+    }
+    return null;
+  }
+
+  function mostrarSistema(usuario){
+    salvarSessao(usuario);
+    const overlay=document.getElementById("loginOverlay");
+    if(overlay) overlay.style.display="none";
+    document.body.classList.remove("invite-mode");
+    try{ if(typeof carregarDoBanco==="function") carregarDoBanco(); }catch(e){}
+    try{ if(typeof aplicarPermissoesV59==="function") aplicarPermissoesV59(); }catch(e){}
+    try{ if(typeof aplicarControleMenuV59==="function") aplicarControleMenuV59(); }catch(e){}
+    setTimeout(()=>{ try{window.renderUsuariosAdmin&&window.renderUsuariosAdmin();}catch(e){} },300);
+  }
+
+  function fmtData(v){
+    if(!v) return "Sem login registrado";
+    const d=new Date(v); if(Number.isNaN(d.getTime())) return String(v);
+    return d.toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"});
+  }
+
+  function setTxt(id, valor){const el=document.getElementById(id); if(el) el.textContent=valor;}
+
+  async function carregarUsuarios(){
+    const data=await api("/usuarios");
+    return Array.isArray(data)?data:(data.usuarios||data.dados||[]);
+  }
+
+  function cardUsuario(u){
+    const id=u.id, sid=idSafe(id), nome=u.nome||u.login||"Usuário", login=u.login||nome;
+    const ativo=u.ativo!==false, online=u.online===true, dev=isDev(u);
+    const travado=dev && !isDev(usuarioAtual());
+    const perfis=["Administrador","Supervisor","Atendente","Suporte","Técnico"];
+    return `<div class="tcf-v072-user-card ${dev?'dev':''}">
+      <div class="tcf-v072-avatar">${esc(iniciais(nome))}</div>
+      <div class="tcf-v072-meta">
+        <strong>${esc(nome)} ${dev?'• DEV protegido':''}</strong>
+        <span>Login: ${esc(login)} • E-mail: ${esc(u.email||'sem e-mail')} • ID: ${esc(id)}</span>
+        <span>Último login: ${esc(fmtData(u.ultimoLogin))}</span>
+        <span class="tcf-v072-online ${online?'':'off'}">${online?'● Online':'● Offline'}</span>
+      </div>
+      <select id="perfil_v072_${sid}" ${travado?'disabled':''}>${perfis.map(p=>`<option value="${p}" ${p===u.perfil?'selected':''}>${p}</option>`).join('')}</select>
+      <select id="status_v072_${sid}" ${travado?'disabled':''}><option value="true" ${ativo?'selected':''}>Ativo</option><option value="false" ${!ativo?'selected':''}>Bloqueado</option></select>
+      <div class="tcf-v072-actions">
+        <button class="primary small-btn" type="button" onclick="salvarUsuarioV072('${esc(id)}')" ${travado?'disabled':''}>Salvar</button>
+        <button class="warning small-btn" type="button" onclick="redefinirSenhaUsuarioV072('${esc(id)}')" ${travado?'disabled':''}>Senha</button>
+        <button class="secondary small-btn" type="button" onclick="forcarOfflineV072('${esc(id)}')" ${travado?'disabled':''}>Offline</button>
+        <button class="danger small-btn" type="button" onclick="removerUsuarioV072('${esc(id)}')" ${dev?'disabled':''}>Remover</button>
+      </div>
+    </div>`;
+  }
+
+  async function renderConvites(){
+    let box=document.getElementById("gerenciadorLinksV070");
+    if(!box){
+      const config=document.querySelector("#configuracoes .config-item.admin-only");
+      if(config){
+        const bloco=document.createElement("div");
+        bloco.className="invite-card";
+        bloco.innerHTML='<strong>Convites do banco</strong><div id="gerenciadorLinksV070"></div>';
+        config.appendChild(bloco); box=bloco.querySelector("#gerenciadorLinksV070");
+      }
+    }
+    if(!box) return;
+    try{
+      const convites=await api("/convites");
+      if(!Array.isArray(convites)||!convites.length){box.innerHTML='<div class="empty">Nenhum convite gerado.</div>';return;}
+      box.innerHTML=convites.map(c=>{
+        const link=siteBase()+"?token="+encodeURIComponent(c.token);
+        return `<div class="tcf-v072-convite-card"><strong>${esc(c.nome||c.login||'Convite')} • ${esc(c.perfil||'Atendente')}</strong><span class="trend">${c.usado?'Usado':'Disponível'} • Expira: ${esc(fmtData(c.expiraEm))}</span><code>${esc(link)}</code><button class="secondary small-btn" onclick="copiarTextoV072('${esc(link)}')">Copiar</button></div>`;
+      }).join("");
+    }catch(e){box.innerHTML='<div class="empty">Erro ao carregar convites: '+esc(e.message)+'</div>';}
+  }
+
+  window.renderUsuariosAdmin = async function(){
+    const alvos=[document.getElementById("usuariosAdminListaPage"),document.getElementById("usuariosAdminLista")].filter(Boolean);
+    alvos.forEach(x=>x.innerHTML='<div class="empty">Carregando usuários do banco...</div>');
+    try{
+      const lista=await carregarUsuarios();
+      setTxt("kpiUsuariosTotal", lista.length);
+      setTxt("kpiUsuariosAdmin", lista.filter(u=>isAdmin(u.perfil)).length);
+      setTxt("kpiUsuariosOperador", lista.filter(u=>!isAdmin(u.perfil)).length);
+      setTxt("kpiUsuariosLogins", lista.filter(u=>u.ultimoLogin).length);
+      const html=lista.map(cardUsuario).join("") || '<div class="empty">Nenhum usuário cadastrado.</div>';
+      alvos.forEach(x=>x.innerHTML=html);
+      await renderConvites();
+      return lista;
+    }catch(e){
+      alvos.forEach(x=>x.innerHTML='<div class="empty">Erro ao carregar usuários: '+esc(e.message)+'</div>');
+      console.error(e); return [];
+    }
+  };
+
+  window.salvarUsuarioV072 = async function(id){
+    const perfil=document.getElementById("perfil_v072_"+idSafe(id))?.value;
+    const ativo=(document.getElementById("status_v072_"+idSafe(id))?.value||"true")==="true";
+    try{await api("/usuarios/"+encodeURIComponent(id),{method:"PUT",body:JSON.stringify({perfil,ativo})}); alert("Usuário atualizado."); window.renderUsuariosAdmin();}
+    catch(e){alert(e.message||"Erro ao salvar usuário.");}
+  };
+
+  window.redefinirSenhaUsuarioV072 = async function(id){
+    const senha=prompt("Digite a nova senha:"); if(senha===null) return;
+    if(norm(senha).length<4) return alert("A senha precisa ter pelo menos 4 caracteres.");
+    try{await api("/usuarios/"+encodeURIComponent(id),{method:"PUT",body:JSON.stringify({senha:norm(senha)})}); alert("Senha atualizada.");}
+    catch(e){alert(e.message||"Erro ao redefinir senha.");}
+  };
+
+  window.forcarOfflineV072 = async function(id){
+    try{await api("/usuarios/"+encodeURIComponent(id),{method:"PUT",body:JSON.stringify({online:false})}); window.renderUsuariosAdmin();}
+    catch(e){alert(e.message||"Erro ao marcar offline.");}
+  };
+
+  window.removerUsuarioV072 = async function(id){
+    if(!confirm("Remover este usuário?")) return;
+    try{await api("/usuarios/"+encodeURIComponent(id),{method:"DELETE"}); alert("Usuário removido."); window.renderUsuariosAdmin();}
+    catch(e){alert(e.message||"Erro ao remover usuário.");}
+  };
+
+  window.copiarTextoV072 = function(texto){navigator.clipboard?.writeText(texto).then(()=>alert("Copiado."),()=>prompt("Copie:",texto));};
+
+  window.gerarConvite = async function(){
+    const nome=norm(document.getElementById("conviteNome")?.value);
+    const perfil=norm(document.getElementById("convitePerfil")?.value)||"Atendente";
+    if(!nome) return alert("Digite o nome do atendente.");
+    try{
+      const atual=usuarioAtual();
+      const convite=await api("/convites",{method:"POST",body:JSON.stringify({nome,perfil,criadoPor:atual?.login||atual?.nome||"admin"})});
+      const link=siteBase()+"?token="+encodeURIComponent(convite.token);
+      const out=document.getElementById("linkConvite"); if(out) out.textContent=link;
+      await renderConvites();
+      alert("Convite gerado.");
+    }catch(e){alert(e.message||"Erro ao gerar convite.");}
+  };
+
+  window.copiarConvite = function(){
+    const texto=(document.getElementById("linkConvite")?.textContent||"").trim();
+    if(!texto || texto.includes("Nenhum")) return alert("Gere o link primeiro.");
+    window.copiarTextoV072(texto);
+  };
+
+  window.abrirReset = async function(){
+    const loginOuEmail=prompt("Digite o login ou e-mail do usuário:");
+    if(!loginOuEmail) return;
+    try{
+      const payload=loginOuEmail.includes("@")?{email:loginOuEmail}:{login:loginOuEmail};
+      const resp=await api("/recuperar-senha",{method:"POST",body:JSON.stringify(payload)});
+      const nova=prompt("Token gerado internamente. Digite a nova senha para concluir:");
+      if(!nova) return;
+      await api("/redefinir-senha",{method:"POST",body:JSON.stringify({token:resp.token,senha:nova})});
+      alert("Senha redefinida com sucesso.");
+    }catch(e){alert(e.message||"Erro na recuperação de senha.");}
+  };
+
+  window.entrarSistema = async function(){
+    const login=norm(document.getElementById("loginUsuario")?.value);
+    const senha=norm(document.getElementById("loginSenha")?.value);
+    const email=norm(document.getElementById("loginEmail")?.value);
+    const confirma=norm(document.getElementById("loginSenhaConfirmar")?.value);
+    const token=tokenURL();
+    const erro=document.getElementById("loginErro"); if(erro) erro.textContent="";
+    try{
+      if(token){
+        if(!login||!senha||!email) throw new Error("Preencha usuário, e-mail e senha para criar a conta pelo convite.");
+        if(senha!==confirma) throw new Error("As senhas não conferem.");
+        await api("/convites/usar",{method:"POST",body:JSON.stringify({token,nome:login,login,email,senha})});
+        alert("Conta criada. Agora faça login.");
+        history.replaceState({},document.title,location.pathname);
+        document.body.classList.remove("invite-mode");
+        const emailEl=document.getElementById("loginEmail"); if(emailEl) emailEl.value="";
+        const confEl=document.getElementById("loginSenhaConfirmar"); if(confEl) confEl.value="";
+        return;
+      }
+      const resp=await api("/login",{method:"POST",body:JSON.stringify({login,senha})});
+      mostrarSistema(resp.usuario);
+    }catch(e){ if(erro) erro.textContent=e.message; else alert(e.message); }
+  };
+
+  window.sairSistemaFinal = async function(){
+    const u=usuarioAtual();
+    try{ if(u) await api("/logout",{method:"POST",body:JSON.stringify({id:u.id,login:u.login})}); }catch(e){console.warn(e);}
+    [LOGIN_KEY,...LEGACY_KEYS,"token"].forEach(k=>localStorage.removeItem(k));
+    location.reload();
+  };
+
+  function prepararConvite(){
+    const token=tokenURL();
+    if(!token) return;
+    document.body.classList.add("invite-mode");
+    const overlay=document.getElementById("loginOverlay"); if(overlay) overlay.style.display="flex";
+    const btn=document.querySelector(".login-main-btn"); if(btn) btn.textContent="Criar conta pelo convite";
+  }
+
+  window.addEventListener("load",function(){
+    prepararConvite();
+    const u=usuarioAtual();
+    if(u) document.body.classList.toggle("admin", isAdmin(u.perfil)||isDev(u));
+    setTimeout(()=>{try{window.renderUsuariosAdmin&&window.renderUsuariosAdmin();}catch(e){}},1200);
+  });
+})();
+</script>
+
 </body>
 </html>
