@@ -6968,11 +6968,7 @@ window.addEventListener("load",function(){
     carregarPerfilUsuario();
     renderUsuariosAdmin();
   });
-  window.addEventListener("load", function(){
-    handleInviteOnLoad();
-    carregarPerfilUsuario();
-    renderUsuariosAdmin();
-  });
+
 })();
 </script>
 
@@ -9893,6 +9889,98 @@ body.light-mode .tcf-v070-link-card code{background:#f1f5f9;}
 })();
 </script>
 
+</body></html>`;
+    const w = window.open("", "_blank");
+    if(!w){ alert("O navegador bloqueou a janela do PDF. Libere pop-ups para este site."); return; }
+    w.document.open(); w.document.write(html); w.document.close();
+  };
+
+  window.exportarXLSX = async function(){
+    const lista = listaExportacaoFiltrada();
+    if(!avisarFiltro(lista)) return;
+    let XLSXLib = window.XLSX;
+    if(!XLSXLib && typeof carregarBibliotecaExcel === "function"){
+      try{ XLSXLib = await carregarBibliotecaExcel(); }catch(e){ console.error(e); }
+    }
+    if(!XLSXLib){ alert("Não foi possível gerar Excel agora. Use CSV ou tente com internet ativa."); return; }
+
+    const tecnico = tecnicoSelecionadoExportacao() || "Todos os atendentes";
+    const wb = XLSXLib.utils.book_new();
+    wb.Props = {Title:"Exportação de Atendimentos TCFTELECOM", Author:"Sistema TCFTELECOM", CreatedDate:new Date()};
+    const dados = lista.map(linhaExportacao);
+    const ws = XLSXLib.utils.aoa_to_sheet([
+      ["TCFTELECOM — Registro de Atendimentos"],
+      ["Filtro:", tecnico],
+      ["Gerado em:", new Date().toLocaleString("pt-BR")],
+      [],
+      cabecalhoExportacao(),
+      ...dados
+    ]);
+    ws["!merges"] = [{s:{r:0,c:0}, e:{r:0,c:11}}];
+    ws["!cols"] = [{wch:13},{wch:22},{wch:28},{wch:18},{wch:24},{wch:14},{wch:18},{wch:24},{wch:12},{wch:22},{wch:20},{wch:46}];
+    ws["!autofilter"] = {ref:`A5:L${dados.length+5}`};
+
+    const total = lista.length;
+    const count = (fn) => lista.filter(fn).length;
+    const porCampo = campo => Object.entries(lista.reduce((acc,i)=>{const k=i[campo]||"Não informado"; acc[k]=(acc[k]||0)+1; return acc;},{})).sort((a,b)=>b[1]-a[1]);
+    const dash = XLSXLib.utils.aoa_to_sheet([
+      ["TCFTELECOM — Dashboard da Exportação"],
+      ["Filtro:", tecnico],
+      [],
+      ["Indicador","Valor"],
+      ["Total de Atendimentos", total],
+      ["Atendimentos Críticos", count(x=>x.critico==="Sim")],
+      ["Resolvidos Remoto", count(x=>x.resolvidoRemoto==="Sim")],
+      ["Com OS Aberta", count(x=>x.osAberta==="Sim")],
+      ["Pós Suporte Realizado", count(x=>x.posSuporte==="Sim")],
+      [],
+      ["Atendimentos por Tipo","Quantidade"], ...porCampo("tipo"),
+      [],
+      ["Atendimentos por Técnico","Quantidade"], ...porCampo("tecnico"),
+      [],
+      ["Atendimentos por Status","Quantidade"], ...porCampo("status")
+    ]);
+    dash["!cols"] = [{wch:32},{wch:18},{wch:4},{wch:26}];
+
+    const listas = XLSXLib.utils.aoa_to_sheet([
+      ["Atendentes", "Tipos de Atendimento", "Status", "Sim/Não"],
+      ["Victor", "Suporte", "Concluído", "Sim"],
+      ["Hiago", "Verificação da Conexão", "Pendente", "Não"],
+      ["Higor", "Mudança de Cômodo", "Em andamento", ""],
+      ["Odair", "Instabilidade", "Aguardando técnico", ""],
+      ["Otavio", "LOS", "Aguardando cliente", ""],
+      ["Gustavo", "Sinal Alto", "", ""],
+      ["Cleiton", "Problema na ONU", "", ""]
+    ]);
+    listas["!cols"] = [{wch:20},{wch:28},{wch:24},{wch:12}];
+
+    XLSXLib.utils.book_append_sheet(wb, ws, "Registro de Atendimentos");
+    XLSXLib.utils.book_append_sheet(wb, dash, "Dashboard");
+    XLSXLib.utils.book_append_sheet(wb, listas, "Listas");
+    XLSXLib.writeFile(wb, nomeFiltroArquivo("xlsx"));
+  };
+
+  function inserirAvisoFiltro(){
+    const filters = document.querySelector("#registros .filters");
+    if(filters && !document.getElementById("tcfExportFilterInfo")){
+      const span = document.createElement("span");
+      span.id = "tcfExportFilterInfo";
+      span.className = "tcf-export-filter-info";
+      span.textContent = "Exportação respeita o atendente selecionado";
+      filters.appendChild(span);
+    }
+  }
+
+  window.addEventListener("load", function(){
+    setTimeout(function(){ setLinkPublicoPadrao(); inserirAvisoFiltro(); }, 300);
+  });
+  document.addEventListener("click", function(){ setTimeout(inserirAvisoFiltro, 120); }, true);
+})();
+</script>
+
+</body>
+</html>
+
 <!-- PATCH TCF v0.52 - Login com cadastro + sair correto no dashboard -->
 <style id="v052-login-cadastro-sair-fix">
 /* Remove botões duplicados que estavam poluindo o menu */
@@ -11075,5 +11163,3 @@ body:not(.light-mode):not(.light) .tcf-link-output{background:rgba(2,6,23,.55);c
   };
 })();
 </script>
-</body>
-</html>
