@@ -9182,8 +9182,10 @@ body:not(.light-mode):not(.light) .tcf-v58-mini-card{background:rgba(15,23,42,.5
     setTimeout(()=>{ window.renderUsuariosAdmin?.(); window.aplicarPermissoesTCF?.(); window.aplicarControleMenuV59?.(); }, 250);
   }
   async function ensureDevBanco(){
-  return;
-}
+    // Usuário administrador já existe no banco.
+    // Não criar automaticamente para evitar erro 409.
+    return;
+  }
   async function migrarUsuariosLocais(){
     if(localStorage.getItem(MIGRATION_KEY) === "sim") return;
     const users = read(USERS_KEY, {});
@@ -11130,5 +11132,38 @@ body:not(.light-mode):not(.light) .tcf-link-output{background:rgba(2,6,23,.55);c
     try{ localStorage.removeItem("usuarios_senhas_v21"); localStorage.removeItem("convites_v21"); }catch(e){}
     setTimeout(()=>{ window.renderUsuariosAdmin && window.renderUsuariosAdmin(); }, 900);
   });
+})();
+</script>
+
+
+<script id="v071-render-usuarios-dedup">
+/* v071 - Proteção contra chamadas repetidas de /usuarios
+   Mantém somente uma execução de renderUsuariosAdmin por vez e reaproveita chamadas feitas em sequência. */
+(function(){
+  const renderOriginal = window.renderUsuariosAdmin;
+  if(typeof renderOriginal !== "function") return;
+
+  let emExecucao = null;
+  let ultimoInicio = 0;
+  const JANELA_MS = 2500;
+
+  window.renderUsuariosAdmin = async function(){
+    const agora = Date.now();
+
+    if(emExecucao){
+      return emExecucao;
+    }
+
+    if(agora - ultimoInicio < JANELA_MS){
+      return Promise.resolve();
+    }
+
+    ultimoInicio = agora;
+    emExecucao = Promise.resolve(renderOriginal.apply(this, arguments))
+      .catch(function(erro){ console.warn("Falha ao renderizar usuários:", erro); })
+      .finally(function(){ emExecucao = null; });
+
+    return emExecucao;
+  };
 })();
 </script>
