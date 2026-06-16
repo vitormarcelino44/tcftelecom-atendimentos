@@ -1,10 +1,11 @@
-{
+j{
   "name": "backend",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "npx prisma generate && node src/server.js"
+    "start": "node src/server.js",
+"postinstall": "prisma generate"
     "dev": "node src/server.js",
     "postinstall": "prisma generate"
   },
