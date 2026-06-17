@@ -10904,6 +10904,48 @@ body.invite-mode .login-card-top strong::after{content:"Convite válido detectad
   });
 })();
 </script>
+<script>
+window.entrarSistema = async function () {
+  const login = document.getElementById("loginUsuario").value.trim();
+  const senha = document.getElementById("loginSenha").value.trim();
+  const erro = document.getElementById("loginErro");
 
+  try {
+    const res = await fetch("https://tcftelecom-atendimentos-production.up.railway.app/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ login, senha })
+    });
+
+    const dados = await res.json();
+
+    if (!res.ok || !dados.sucesso) {
+      erro.textContent = "Usuário ou senha incorretos.";
+      return;
+    }
+
+    localStorage.setItem("usuarioLogadoTCF", JSON.stringify(dados.usuario));
+    document.getElementById("loginOverlay").style.display = "none";
+    document.body.classList.remove("invite-mode");
+
+    if (typeof mostrarSistema === "function") {
+      mostrarSistema(dados.usuario);
+    }
+
+    if (typeof carregarDoBanco === "function") {
+      carregarDoBanco();
+    }
+
+  } catch (e) {
+    erro.textContent = "Erro ao conectar com o servidor.";
+    console.error(e);
+  }
+};
+
+document.addEventListener("DOMContentLoaded", function () {
+  const btn = document.querySelector(".login-main-btn");
+  if (btn) btn.onclick = window.entrarSistema;
+});
+</script>
 </body>
 </html>
