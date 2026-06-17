@@ -5006,7 +5006,7 @@ body.light-mode .invite-card{
         <label id="confirmSenhaLabel" style="display:none;">Confirmar senha</label>
         <input id="loginSenhaConfirmar" type="password" placeholder="Confirme sua senha" style="display:none;">
 
-        <button class="primary login-main-btn" onclick="entrarSistema()">Acessar sistema</button>
+        <button class="primary login-main-btn" onclick="return tcfLoginFinalV073(event)">Acessar sistema</button>
       </div>
 
       <div class="login-error" id="loginErro"></div><div id="authMessage" class="auth-message"></div><div class="reset-password-link" onclick="abrirReset()">Esqueci minha senha</div>
@@ -8905,188 +8905,104 @@ body:not(.light-mode):not(.light) .tcf-v58-mini-card{background:rgba(15,23,42,.5
   }
   body:not(.light):not(.light-mode) .tcf-export-filter-info{color:#7dd3fc;}
 </style>
-<script id="v062-links-export-filter">
+
+
+<!-- PATCH TCF v073 - login final via Railway sem localStorage antigo -->
+<script id="v073-login-railway-final">
 (function(){
-  const DEFAULT_SITE_URL = "https://tcftelecom-atendimentos-48fp.vercel.app";
-  const BAD_DOMAINS = ["tcftelecomatendimentos.com", "seudominio.com.br", "localhost", "127.0.0.1", "file://"];
-
-  function normalizarUrl(url){
-    url = String(url || "").trim();
-    if(!url) return "";
-    if(!/^https?:\/\//i.test(url)) url = "https://" + url;
-    return url.replace(/\/$/, "");
+  const API_BASE_V073 = "https://tcftelecom-atendimentos-production.up.railway.app";
+  function n(v){ return String(v || "").trim(); }
+  function erro(msg){
+    const loginErro = document.getElementById("loginErro");
+    const auth = document.getElementById("authMessage");
+    if(loginErro){ loginErro.textContent = msg || ""; }
+    if(auth){ auth.textContent = msg || ""; auth.className = msg ? "auth-message show auth-error" : "auth-message"; }
   }
-
-  function isUrlRuim(url){
-    const u = String(url || "").toLowerCase();
-    return !u || BAD_DOMAINS.some(d => u.includes(d));
+  async function apiV073(path, opts){
+    const res = await fetch(API_BASE_V073 + path, Object.assign({headers:{"Content-Type":"application/json"}}, opts || {}));
+    let data = {};
+    try{ data = await res.json(); }catch(e){ data = {}; }
+    if(!res.ok){ throw new Error(data.erro || data.message || ("Erro HTTP " + res.status)); }
+    return data;
   }
-
-  function siteBaseSeguro(){
-    const salvo = normalizarUrl(localStorage.getItem("site_public_url_v30") || window.SITE_PUBLIC_URL || "");
-    if(salvo && !isUrlRuim(salvo)) return salvo;
-    if(location.hostname && location.hostname.includes("vercel.app")) return (location.origin + location.pathname).replace(/\/$/, "");
-    return DEFAULT_SITE_URL;
+  function salvarSessaoV073(usuario){
+    const u = usuario || {};
+    localStorage.setItem("sistema_login_v29", JSON.stringify(u));
+    localStorage.setItem("usuario_banco_v067", JSON.stringify(u));
+    localStorage.setItem("sistema_login_v21", u.login || u.nome || "");
+    localStorage.setItem("sistema_auto_login_v29", JSON.stringify(u));
   }
-
-  function setLinkPublicoPadrao(){
-    const base = siteBaseSeguro();
-    window.SITE_PUBLIC_URL = base;
-    localStorage.setItem("site_public_url_v30", base);
-    ["sitePublicUrl", "sitePublicUrlV57"].forEach(id => {
-      const el = document.getElementById(id);
-      if(el) el.value = base;
-    });
-    ["linkPublicoAtualV57"].forEach(id => {
-      const el = document.getElementById(id);
-      if(el) el.textContent = base;
-    });
+  function isAdminV073(usuario){
+    const perfil = String(usuario && usuario.perfil || "").toLowerCase();
+    const login = String(usuario && usuario.login || usuario && usuario.nome || "").toLowerCase();
+    return perfil.includes("admin") || login === "victor";
   }
-
-  function readJSON(key, fallback){
-    try { return JSON.parse(localStorage.getItem(key) || JSON.stringify(fallback)); }
-    catch(e){ return fallback; }
+  function liberarSistemaV073(usuario){
+    salvarSessaoV073(usuario);
+    const overlay = document.getElementById("loginOverlay");
+    if(overlay) overlay.style.display = "none";
+    document.body.classList.remove("invite-mode", "tcf-cadastro-mode", "tcf-register-mode");
+    document.body.classList.toggle("admin", isAdminV073(usuario));
+    try{ if(typeof aplicarUsuarioLogado === "function") aplicarUsuarioLogado(usuario.login || usuario.nome || ""); }catch(e){}
+    try{ if(typeof carregarDoBanco === "function") carregarDoBanco(); }catch(e){}
+    try{ if(typeof aplicarPermissoesV59 === "function") aplicarPermissoesV59(); }catch(e){}
+    try{ if(typeof aplicarControleMenuV59 === "function") aplicarControleMenuV59(); }catch(e){}
+    setTimeout(function(){ try{ if(typeof window.renderUsuariosAdmin === "function") window.renderUsuariosAdmin(); }catch(e){} }, 400);
   }
-  function writeJSON(key, value){ localStorage.setItem(key, JSON.stringify(value)); }
-  function nowBR(){ return new Date().toLocaleString("pt-BR", {dateStyle:"short", timeStyle:"short"}); }
-
-  function getPerfilConvite(){
-    return document.getElementById("convitePerfil")?.value || document.getElementById("tcfNovoUsuarioPerfil")?.value || "Atendente";
+  function tokenURLV073(){
+    const p = new URLSearchParams(location.search);
+    return p.get("token") || "";
   }
-
-  function getNomeConvite(){
-    return (document.getElementById("conviteNome")?.value || document.getElementById("tcfNovoUsuarioNome")?.value || "").trim();
-  }
-
-  window.salvarUrlPublica = function(){
-    const raw = document.getElementById("sitePublicUrl")?.value || document.getElementById("sitePublicUrlV57")?.value || DEFAULT_SITE_URL;
-    const url = normalizarUrl(raw);
-    if(!url){ alert("Digite o link público do site."); return; }
-    localStorage.setItem("site_public_url_v30", url);
-    window.SITE_PUBLIC_URL = url;
-    setLinkPublicoPadrao();
-    alert("Link público salvo com sucesso.");
-  };
-
-  window.salvarUrlPublicaV57 = window.salvarUrlPublica;
-
-  window.atualizarLinkPublicoV57 = function(){
-    setLinkPublicoPadrao();
-  };
-
-  window.copiarLinkPublicoV57 = function(){
-    const url = siteBaseSeguro();
-    navigator.clipboard?.writeText(url).then(() => alert("Link do site copiado."), () => prompt("Copie o link:", url));
-  };
-
-  window.gerarConvite = function(){
-    const nome = getNomeConvite();
-    const perfil = getPerfilConvite();
-    if(!nome){ alert("Digite o nome do atendente."); return; }
-
-    const token = "tcf_" + Date.now().toString(36) + Math.random().toString(36).slice(2,8);
-    const base = siteBaseSeguro();
-    const url = base + "?token=" + encodeURIComponent(token) + "&convite=" + encodeURIComponent(nome) + "&perfil=" + encodeURIComponent(perfil);
-
-    const convites = readJSON("convites_v21", {});
-    convites[token] = { token, nome, perfil, criadoEm: nowBR(), usado:false, link:url };
-    writeJSON("convites_v21", convites);
-
-    const first = readJSON("usuarios_primeiro_acesso_v29", {});
-    first[nome] = true;
-    writeJSON("usuarios_primeiro_acesso_v29", first);
-
-    const profiles = readJSON("usuarios_perfis_v42", {});
-    profiles[nome] = Object.assign({}, profiles[nome] || {}, { nome, perfil, origem:"Convite", criadoEm: profiles[nome]?.criadoEm || nowBR() });
-    writeJSON("usuarios_perfis_v42", profiles);
-
-    const out = document.getElementById("linkConvite");
-    if(out) out.textContent = url;
-    if(typeof renderUsuariosAdmin === "function") renderUsuariosAdmin();
-  };
-
-  window.copiarConvite = function(){
-    const texto = (document.getElementById("linkConvite")?.textContent || "").replace(/ \| Senha padrão:.*/, "").trim();
-    if(!texto || texto.includes("Nenhum") || texto.includes("Configure primeiro")){
-      alert("Gere o link primeiro.");
-      return;
+  async function loginFinalV073(ev){
+    if(ev && ev.preventDefault) ev.preventDefault();
+    erro("");
+    const login = n(document.getElementById("loginUsuario") && document.getElementById("loginUsuario").value);
+    const senha = n(document.getElementById("loginSenha") && document.getElementById("loginSenha").value);
+    const email = n(document.getElementById("loginEmail") && document.getElementById("loginEmail").value);
+    const confirma = n(document.getElementById("loginSenhaConfirmar") && document.getElementById("loginSenhaConfirmar").value);
+    const token = tokenURLV073();
+    try{
+      if(!login || !senha){ throw new Error("Preencha usuário e senha."); }
+      if(token && (document.body.classList.contains("invite-mode") || email || confirma)){
+        if(!email || !email.includes("@")) throw new Error("Digite um e-mail válido para criar a conta.");
+        if(senha !== confirma) throw new Error("As senhas não conferem.");
+        await apiV073("/convites/usar", {method:"POST", body:JSON.stringify({token, nome:login, login, email, senha})});
+        alert("Conta criada. Agora faça login.");
+        history.replaceState({}, document.title, location.pathname);
+        document.body.classList.remove("invite-mode");
+        return false;
+      }
+      const resp = await apiV073("/login", {method:"POST", body:JSON.stringify({login, senha})});
+      const usuario = resp.usuario || resp;
+      if(!usuario || !(usuario.login || usuario.nome)){ throw new Error("Login retornou sem usuário."); }
+      liberarSistemaV073(usuario);
+    }catch(e){
+      erro(e.message || "Usuário ou senha incorretos.");
     }
-    navigator.clipboard?.writeText(texto).then(() => alert("Link de convite copiado."), () => prompt("Copie o link:", texto));
-  };
-
-  window.copiarLinkLoginUsuarioTCF = function(nome){
-    const url = siteBaseSeguro() + "?usuario=" + encodeURIComponent(nome || "");
-    navigator.clipboard?.writeText(url).then(() => alert("Link de acesso copiado."), () => prompt("Copie o link:", url));
-  };
-
-  function tecnicoSelecionadoExportacao(){
-    return (document.getElementById("filtroAtendente")?.value || "").trim();
+    return false;
   }
-
-  function listaExportacaoFiltrada(){
-    const lista = (typeof carregar === "function" ? carregar() : []);
-    const tecnico = tecnicoSelecionadoExportacao();
-    if(!tecnico) return lista;
-    return lista.filter(i => String(i.tecnico || "").trim() === tecnico);
-  }
-
-  function nomeFiltroArquivo(ext){
-    const tecnico = tecnicoSelecionadoExportacao();
-    const pessoa = tecnico ? tecnico.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/gi,"_") : "todos";
-    const d = new Date();
-    const p = n => String(n).padStart(2,"0");
-    return `TCFTELECOM_atendimentos_${pessoa}_${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}_${p(d.getHours())}-${p(d.getMinutes())}.${ext}`;
-  }
-
-  function limparCSVLocal(valor){ return `"${String(valor ?? "").replace(/"/g, '""')}"`; }
-
-  function cabecalhoExportacao(){
-    return ["Data","Técnico/Atendente","Cliente","Contato","Tipo de Atendimento","OS Aberta?","Resolvido Remoto?","Resolvido Internamente?","Crítico?","Pós Suporte Realizado?","Status","Observações"];
-  }
-
-  function linhaExportacao(i){
-    return [i.data||"", i.tecnico||"", i.cliente||"", i.contato||i.telefone||"", i.tipo||"", i.osAberta||"", i.resolvidoRemoto||"", i.resolvidoInternamente||i.resolvidoRemoto||"", i.critico||"", i.posSuporte||"", i.status||"", i.observacoes||""];
-  }
-
-  function avisarFiltro(lista){
-    const tecnico = tecnicoSelecionadoExportacao();
-    if(lista.length === 0){
-      alert(tecnico ? `Nenhum atendimento encontrado para ${tecnico}.` : "Nenhum atendimento para exportar.");
-      return false;
+  function bindLoginV073(){
+    const btn = document.querySelector(".login-main-btn");
+    if(btn){
+      btn.onclick = loginFinalV073;
+      btn.setAttribute("onclick", "return tcfLoginFinalV073(event)");
     }
-    return true;
+    ["loginUsuario","loginSenha","loginSenhaConfirmar"].forEach(function(id){
+      const el = document.getElementById(id);
+      if(el && !el.dataset.v073Enter){
+        el.dataset.v073Enter = "1";
+        el.addEventListener("keydown", function(e){ if(e.key === "Enter") loginFinalV073(e); });
+      }
+    });
   }
-
-  window.exportarCSV = function(){
-    const lista = listaExportacaoFiltrada();
-    if(!avisarFiltro(lista)) return;
-    const csv = [cabecalhoExportacao(), ...lista.map(linhaExportacao)].map(l => l.map(limparCSVLocal).join(";")).join("\n");
-    const blob = new Blob(["\ufeff" + csv], { type:"text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = nomeFiltroArquivo("csv");
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
-  };
-
-  window.exportarPDF = function(){
-    const lista = listaExportacaoFiltrada();
-    if(!avisarFiltro(lista)) return;
-    const tecnico = tecnicoSelecionadoExportacao() || "Todos os atendentes";
-    const rows = lista.map(i => `<tr>${linhaExportacao(i).map(v => `<td>${String(v ?? "").replace(/[&<>]/g, s => ({"&":"&amp;","<":"&lt;",">":"&gt;"}[s]))}</td>`).join("")}</tr>`).join("");
-    const html = `<!doctype html><html><head><meta charset="utf-8"><title>TCFTELECOM - Relatório PDF</title><style>
-      body{font-family:Arial,sans-serif;margin:24px;color:#0f172a} h1{margin:0 0 4px;font-size:22px} .meta{color:#475569;margin-bottom:18px;font-size:12px} table{width:100%;border-collapse:collapse;font-size:10px} th{background:#0f2f4d;color:white;padding:8px;border:1px solid #173a59;text-align:left} td{padding:7px;border:1px solid #dbe3ef;vertical-align:top} tr:nth-child(even)td{background:#f8fafc}@media print{body{margin:12mm} button{display:none}}
-    </style></head><body><button onclick="window.print()" style="margin-bottom:12px;padding:10px 14px;border:0;border-radius:8px;background:#0284c7;color:#fff;font-weight:bold">Imprimir / salvar PDF</button><h1>TCFTELECOM — Relatório de Atendimentos</h1><div class="meta">Filtro: ${tecnico} • Registros: ${lista.length} • Gerado em ${new Date().toLocaleString("pt-BR")}</div><table><thead><tr>${cabecalhoExportacao().map(h=>`<th>${h}</th>`).join("")}</tr></thead><tbody>${rows}</tbody></table><script>setTimeout(()=>window.print(),400)<\/script></body></html>`;
-    const w = window.open("", "_blank");
-    if(!w){ alert("O navegador bloqueou a janela do PDF. Libere pop-ups e tente novamente."); return; }
-    w.document.open();
-    w.document.write(html);
-    w.document.close();
-  };
+  window.tcfLoginFinalV073 = loginFinalV073;
+  window.entrarSistema = loginFinalV073;
+  try{ entrarSistema = loginFinalV073; }catch(e){}
+  document.addEventListener("DOMContentLoaded", bindLoginV073);
+  window.addEventListener("load", bindLoginV073);
+  setTimeout(bindLoginV073, 300);
 })();
+function entrarSistema(){ return window.tcfLoginFinalV073 ? window.tcfLoginFinalV073() : false; }
 </script>
 
 </body></html>`;
