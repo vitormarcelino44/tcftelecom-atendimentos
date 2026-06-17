@@ -10905,47 +10905,86 @@ body.invite-mode .login-card-top strong::after{content:"Convite válido detectad
 })();
 </script>
 <script>
-window.entrarSistema = async function () {
-  const login = document.getElementById("loginUsuario").value.trim();
-  const senha = document.getElementById("loginSenha").value.trim();
-  const erro = document.getElementById("loginErro");
+(function(){
+  const API = "https://tcftelecom-atendimentos-production.up.railway.app";
 
-  try {
-    const res = await fetch("https://tcftelecom-atendimentos-production.up.railway.app/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ login, senha })
-    });
+  function liberarSistema(usuario){
+    localStorage.setItem("usuarioLogadoTCF", JSON.stringify(usuario));
+    localStorage.setItem("sistema_login_v29", JSON.stringify(usuario));
+    localStorage.setItem("sistema_login_v21", JSON.stringify(usuario));
 
-    const dados = await res.json();
+    const overlay = document.getElementById("loginOverlay");
+    if (overlay) overlay.style.display = "none";
 
-    if (!res.ok || !dados.sucesso) {
-      erro.textContent = "Usuário ou senha incorretos.";
-      return;
+    const erro = document.getElementById("loginErro");
+    if (erro) {
+      erro.textContent = "";
+      erro.style.display = "none";
     }
 
-    localStorage.setItem("usuarioLogadoTCF", JSON.stringify(dados.usuario));
-    document.getElementById("loginOverlay").style.display = "none";
-    document.body.classList.remove("invite-mode");
-
-    if (typeof mostrarSistema === "function") {
-      mostrarSistema(dados.usuario);
-    }
-
-    if (typeof carregarDoBanco === "function") {
-      carregarDoBanco();
-    }
-
-  } catch (e) {
-    erro.textContent = "Erro ao conectar com o servidor.";
-    console.error(e);
+    if (typeof mostrarSistema === "function") mostrarSistema(usuario);
+    if (typeof carregarDoBanco === "function") carregarDoBanco();
+    if (typeof abrirTelaPorId === "function") abrirTelaPorId("dashboard");
   }
-};
 
-document.addEventListener("DOMContentLoaded", function () {
-  const btn = document.querySelector(".login-main-btn");
-  if (btn) btn.onclick = window.entrarSistema;
-});
+  window.entrarSistema = async function(event){
+    if (event) event.preventDefault();
+
+    const login = document.getElementById("loginUsuario").value.trim();
+    const senha = document.getElementById("loginSenha").value.trim();
+    const erro = document.getElementById("loginErro");
+
+    try {
+      const res = await fetch(API + "/login", {
+        method: "POST",
+        headers: {"Content-Type":"application/json"},
+        body: JSON.stringify({login, senha})
+      });
+
+      const dados = await res.json();
+
+      if (!res.ok || !dados.sucesso || !dados.usuario) {
+        if (erro) {
+          erro.style.display = "block";
+          erro.textContent = "Usuário ou senha incorretos.";
+        }
+        return false;
+      }
+
+      liberarSistema(dados.usuario);
+      return false;
+
+    } catch(e) {
+      if (erro) {
+        erro.style.display = "block";
+        erro.textContent = "Erro ao conectar com o servidor.";
+      }
+      console.error(e);
+      return false;
+    }
+  };
+
+  window.addEventListener("load", function(){
+    const salvo = localStorage.getItem("usuarioLogadoTCF");
+    if (salvo) {
+      try {
+        liberarSistema(JSON.parse(salvo));
+      } catch(e){}
+    }
+
+    const btn = document.querySelector(".login-main-btn");
+    if (btn) btn.onclick = window.entrarSistema;
+
+    ["loginUsuario","loginSenha"].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) {
+        el.onkeydown = function(e){
+          if (e.key === "Enter") window.entrarSistema(e);
+        };
+      }
+    });
+  });
+})();
 </script>
 </body>
 </html>
