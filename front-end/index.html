@@ -9080,9 +9080,8 @@ body:not(.light-mode):not(.light) .tcf-v58-mini-card{background:rgba(15,23,42,.5
     const html = `<!doctype html><html><head><meta charset="utf-8"><title>TCFTELECOM - Relatório PDF</title><style>
       body{font-family:Arial,sans-serif;margin:24px;color:#0f172a} h1{margin:0 0 4px;font-size:22px} .meta{color:#475569;margin-bottom:18px;font-size:12px} table{width:100%;border-collapse:collapse;font-size:10px} th{background:#0f2f4d;color:white;padding:8px;border:1px solid #173a59;text-align:left} td{padding:7px;border:1px solid #dbe3ef;vertical-align:top} tr:nth-child(even)td{background:#f8fafc}@media print{body{margin:12mm} button{display:none}}
     </style></head><body><button onclick="window.print()" style="margin-bottom:12px;padding:10px 14px;border:0;border-radius:8px;background:#0284c7;color:#fff;font-weight:bold">Imprimir / salvar PDF</button><h1>TCFTELECOM — Relatório de Atendimentos</h1><div class="meta">Filtro: ${tecnico} • Registros: ${lista.length} • Gerado em ${new Date().toLocaleString("pt-BR")}</div><table><thead><tr>${cabecalhoExportacao().map(h=>`<th>${h}</th>`).join("")}</tr></thead><tbody>${rows}</tbody></table><script>setTimeout(()=>window.print(),400)<\/script>
-
-<!-- v083 - correção final login/logout sem F5: força ocultar overlay com !important -->
-<style id="v083-login-overlay-force-fix">
+<!-- v084 - correção definitiva: login/logout sem F5 usando loginOverlay real -->
+<style id="v084-login-overlay-definitivo">
   body.tcf-logado #loginOverlay,
   #loginOverlay.tcf-force-hide{
     display:none !important;
@@ -9090,11 +9089,8 @@ body:not(.light-mode):not(.light) .tcf-v58-mini-card{background:rgba(15,23,42,.5
     opacity:0 !important;
     pointer-events:none !important;
   }
-  body.tcf-logado .app{
-    display:grid !important;
-  }
 </style>
-<script id="v083-login-logout-sem-f5">
+<script id="v084-login-overlay-definitivo">
 (function(){
   const LOGIN_KEYS = [
     "usuarioLogadoTCF",
@@ -9107,14 +9103,12 @@ body:not(.light-mode):not(.light) .tcf-v58-mini-card{background:rgba(15,23,42,.5
     "sistema_login_v14"
   ];
 
-  function el(id){ return document.getElementById(id); }
-
-  function temUsuarioLogado(){
-    return !!(localStorage.getItem("usuarioLogadoTCF") || localStorage.getItem("usuario_banco_v069") || localStorage.getItem("usuarioLogado"));
+  function temLogin(){
+    return LOGIN_KEYS.some(function(k){ return !!localStorage.getItem(k); });
   }
 
-  function esconderLogin(){
-    const overlay = el("loginOverlay");
+  function esconderLoginAgora(){
+    const overlay = document.getElementById("loginOverlay");
     if(overlay){
       overlay.classList.add("tcf-force-hide");
       overlay.style.setProperty("display", "none", "important");
@@ -9124,15 +9118,13 @@ body:not(.light-mode):not(.light) .tcf-v58-mini-card{background:rgba(15,23,42,.5
     }
     document.body.classList.add("tcf-logado");
     const app = document.querySelector(".app");
-    if(app){
-      app.style.setProperty("display", "grid", "important");
-    }
+    if(app) app.style.setProperty("display", "grid", "important");
     try{ if(typeof window.carregarDoBanco === "function") window.carregarDoBanco(); }catch(e){}
     try{ if(typeof window.atualizarTudo === "function") window.atualizarTudo(); }catch(e){}
   }
 
-  function mostrarLogin(){
-    const overlay = el("loginOverlay");
+  function mostrarLoginAgora(){
+    const overlay = document.getElementById("loginOverlay");
     document.body.classList.remove("tcf-logado", "admin");
     if(overlay){
       overlay.classList.remove("tcf-force-hide");
@@ -9143,56 +9135,63 @@ body:not(.light-mode):not(.light) .tcf-v58-mini-card{background:rgba(15,23,42,.5
     }
   }
 
-  function limparSessao(){
+  function limparLogin(){
     LOGIN_KEYS.forEach(function(k){ localStorage.removeItem(k); });
     sessionStorage.clear();
   }
 
-  function verificarLoginDepoisDoClique(){
-    setTimeout(function(){ if(temUsuarioLogado()) esconderLogin(); }, 120);
-    setTimeout(function(){ if(temUsuarioLogado()) esconderLogin(); }, 500);
-    setTimeout(function(){ if(temUsuarioLogado()) esconderLogin(); }, 1200);
-  }
-
-  document.addEventListener("click", function(e){
-    const alvo = e.target && e.target.closest && e.target.closest("#tcfFinalLoginBtn, .tcf-final-login-btn, .login-main-btn");
-    if(alvo) verificarLoginDepoisDoClique();
-  }, true);
-
-  document.addEventListener("keydown", function(e){
-    if(e.key === "Enter") verificarLoginDepoisDoClique();
-  }, true);
-
-  const originalEntrar = window.entrarSistema;
+  const entradaOriginal = window.entrarSistema;
   window.entrarSistema = function(){
-    let retorno;
-    try{
-      retorno = typeof originalEntrar === "function" ? originalEntrar.apply(this, arguments) : undefined;
-    }finally{
-      verificarLoginDepoisDoClique();
-    }
+    const retorno = typeof entradaOriginal === "function" ? entradaOriginal.apply(this, arguments) : undefined;
+    setTimeout(function(){ if(temLogin()) esconderLoginAgora(); }, 80);
+    setTimeout(function(){ if(temLogin()) esconderLoginAgora(); }, 300);
+    setTimeout(function(){ if(temLogin()) esconderLoginAgora(); }, 900);
     return retorno;
   };
 
-  window.mostrarSistema = esconderLogin;
-  window.sairSistema = function(){ limparSessao(); mostrarLogin(); return false; };
+  const loginFinalOriginal = window.tcfLoginFinalV078;
+  if(typeof loginFinalOriginal === "function"){
+    window.tcfLoginFinalV078 = async function(){
+      const retorno = await loginFinalOriginal.apply(this, arguments);
+      if(temLogin()) esconderLoginAgora();
+      return retorno;
+    };
+  }
+
+  function ligarBotaoLogin(){
+    const btn = document.getElementById("tcfFinalLoginBtn") || document.querySelector(".tcf-final-login-btn") || document.querySelector(".login-main-btn");
+    if(btn && !btn.dataset.v084Ok){
+      btn.dataset.v084Ok = "1";
+      btn.addEventListener("click", function(){
+        setTimeout(function(){ if(temLogin()) esconderLoginAgora(); }, 120);
+        setTimeout(function(){ if(temLogin()) esconderLoginAgora(); }, 500);
+        setTimeout(function(){ if(temLogin()) esconderLoginAgora(); }, 1200);
+      }, true);
+    }
+  }
+
+  window.mostrarSistema = esconderLoginAgora;
+  window.sairSistema = function(){
+    limparLogin();
+    mostrarLoginAgora();
+    return false;
+  };
   window.sairSistemaFinal = window.sairSistema;
 
-  document.addEventListener("DOMContentLoaded", function(){
-    if(temUsuarioLogado()) esconderLogin();
-    const sairBtn = document.querySelector(".sidebar-final-btn.exit");
-    if(sairBtn){
-      sairBtn.onclick = window.sairSistemaFinal;
-    }
-  });
+  function iniciarV084(){
+    ligarBotaoLogin();
+    const sair = document.querySelector(".sidebar-final-btn.exit");
+    if(sair) sair.onclick = window.sairSistemaFinal;
+    if(temLogin()) esconderLoginAgora();
+  }
 
+  document.addEventListener("DOMContentLoaded", iniciarV084);
   window.addEventListener("load", function(){
-    if(temUsuarioLogado()) esconderLogin();
-    const sairBtn = document.querySelector(".sidebar-final-btn.exit");
-    if(sairBtn){
-      sairBtn.onclick = window.sairSistemaFinal;
-    }
+    iniciarV084();
+    setTimeout(iniciarV084, 300);
+    setTimeout(iniciarV084, 1200);
   });
+  setInterval(ligarBotaoLogin, 800);
 })();
 </script>
 
@@ -10919,7 +10918,14 @@ body:not(.light-mode):not(.light) .tcf-link-output{background:rgba(2,6,23,.55);c
     localStorage.setItem("usuario_banco_v069", JSON.stringify(user));
     document.body.classList.toggle("admin", lower(user.perfil) === "administrador" || lower(user.perfil) === "desenvolvedor" || lower(login) === "victor");
     const overlay = el("loginOverlay");
-    if(overlay) overlay.style.display = "none";
+    if(overlay){
+      overlay.classList.add("tcf-force-hide");
+      overlay.style.setProperty("display", "none", "important");
+      overlay.style.setProperty("visibility", "hidden", "important");
+      overlay.style.setProperty("opacity", "0", "important");
+      overlay.style.setProperty("pointer-events", "none", "important");
+    }
+    document.body.classList.add("tcf-logado");
     try{ if(typeof window.aplicarUsuarioLogado === "function") window.aplicarUsuarioLogado(login); }catch(e){}
     try{ if(typeof window.carregarPerfilUsuario === "function") window.carregarPerfilUsuario(); }catch(e){}
     try{ if(typeof window.carregarDoBanco === "function") window.carregarDoBanco(); }catch(e){}
@@ -11025,9 +11031,8 @@ body:not(.light-mode):not(.light) .tcf-link-output{background:rgba(2,6,23,.55);c
 </script>
 
 
-
-<!-- v083 - correção final login/logout sem F5: força ocultar overlay com !important -->
-<style id="v083-login-overlay-force-fix">
+<!-- v084 - correção definitiva: login/logout sem F5 usando loginOverlay real -->
+<style id="v084-login-overlay-definitivo">
   body.tcf-logado #loginOverlay,
   #loginOverlay.tcf-force-hide{
     display:none !important;
@@ -11035,11 +11040,8 @@ body:not(.light-mode):not(.light) .tcf-link-output{background:rgba(2,6,23,.55);c
     opacity:0 !important;
     pointer-events:none !important;
   }
-  body.tcf-logado .app{
-    display:grid !important;
-  }
 </style>
-<script id="v083-login-logout-sem-f5">
+<script id="v084-login-overlay-definitivo">
 (function(){
   const LOGIN_KEYS = [
     "usuarioLogadoTCF",
@@ -11052,14 +11054,12 @@ body:not(.light-mode):not(.light) .tcf-link-output{background:rgba(2,6,23,.55);c
     "sistema_login_v14"
   ];
 
-  function el(id){ return document.getElementById(id); }
-
-  function temUsuarioLogado(){
-    return !!(localStorage.getItem("usuarioLogadoTCF") || localStorage.getItem("usuario_banco_v069") || localStorage.getItem("usuarioLogado"));
+  function temLogin(){
+    return LOGIN_KEYS.some(function(k){ return !!localStorage.getItem(k); });
   }
 
-  function esconderLogin(){
-    const overlay = el("loginOverlay");
+  function esconderLoginAgora(){
+    const overlay = document.getElementById("loginOverlay");
     if(overlay){
       overlay.classList.add("tcf-force-hide");
       overlay.style.setProperty("display", "none", "important");
@@ -11069,15 +11069,13 @@ body:not(.light-mode):not(.light) .tcf-link-output{background:rgba(2,6,23,.55);c
     }
     document.body.classList.add("tcf-logado");
     const app = document.querySelector(".app");
-    if(app){
-      app.style.setProperty("display", "grid", "important");
-    }
+    if(app) app.style.setProperty("display", "grid", "important");
     try{ if(typeof window.carregarDoBanco === "function") window.carregarDoBanco(); }catch(e){}
     try{ if(typeof window.atualizarTudo === "function") window.atualizarTudo(); }catch(e){}
   }
 
-  function mostrarLogin(){
-    const overlay = el("loginOverlay");
+  function mostrarLoginAgora(){
+    const overlay = document.getElementById("loginOverlay");
     document.body.classList.remove("tcf-logado", "admin");
     if(overlay){
       overlay.classList.remove("tcf-force-hide");
@@ -11088,56 +11086,63 @@ body:not(.light-mode):not(.light) .tcf-link-output{background:rgba(2,6,23,.55);c
     }
   }
 
-  function limparSessao(){
+  function limparLogin(){
     LOGIN_KEYS.forEach(function(k){ localStorage.removeItem(k); });
     sessionStorage.clear();
   }
 
-  function verificarLoginDepoisDoClique(){
-    setTimeout(function(){ if(temUsuarioLogado()) esconderLogin(); }, 120);
-    setTimeout(function(){ if(temUsuarioLogado()) esconderLogin(); }, 500);
-    setTimeout(function(){ if(temUsuarioLogado()) esconderLogin(); }, 1200);
-  }
-
-  document.addEventListener("click", function(e){
-    const alvo = e.target && e.target.closest && e.target.closest("#tcfFinalLoginBtn, .tcf-final-login-btn, .login-main-btn");
-    if(alvo) verificarLoginDepoisDoClique();
-  }, true);
-
-  document.addEventListener("keydown", function(e){
-    if(e.key === "Enter") verificarLoginDepoisDoClique();
-  }, true);
-
-  const originalEntrar = window.entrarSistema;
+  const entradaOriginal = window.entrarSistema;
   window.entrarSistema = function(){
-    let retorno;
-    try{
-      retorno = typeof originalEntrar === "function" ? originalEntrar.apply(this, arguments) : undefined;
-    }finally{
-      verificarLoginDepoisDoClique();
-    }
+    const retorno = typeof entradaOriginal === "function" ? entradaOriginal.apply(this, arguments) : undefined;
+    setTimeout(function(){ if(temLogin()) esconderLoginAgora(); }, 80);
+    setTimeout(function(){ if(temLogin()) esconderLoginAgora(); }, 300);
+    setTimeout(function(){ if(temLogin()) esconderLoginAgora(); }, 900);
     return retorno;
   };
 
-  window.mostrarSistema = esconderLogin;
-  window.sairSistema = function(){ limparSessao(); mostrarLogin(); return false; };
+  const loginFinalOriginal = window.tcfLoginFinalV078;
+  if(typeof loginFinalOriginal === "function"){
+    window.tcfLoginFinalV078 = async function(){
+      const retorno = await loginFinalOriginal.apply(this, arguments);
+      if(temLogin()) esconderLoginAgora();
+      return retorno;
+    };
+  }
+
+  function ligarBotaoLogin(){
+    const btn = document.getElementById("tcfFinalLoginBtn") || document.querySelector(".tcf-final-login-btn") || document.querySelector(".login-main-btn");
+    if(btn && !btn.dataset.v084Ok){
+      btn.dataset.v084Ok = "1";
+      btn.addEventListener("click", function(){
+        setTimeout(function(){ if(temLogin()) esconderLoginAgora(); }, 120);
+        setTimeout(function(){ if(temLogin()) esconderLoginAgora(); }, 500);
+        setTimeout(function(){ if(temLogin()) esconderLoginAgora(); }, 1200);
+      }, true);
+    }
+  }
+
+  window.mostrarSistema = esconderLoginAgora;
+  window.sairSistema = function(){
+    limparLogin();
+    mostrarLoginAgora();
+    return false;
+  };
   window.sairSistemaFinal = window.sairSistema;
 
-  document.addEventListener("DOMContentLoaded", function(){
-    if(temUsuarioLogado()) esconderLogin();
-    const sairBtn = document.querySelector(".sidebar-final-btn.exit");
-    if(sairBtn){
-      sairBtn.onclick = window.sairSistemaFinal;
-    }
-  });
+  function iniciarV084(){
+    ligarBotaoLogin();
+    const sair = document.querySelector(".sidebar-final-btn.exit");
+    if(sair) sair.onclick = window.sairSistemaFinal;
+    if(temLogin()) esconderLoginAgora();
+  }
 
+  document.addEventListener("DOMContentLoaded", iniciarV084);
   window.addEventListener("load", function(){
-    if(temUsuarioLogado()) esconderLogin();
-    const sairBtn = document.querySelector(".sidebar-final-btn.exit");
-    if(sairBtn){
-      sairBtn.onclick = window.sairSistemaFinal;
-    }
+    iniciarV084();
+    setTimeout(iniciarV084, 300);
+    setTimeout(iniciarV084, 1200);
   });
+  setInterval(ligarBotaoLogin, 800);
 })();
 </script>
 
