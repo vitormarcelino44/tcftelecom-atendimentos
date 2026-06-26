@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>TCFTELECOM v118</title>
+<title>TCFTELECOM v118.2</title>
 <style>
 :root{
   --bg:#06111f;--bg2:#0a1528;--side:#071226;--panel:#0e1a2d;--panel2:#111f34;--line:rgba(148,163,184,.20);--txt:#f8fafc;--mut:#9fb0c7;
@@ -20,6 +20,218 @@ body.light{
 .main{padding:28px 34px 80px;min-width:0}.top{min-height:168px;background:radial-gradient(circle at 94% 0,rgba(37,99,235,.12),transparent 30%),linear-gradient(135deg,#fff,#eef5ff 72%);border:1px solid var(--line);border-radius:34px;padding:32px 34px;display:grid;grid-template-columns:1fr 220px;gap:24px;align-items:center;margin-bottom:28px;box-shadow:var(--shadow);position:relative;overflow:hidden}body:not(.light) .top{background:radial-gradient(circle at 94% 0,rgba(56,189,248,.14),transparent 30%),linear-gradient(135deg,#0e1a2d,#081120 72%)}.top::after{content:"";position:absolute;right:-90px;bottom:-125px;width:300px;height:300px;border-radius:50%;background:radial-gradient(circle,rgba(56,189,248,.16),transparent 66%)}.top>div{position:relative;z-index:1}.top h1{font-size:54px;line-height:1;margin:8px 0 8px;letter-spacing:-2px}.top p{font-size:15px;max-width:720px;color:var(--mut);margin:0}.version{min-width:0;height:112px;text-align:center;border:1px solid var(--line);background:rgba(255,255,255,.58);border-radius:22px;padding:17px;display:grid;place-items:center;align-content:center;backdrop-filter:blur(18px)}body:not(.light) .version{background:rgba(255,255,255,.055);border-color:rgba(255,255,255,.14)}.version h2{margin:6px 0;font-size:24px}.screen{display:none}.screen.active{display:block;animation:softUp .32s ease both}@keyframes softUp{from{opacity:.45;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 .cards{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:18px;margin-bottom:26px}.card{min-height:132px;border-radius:22px;padding:22px;background:var(--panel);position:relative;overflow:hidden;border:1px solid var(--line);box-shadow:var(--soft);display:flex;flex-direction:column;justify-content:space-between;transition:.18s ease}.card:hover{transform:translateY(-4px);filter:brightness(1.03)}.card::after{content:"";position:absolute;right:-42px;top:-42px;width:130px;height:130px;border-radius:50%;background:rgba(255,255,255,.22)}.card span{font-size:13px;opacity:.95}.card b{font-size:42px;line-height:1;display:block;margin:6px 0}.card small{opacity:.88}.c1{background:linear-gradient(135deg,#2563eb,#60a5fa)!important;color:#fff}.c2{background:linear-gradient(135deg,#ef4444,#fb7185)!important;color:#fff}.c3{background:linear-gradient(135deg,#16a34a,#5eead4)!important;color:#fff}.c4{background:linear-gradient(135deg,#7c3aed,#c084fc)!important;color:#fff}.c5{background:linear-gradient(135deg,#ea580c,#fdba74)!important;color:#fff}.panel{background:var(--panel);border:1px solid var(--line);border-radius:30px;padding:28px;margin-bottom:24px;box-shadow:var(--soft)}.panel h2{font-size:28px;line-height:1.1;margin:0 0 8px;letter-spacing:-.9px}.grid2{display:grid;grid-template-columns:1.7fr 1fr;gap:24px}.quick{display:grid;gap:12px;margin-top:18px}.quick div{min-height:76px;background:var(--panel2);border:1px solid var(--line);border-radius:18px;padding:17px;display:grid;align-content:center;transition:.18s}.quick div:hover{transform:translateY(-2px);border-color:rgba(56,189,248,.45)}.quick span{color:var(--mut);font-weight:650}.bars{display:grid;gap:14px}.bar-top{display:flex;justify-content:space-between;color:var(--mut);font-weight:850}.bar-bg{height:12px;background:rgba(148,163,184,.20);border-radius:999px;overflow:hidden}.bar-fill{height:100%;background:linear-gradient(90deg,#2563eb,#38bdf8);border-radius:999px;transform-origin:left center;animation:barGrow .75s ease both}@keyframes barGrow{from{transform:scaleX(0)}to{transform:scaleX(1)}}.donut{width:190px;height:190px;border-radius:50%;background:conic-gradient(var(--green) var(--p,0%),rgba(148,163,184,.18) 0);display:grid;place-items:center;margin:30px auto}.donut div{width:94px;height:94px;border-radius:50%;background:var(--panel);display:grid;place-items:center;text-align:center}.form{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}.form label{display:grid;gap:8px;font-size:11px;color:var(--mut);font-weight:950;letter-spacing:.06em;text-transform:uppercase}.span2{grid-column:span 2}.span4{grid-column:1/-1}textarea{min-height:98px}.actions{display:flex;gap:10px;flex-wrap:wrap;margin:16px 0}.registros-toolbar{display:grid;grid-template-columns:2fr 1fr 1fr auto auto;gap:12px;align-items:center;margin:18px 0;padding:14px;background:var(--panel2);border:1px solid var(--line);border-radius:22px}.table-wrap{max-height:560px;overflow:auto;border:1px solid var(--line);border-radius:22px;background:var(--panel2);margin-top:18px}table{width:100%;border-collapse:collapse;min-width:1150px}th,td{padding:14px;border-bottom:1px solid var(--line);text-align:left}th{position:sticky;top:0;z-index:2;background:linear-gradient(135deg,#0f3b63,#155f91);color:white;text-transform:uppercase;font-size:12px;letter-spacing:.2px}td{font-size:13px;background:rgba(255,255,255,.025);line-height:1.35}body.light td{background:#fff}tbody tr:nth-child(even) td{background:rgba(148,163,184,.06)}body.light tbody tr:nth-child(even) td{background:#f2f6fc}tbody tr:hover td{background:rgba(56,189,248,.08)!important}.mini{padding:8px 11px;border-radius:12px;border:1px solid var(--line);background:var(--panel2);color:var(--txt);font-weight:950;cursor:pointer}.excel-btn{background:linear-gradient(135deg,#16a34a,#22c55e)!important;color:#fff!important;border:0!important}.reg-status,.pill,.badge{display:inline-flex;align-items:center;justify-content:center;padding:7px 10px;border-radius:999px;font-size:12px;font-weight:950;background:rgba(56,189,248,.12);color:var(--cyan);border:1px solid rgba(56,189,248,.22)}.reg-status.ok,.pill.online,.badge{background:rgba(34,197,94,.12);color:var(--green);border-color:rgba(34,197,94,.22)}.reg-status.warn{background:rgba(245,158,11,.12);color:var(--yellow);border-color:rgba(245,158,11,.25)}.reg-status.danger2,.pill.blocked,.off{background:rgba(251,113,133,.12);color:var(--red);border-color:rgba(251,113,133,.25)}.pill.offline{background:rgba(148,163,184,.10);color:var(--mut);border-color:rgba(148,163,184,.25)}.pill.admin{background:rgba(139,92,246,.12);color:var(--purple);border-color:rgba(139,92,246,.28)}.empty-state{text-align:center;padding:38px;color:var(--mut)}.empty-state b{display:block;font-size:22px;color:var(--txt);margin-bottom:8px}.edit-alert{display:none;border:1px solid rgba(245,158,11,.32);background:rgba(245,158,11,.10);color:var(--yellow);border-radius:18px;padding:14px 16px;margin-bottom:16px}body.editando .edit-alert{display:block}.admin-note,.users-note,.convite-ajuda{background:rgba(56,189,248,.08);border:1px solid rgba(56,189,248,.22);color:var(--cyan);border-radius:18px;padding:14px 16px;margin:12px 0 18px;line-height:1.45;font-size:13px}.list{display:grid;gap:12px}.item{background:var(--panel2);border:1px solid var(--line);border-radius:18px;padding:14px;display:flex;justify-content:space-between;gap:12px;align-items:center}.users-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin:18px 0}.users-summary .u-card{background:linear-gradient(135deg,var(--panel2),rgba(56,189,248,.08));border:1px solid var(--line);border-radius:22px;padding:18px}.users-summary span{color:var(--mut);font-size:13px}.users-summary strong{display:block;font-size:30px;margin-top:6px;color:var(--cyan)}.users-list-premium{display:grid;gap:14px;margin-top:18px}.user-view-card{display:grid;grid-template-columns:56px 1fr auto;gap:14px;align-items:center;padding:16px;background:linear-gradient(135deg,var(--panel2),rgba(56,189,248,.04));border:1px solid var(--line);border-radius:22px}.user-avatar-view{width:56px;height:56px;border-radius:18px;display:grid;place-items:center;font-size:22px;font-weight:950;color:#fff;background:linear-gradient(135deg,#2563eb,#38bdf8);box-shadow:0 12px 26px rgba(56,189,248,.18)}.user-view-main b{display:block;font-size:18px}.user-view-main span{display:block;margin-top:4px;color:var(--mut);font-weight:700}.user-view-tags{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}.login-ok{color:var(--green)!important}.login-erro{color:var(--red)!important}#boxConvite input{text-transform:none!important}
 @media(max-width:1350px){.cards{grid-template-columns:repeat(2,minmax(0,1fr))}.grid2{grid-template-columns:1fr}.registros-toolbar{grid-template-columns:1fr 1fr}}@media(max-width:980px){.app{grid-template-columns:1fr}.side{position:relative;width:100%;height:auto}.main{padding:18px}.top{grid-template-columns:1fr}.version{height:auto}.cards,.form{grid-template-columns:1fr}.span2,.span4{grid-column:1}.registros-toolbar{grid-template-columns:1fr}.users-summary{grid-template-columns:1fr 1fr}.user-view-card{grid-template-columns:56px 1fr}.user-view-tags{grid-column:1/-1;justify-content:flex-start}nav::before,nav button:nth-child(6)::before{display:none}nav button:nth-child(6){margin-top:0}}@media(max-width:640px){.users-summary{grid-template-columns:1fr}.top h1{font-size:38px}.links{display:grid}}
+
+
+
+/* v118.1 - Login premium claro/escuro */
+.login{
+  min-height:100vh!important;
+  padding:34px!important;
+  display:grid!important;
+  place-items:center!important;
+  background:
+    radial-gradient(circle at 12% 10%,rgba(37,99,235,.16),transparent 30%),
+    radial-gradient(circle at 90% 18%,rgba(56,189,248,.18),transparent 26%),
+    radial-gradient(circle at 70% 88%,rgba(139,92,246,.13),transparent 30%),
+    linear-gradient(135deg,#e8eef8 0%,#f8fbff 54%,#dbeafe 100%)!important;
+  color:#0f172a!important;
+}
+.login::before{
+  content:"";
+  position:fixed;
+  inset:0;
+  pointer-events:none;
+  background-image:
+    linear-gradient(rgba(37,99,235,.045) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(37,99,235,.045) 1px,transparent 1px);
+  background-size:42px 42px;
+  mask-image:radial-gradient(circle at center,black,transparent 75%);
+}
+.login-card{
+  width:min(1040px,96vw)!important;
+  min-height:620px;
+  display:grid!important;
+  grid-template-columns:1.05fr .95fr;
+  gap:0;
+  overflow:hidden;
+  padding:0!important;
+  border-radius:36px!important;
+  background:rgba(255,255,255,.78)!important;
+  border:1px solid rgba(203,213,225,.9)!important;
+  box-shadow:0 34px 90px rgba(15,23,42,.16), inset 0 1px 0 rgba(255,255,255,.72)!important;
+  backdrop-filter:blur(22px);
+  position:relative;
+}
+.login-card::before{
+  content:"";
+  grid-row:1 / span 3;
+  grid-column:1;
+  background:
+    radial-gradient(circle at 22% 18%,rgba(96,165,250,.34),transparent 24%),
+    radial-gradient(circle at 92% 82%,rgba(34,197,94,.14),transparent 30%),
+    linear-gradient(145deg,#ffffff 0%,#edf5ff 58%,#dbeafe 100%);
+  border-right:1px solid rgba(203,213,225,.9);
+}
+.login-card::after{
+  content:"SISTEMA INTERNO\A Gestão operacional TCFTELECOM\A\A• Dashboard de atendimentos\A• Registros, filtros e exportações\A• Convites seguros por link\A• Tema claro e escuro premium";
+  white-space:pre-line;
+  position:absolute;
+  left:48px;
+  top:206px;
+  width:390px;
+  color:#475569;
+  font-weight:850;
+  line-height:1.75;
+  font-size:15px;
+}
+.login-card .brand{
+  grid-column:1;
+  grid-row:1;
+  align-self:start;
+  margin:0!important;
+  padding:48px 48px 0!important;
+  position:relative;
+  z-index:2;
+}
+.login-card .brand .logo{
+  width:72px!important;
+  height:72px!important;
+  border-radius:24px!important;
+  background:linear-gradient(135deg,#2563eb,#38bdf8)!important;
+  box-shadow:0 20px 42px rgba(37,99,235,.28)!important;
+}
+.login-card .brand small{
+  color:#2563eb!important;
+  letter-spacing:6px!important;
+}
+.login-card .brand h1{
+  color:#0f172a!important;
+  font-size:36px!important;
+}
+.login-card .brand p{
+  color:#64748b!important;
+}
+.login-card .box{
+  grid-column:2;
+  grid-row:1 / span 3;
+  align-self:center;
+  padding:54px 52px!important;
+  position:relative;
+  z-index:2;
+}
+.login-card .box h2{
+  color:#0f172a!important;
+  font-size:34px!important;
+  margin-bottom:18px!important;
+}
+.login-card .box h2::after{
+  content:"Acesse sua central operacional";
+  display:block;
+  margin-top:8px;
+  color:#64748b;
+  font-size:14px;
+  font-weight:800;
+  letter-spacing:0;
+}
+.login-card .box label{
+  color:#475569!important;
+}
+.login-card input{
+  background:#ffffff!important;
+  color:#0f172a!important;
+  border-color:#cbd5e1!important;
+  min-height:54px!important;
+  box-shadow:inset 0 1px 0 rgba(15,23,42,.02);
+}
+.login-card input:focus{
+  border-color:#38bdf8!important;
+  box-shadow:0 0 0 4px rgba(56,189,248,.15)!important;
+}
+.login-card .primary{
+  min-height:54px!important;
+  margin-top:4px;
+  border-radius:18px!important;
+  background:linear-gradient(135deg,#2563eb,#38bdf8)!important;
+  box-shadow:0 18px 34px rgba(37,99,235,.24)!important;
+}
+.login-card .links{
+  margin-top:2px;
+}
+.login-card .btn{
+  background:#f8fbff!important;
+  color:#0f172a!important;
+  border-color:#d6e1ef!important;
+}
+.login-card .convite-ajuda{
+  background:#eff6ff!important;
+  color:#2563eb!important;
+  border-color:#bfdbfe!important;
+}
+.login-card .msg,.login-card + .msg{
+  color:#64748b!important;
+}
+.login-card #msg{
+  grid-column:2;
+  align-self:end;
+  padding:0 52px 34px!important;
+}
+body:not(.light) .login{
+  background:
+    radial-gradient(circle at 10% 0%,rgba(37,99,235,.28),transparent 30%),
+    radial-gradient(circle at 92% 20%,rgba(56,189,248,.16),transparent 28%),
+    linear-gradient(135deg,#07111f,#0b1730 58%,#06101f)!important;
+  color:#f8fafc!important;
+}
+body:not(.light) .login-card{
+  background:rgba(15,23,42,.76)!important;
+  border-color:rgba(148,163,184,.20)!important;
+  box-shadow:0 38px 110px rgba(0,0,0,.42), inset 0 1px 0 rgba(255,255,255,.06)!important;
+}
+body:not(.light) .login-card::before{
+  background:
+    radial-gradient(circle at 22% 18%,rgba(37,99,235,.30),transparent 24%),
+    radial-gradient(circle at 88% 88%,rgba(56,189,248,.12),transparent 30%),
+    linear-gradient(145deg,#111827 0%,#0b1730 58%,#08111f 100%);
+  border-right-color:rgba(148,163,184,.18);
+}
+body:not(.light) .login-card::after{
+  color:#cbd5e1;
+}
+body:not(.light) .login-card .brand h1,
+body:not(.light) .login-card .box h2{
+  color:#f8fafc!important;
+}
+body:not(.light) .login-card .brand p,
+body:not(.light) .login-card .box h2::after{
+  color:#94a3b8!important;
+}
+body:not(.light) .login-card input{
+  background:rgba(15,23,42,.70)!important;
+  color:#f8fafc!important;
+  border-color:rgba(148,163,184,.26)!important;
+}
+body:not(.light) .login-card .btn{
+  background:rgba(15,23,42,.58)!important;
+  color:#e2e8f0!important;
+  border-color:rgba(148,163,184,.22)!important;
+}
+@media(max-width:850px){
+  .login-card{grid-template-columns:1fr!important;min-height:auto!important}
+  .login-card::before,.login-card::after{display:none!important}
+  .login-card .brand,.login-card .box,.login-card #msg{grid-column:1!important;grid-row:auto!important}
+  .login-card .brand{padding:30px 28px 0!important}
+  .login-card .box{padding:34px 28px!important}
+  .links{flex-direction:column}
+}
+
+
+
+/* v118.2 - correção: esconder login após abrir o painel */
+#loginView.hidden{display:none!important;}
+#app.hidden{display:none!important;}
+body.app-aberto #loginView{display:none!important;}
+body.app-aberto #app{display:grid!important;}
+body.auth-aberto #app{display:none!important;}
 
 </style>
 </head>
@@ -38,10 +250,10 @@ body.light{
   <nav>
    <button class="active" data-tela="dashboard">🏠 Dashboard</button><button data-tela="novo">📝 Novo Atendimento</button><button data-tela="registros">📋 Registros</button><button data-tela="graficos">📈 Gráficos</button><button data-tela="indicadores">📊 Indicadores</button><button class="admin-only" data-tela="usuarios">👥 Usuários</button><button class="admin-only" data-tela="convites">🔗 Convites</button><button data-tela="perfil">👤 Perfil</button><button class="admin-only" data-tela="config">⚙️ Configurações</button>
   </nav>
-  <div class="side-bottom"><div class="ver"><span class="dot"></span><strong>v118</strong><small>Visual premium</small></div><button id="tema" class="btn">🌞 Modo Claro</button><button id="sair" class="btn danger">↪ Sair</button></div>
+  <div class="side-bottom"><div class="ver"><span class="dot"></span><strong>v118.2</strong><small>Login corrigido</small></div><button id="tema" class="btn">🌞 Modo Claro</button><button id="sair" class="btn danger">↪ Sair</button></div>
  </aside>
  <main class="main">
-  <header class="top"><div><small>SISTEMA INTERNO</small><h1 id="titulo">Dashboard</h1><p id="subtitulo">Visão operacional dos atendimentos, críticos, OS e pós suporte.</p></div><div class="version"><b>Versão atual</b><h2>v118</h2><p class="sub">Visual premium</p></div></header>
+  <header class="top"><div><small>SISTEMA INTERNO</small><h1 id="titulo">Dashboard</h1><p id="subtitulo">Visão operacional dos atendimentos, críticos, OS e pós suporte.</p></div><div class="version"><b>Versão atual</b><h2>v118.2</h2><p class="sub">Login corrigido</p></div></header>
   <section id="dashboard" class="screen active">
    <div class="cards"><div class="card c1"><span>Total de Atendimentos</span><b id="kTotal">0</b><small>Registros lançados</small></div><div class="card c2"><span>Atendimentos Críticos</span><b id="kCrit">0</b><small>Precisam de atenção</small></div><div class="card c3"><span>Resolvidos Remoto</span><b id="kRes">0</b><small>Resolvidos pelo suporte</small></div><div class="card c4"><span>Pós Suporte</span><b id="kPos">0%</b><small>Validação realizada</small></div><div class="card c5"><span>Com OS Aberta</span><b id="kOS">0</b><small>Demandaram ordem</small></div></div>
    <div class="grid2"><div class="panel"><h2>Atendimentos por Tipo</h2><p class="sub">Gráfico principal atualizado em tempo real.</p><div id="barsTipo" class="bars"></div></div><div class="panel"><h2>Resumo rápido</h2><p class="sub">Painel de acompanhamento operacional.</p><div class="quick"><div><b>Atendimento crítico</b><br><span>Deve ser documentado e validado.</span></div><div><b>Pós suporte</b><br><span>Confirmação com cliente após resolução.</span></div><div><b>Exportação</b><br><span>CSV compatível com Excel.</span></div></div></div></div>
@@ -70,7 +282,7 @@ const API="https://tcftelecom-atendimentos-production.up.railway.app";let user=n
 }catch(e){
   msg(e.message||"Erro ao entrar no sistema","err");
 }}
-async function logout(){try{if(user)await api("/logout",{method:"POST",body:JSON.stringify({id:user.id,login:user.login})})}catch(e){}localStorage.removeItem("tcf_v117.2_user");user=null;$("app").classList.add("hidden");$("loginView").classList.remove("hidden");showLogin()}async function usarConvite(){try{
+async function logout(){try{if(user)await api("/logout",{method:"POST",body:JSON.stringify({id:user.id,login:user.login})})}catch(e){}localStorage.removeItem("tcf_v117.2_user");user=null;document.body.classList.add("auth-aberto");document.body.classList.remove("app-aberto");$("app").classList.add("hidden");$("loginView").classList.remove("hidden");showLogin()}async function usarConvite(){try{
   msg("Criando conta...");
   let novoLogin=$("cvLogin").value.trim();
   let novaSenha=$("cvSenha").value.trim();
@@ -95,7 +307,7 @@ async function logout(){try{if(user)await api("/logout",{method:"POST",body:JSON
 }catch(e){
   msg(e.message||"Erro ao usar convite","err");
 }}
-async function recuperar(){try{let v=$("recValor").value.trim();let body=v.includes("@")?{email:v}:{login:v};let r=await api("/recuperar-senha",{method:"POST",body:JSON.stringify(body)});msg("Token gerado: "+r.token,"ok")}catch(e){msg(e.message,"err")}}function abrirApp(){$("loginView").classList.add("hidden");$("app").classList.remove("hidden");$("perfilInfo").innerHTML=`<b>${esc(user.nome)}</b><br>${esc(user.login)} • ${esc(user.email)} • ${esc(user.perfil)}`;document.querySelectorAll(".admin-only").forEach(x=>x.style.display=admin()?"":"none");carregar()}function tela(id,btn){if(["usuarios","convites","config"].includes(id)&&!admin()){alert("Acesso restrito ao Administrador.");return;}document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));$(id).classList.add("active");document.querySelectorAll("nav button").forEach(b=>b.classList.remove("active"));btn.classList.add("active");$("titulo").textContent=btn.textContent.replace(/[🏠📝📋📈📊👥🔗👤⚙️]/g,"").trim();let subs={dashboard:"Visão operacional dos atendimentos, críticos, OS e pós suporte.",novo:"Cadastre os atendimentos um por vez, de forma simples e padronizada.",registros:"Consulte, edite, exclua e exporte os atendimentos.",graficos:"Visualize os indicadores em gráficos operacionais.",indicadores:"Taxas automáticas para acompanhar a operação.",usuarios:"Gestão de usuários do sistema.",convites:"Geração de links de acesso por convite.",perfil:"Dados do usuário logado.",config:"Configurações gerais."};$("subtitulo").textContent=subs[id]||"";if(id==="usuarios")users();if(["dashboard","graficos","indicadores"].includes(id))setTimeout(render,60)}async function carregar(){try{dados=await api("/atendimentos");render()}catch(e){console.error(e)}}function pct(n,t){return t?Math.round(n/t*100):0}function render(){let t=dados.length,crit=dados.filter(x=>x.critico==="Sim").length,res=dados.filter(x=>x.resolvidoRemoto==="Sim"||x.resolvidoInternamente==="Sim").length,os=dados.filter(x=>x.osAberta==="Sim").length,pos=dados.filter(x=>x.posSuporte==="Sim").length,con=dados.filter(x=>String(x.status).toLowerCase().includes("concl")).length;$("kTotal").textContent=t;$("kCrit").textContent=crit;$("kRes").textContent=res;$("kOS").textContent=os;$("kPos").textContent=pct(pos,t)+"%";$("iCrit").textContent=pct(crit,t)+"%";$("iRem").textContent=pct(res,t)+"%";$("iOS").textContent=pct(os,t)+"%";$("iPos").textContent=pct(pos,t)+"%";$("iCon").textContent=pct(con,t)+"%";$("donut").style.setProperty("--p",pct(crit,t)+"%");$("donutTxt").textContent=pct(crit,t)+"%";bars("barsTipo",count("tipo"));bars("barsTipo2",count("tipo"));bars("barsData",count("data"));tabela();filtros()}function count(c){let o={};(c==="tipo"?tipos:[]).forEach(x=>o[x]=0);dados.forEach(x=>{let k=x[c]||"Não informado";o[k]=(o[k]||0)+1});return o}function bars(id,o){let e=Object.entries(o),m=Math.max(...e.map(x=>x[1]),1);$(id).innerHTML=e.map(([k,v])=>`<div><div class="bar-top"><span>${esc(k)}</span><b>${v}</b></div><div class="bar-bg"><div class="bar-fill" style="width:${Math.round(v/m*100)}%"></div></div></div>`).join("")}function filtros(){let sel=$("filtroTec"),v=sel.value,arr=[...new Set(dados.map(x=>x.tecnico).filter(Boolean))];sel.innerHTML='<option value="">Todos os atendentes</option>'+arr.map(x=>`<option ${x===v?"selected":""}>${esc(x)}</option>`).join("")}function listaFiltrada(){let b=($("busca").value||"").toLowerCase(),tec=$("filtroTec").value,cr=$("filtroCrit").value;return dados.filter(x=>{let txt=Object.values(x).join(" ").toLowerCase();return(!b||txt.includes(b))&&(!tec||x.tecnico===tec)&&(!cr||x.critico===cr)})}function statusClass(st){let s=String(st||"").toLowerCase();if(s.includes("concl"))return"ok";if(s.includes("pend")||s.includes("aguard"))return"warn";if(s.includes("cancel"))return"danger2";return""}
+async function recuperar(){try{let v=$("recValor").value.trim();let body=v.includes("@")?{email:v}:{login:v};let r=await api("/recuperar-senha",{method:"POST",body:JSON.stringify(body)});msg("Token gerado: "+r.token,"ok")}catch(e){msg(e.message,"err")}}function abrirApp(){document.body.classList.add("app-aberto");document.body.classList.remove("auth-aberto");$("loginView").classList.add("hidden");$("app").classList.remove("hidden");$("perfilInfo").innerHTML=`<b>${esc(user.nome)}</b><br>${esc(user.login)} • ${esc(user.email)} • ${esc(user.perfil)}`;document.querySelectorAll(".admin-only").forEach(x=>x.style.display=admin()?"":"none");carregar()}function tela(id,btn){if(["usuarios","convites","config"].includes(id)&&!admin()){alert("Acesso restrito ao Administrador.");return;}document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));$(id).classList.add("active");document.querySelectorAll("nav button").forEach(b=>b.classList.remove("active"));btn.classList.add("active");$("titulo").textContent=btn.textContent.replace(/[🏠📝📋📈📊👥🔗👤⚙️]/g,"").trim();let subs={dashboard:"Visão operacional dos atendimentos, críticos, OS e pós suporte.",novo:"Cadastre os atendimentos um por vez, de forma simples e padronizada.",registros:"Consulte, edite, exclua e exporte os atendimentos.",graficos:"Visualize os indicadores em gráficos operacionais.",indicadores:"Taxas automáticas para acompanhar a operação.",usuarios:"Gestão de usuários do sistema.",convites:"Geração de links de acesso por convite.",perfil:"Dados do usuário logado.",config:"Configurações gerais."};$("subtitulo").textContent=subs[id]||"";if(id==="usuarios")users();if(["dashboard","graficos","indicadores"].includes(id))setTimeout(render,60)}async function carregar(){try{dados=await api("/atendimentos");render()}catch(e){console.error(e)}}function pct(n,t){return t?Math.round(n/t*100):0}function render(){let t=dados.length,crit=dados.filter(x=>x.critico==="Sim").length,res=dados.filter(x=>x.resolvidoRemoto==="Sim"||x.resolvidoInternamente==="Sim").length,os=dados.filter(x=>x.osAberta==="Sim").length,pos=dados.filter(x=>x.posSuporte==="Sim").length,con=dados.filter(x=>String(x.status).toLowerCase().includes("concl")).length;$("kTotal").textContent=t;$("kCrit").textContent=crit;$("kRes").textContent=res;$("kOS").textContent=os;$("kPos").textContent=pct(pos,t)+"%";$("iCrit").textContent=pct(crit,t)+"%";$("iRem").textContent=pct(res,t)+"%";$("iOS").textContent=pct(os,t)+"%";$("iPos").textContent=pct(pos,t)+"%";$("iCon").textContent=pct(con,t)+"%";$("donut").style.setProperty("--p",pct(crit,t)+"%");$("donutTxt").textContent=pct(crit,t)+"%";bars("barsTipo",count("tipo"));bars("barsTipo2",count("tipo"));bars("barsData",count("data"));tabela();filtros()}function count(c){let o={};(c==="tipo"?tipos:[]).forEach(x=>o[x]=0);dados.forEach(x=>{let k=x[c]||"Não informado";o[k]=(o[k]||0)+1});return o}function bars(id,o){let e=Object.entries(o),m=Math.max(...e.map(x=>x[1]),1);$(id).innerHTML=e.map(([k,v])=>`<div><div class="bar-top"><span>${esc(k)}</span><b>${v}</b></div><div class="bar-bg"><div class="bar-fill" style="width:${Math.round(v/m*100)}%"></div></div></div>`).join("")}function filtros(){let sel=$("filtroTec"),v=sel.value,arr=[...new Set(dados.map(x=>x.tecnico).filter(Boolean))];sel.innerHTML='<option value="">Todos os atendentes</option>'+arr.map(x=>`<option ${x===v?"selected":""}>${esc(x)}</option>`).join("")}function listaFiltrada(){let b=($("busca").value||"").toLowerCase(),tec=$("filtroTec").value,cr=$("filtroCrit").value;return dados.filter(x=>{let txt=Object.values(x).join(" ").toLowerCase();return(!b||txt.includes(b))&&(!tec||x.tecnico===tec)&&(!cr||x.critico===cr)})}function statusClass(st){let s=String(st||"").toLowerCase();if(s.includes("concl"))return"ok";if(s.includes("pend")||s.includes("aguard"))return"warn";if(s.includes("cancel"))return"danger2";return""}
 function tabela(){let l=listaFiltrada();$("tbody").innerHTML=l.map(x=>`<tr><td>${esc(x.data)}</td><td>${esc(x.tecnico)}</td><td><b>${esc(x.cliente)}</b></td><td>${esc(x.contato||x.telefone)}</td><td>${esc(x.tipo)}</td><td>${esc(x.osAberta)}</td><td>${esc(x.resolvidoRemoto)}</td><td>${esc(x.critico)}</td><td>${esc(x.posSuporte)}</td><td><span class="reg-status ${statusClass(x.status)}">${esc(x.status)}</span></td><td>${esc(x.observacoes)}</td><td><button class="mini warn" data-edit="${x.id}">Editar</button> <button class="mini danger" data-del="${x.id}">Excluir</button></td></tr>`).join("")||'<tr><td colspan="12"><div class="empty-state"><b>Nenhum registro encontrado</b>Use os filtros ou cadastre um novo atendimento.</div></td></tr>'}
 async function salvar(){try{let body={data:$("data").value,tecnico:$("tec").value,cliente:$("cliente").value.trim(),contato:$("contato").value.trim(),tipo:$("tipo").value,osAberta:$("os").value,resolvidoRemoto:$("rem").value,resolvidoInternamente:$("int").value,critico:$("crit").value,posSuporte:$("pos").value,status:$("status").value,observacoes:$("obs").value.trim()};if(!body.cliente||!body.tipo)return alert("Informe cliente e tipo.");if(editId){await api("/atendimentos/"+editId,{method:"PUT",body:JSON.stringify(body)});editId=null}else await api("/atendimentos",{method:"POST",body:JSON.stringify(body)});limpar();await carregar();alert("Salvo com sucesso.")}catch(e){alert(e.message)}}function limpar(){$("cliente").value="";$("contato").value="";$("obs").value="";editId=null;document.body.classList.remove("editando")}function editar(id){let x=dados.find(i=>i.id==id);if(!x)return;editId=id;$("data").value=x.data||"";$("tec").value=x.tecnico||"";$("cliente").value=x.cliente||"";$("contato").value=x.contato||x.telefone||"";$("tipo").value=x.tipo||"";$("os").value=x.osAberta||"Não";$("rem").value=x.resolvidoRemoto||"Não";$("int").value=x.resolvidoInternamente||"Não";$("crit").value=x.critico||"Não";$("pos").value=x.posSuporte||"Não";$("status").value=x.status||"Concluído";$("obs").value=x.observacoes||"";document.body.classList.add("editando");document.querySelector('[data-tela="novo"]').click()}async function del(id){if(confirm("Excluir atendimento?")){await api("/atendimentos/"+id,{method:"DELETE"});carregar()}}
 function excel(){
@@ -607,7 +819,7 @@ let ultimo=x.ultimoLogin?new Date(x.ultimoLogin).toLocaleString("pt-BR"):"Sem re
 return `<div class="user-view-card"><div class="user-avatar-view">${inicial}</div><div class="user-view-main"><b>${esc(x.nome||"Sem nome")}</b><span>${esc(x.login||"")} • ${esc(x.email||"")}</span><span>Último login: ${esc(ultimo)}</span></div><div class="user-view-tags"><span class="pill ${x.online?"online":"offline"}">${x.online?"Online":"Offline"}</span><span class="pill ${ativo?"online":"blocked"}">${ativo?"Ativo":"Bloqueado"}</span><span class="pill ${String(perfil).toLowerCase()==="administrador"?"admin":""}">${esc(perfil)}</span></div></div>`
 }).join("")||"<p>Nenhum usuário encontrado.</p>"
 }catch(e){$("listaUsers").textContent=e.message}}
-async function gerarConv(){try{let c=await api("/convites",{method:"POST",body:JSON.stringify({nome:$("convNome").value,email:$("convEmail").value,login:$("convLogin").value,perfil:$("convPerfil").value,criadoPor:user?.login||""})});let url=location.origin+location.pathname+"?convite="+c.token;$("convOut").innerHTML="Convite criado:<br><b>"+esc(c.token)+"</b><br>"+esc(url)}catch(e){$("convOut").textContent=e.message}}function tema(){document.body.classList.toggle("light");localStorage.setItem("tcf_v117.2_tema",document.body.classList.contains("light")?"light":"dark");$("tema").textContent=document.body.classList.contains("light")?"🌙 Modo Escuro":"🌞 Modo Claro"}function init(){if(localStorage.getItem("tcf_v117.2_tema")==="light")document.body.classList.add("light");$("tema").textContent=document.body.classList.contains("light")?"🌙 Modo Escuro":"🌞 Modo Claro";$("data").valueAsDate=new Date();let p=new URLSearchParams(location.search);if(p.get("convite")){showConvite();$("cvToken").value=p.get("convite")}let s=localStorage.getItem("tcf_v117.2_user")||localStorage.getItem("tcf_v117.1_user")||localStorage.getItem("tcf_v116_user");if(s){try{user=JSON.parse(s);abrirApp()}catch(e){}}$("entrar").onclick=login;$("senha").onkeydown=e=>{if(e.key==="Enter")login()};$("convite").onclick=showConvite;$("recuperar").onclick=showRec;document.querySelectorAll(".voltar").forEach(b=>b.onclick=showLogin);$("usarConvite").onclick=usarConvite;$("gerarRec").onclick=recuperar;$("sair").onclick=logout;$("tema").onclick=tema;$("salvar").onclick=salvar;$("limpar").onclick=limpar;$("expExcel").onclick=excel;$("expCSV").onclick=csv;$("carregarUsers").onclick=users;$("gerarConv").onclick=gerarConv;$("busca").oninput=tabela;$("filtroTec").onchange=tabela;$("filtroCrit").onchange=tabela;document.addEventListener("click",e=>{let n=e.target.closest("nav button[data-tela]");if(n)tela(n.dataset.tela,n);let ed=e.target.closest("[data-edit]");if(ed)editar(ed.dataset.edit);let de=e.target.closest("[data-del]");if(de)del(de.dataset.del)})}document.addEventListener("DOMContentLoaded",init);
+async function gerarConv(){try{let c=await api("/convites",{method:"POST",body:JSON.stringify({nome:$("convNome").value,email:$("convEmail").value,login:$("convLogin").value,perfil:$("convPerfil").value,criadoPor:user?.login||""})});let url=location.origin+location.pathname+"?convite="+c.token;$("convOut").innerHTML="Convite criado:<br><b>"+esc(c.token)+"</b><br>"+esc(url)}catch(e){$("convOut").textContent=e.message}}function tema(){document.body.classList.toggle("light");localStorage.setItem("tcf_v117.2_tema",document.body.classList.contains("light")?"light":"dark");$("tema").textContent=document.body.classList.contains("light")?"🌙 Modo Escuro":"🌞 Modo Claro"}function init(){document.body.classList.add("auth-aberto");if(localStorage.getItem("tcf_v117.2_tema")==="light")document.body.classList.add("light");$("tema").textContent=document.body.classList.contains("light")?"🌙 Modo Escuro":"🌞 Modo Claro";$("data").valueAsDate=new Date();let p=new URLSearchParams(location.search);if(p.get("convite")){showConvite();$("cvToken").value=p.get("convite")}let s=localStorage.getItem("tcf_v117.2_user")||localStorage.getItem("tcf_v117.1_user")||localStorage.getItem("tcf_v116_user");if(s){try{user=JSON.parse(s);abrirApp()}catch(e){}}$("entrar").onclick=login;$("senha").onkeydown=e=>{if(e.key==="Enter")login()};$("convite").onclick=showConvite;$("recuperar").onclick=showRec;document.querySelectorAll(".voltar").forEach(b=>b.onclick=showLogin);$("usarConvite").onclick=usarConvite;$("gerarRec").onclick=recuperar;$("sair").onclick=logout;$("tema").onclick=tema;$("salvar").onclick=salvar;$("limpar").onclick=limpar;$("expExcel").onclick=excel;$("expCSV").onclick=csv;$("carregarUsers").onclick=users;$("gerarConv").onclick=gerarConv;$("busca").oninput=tabela;$("filtroTec").onchange=tabela;$("filtroCrit").onchange=tabela;document.addEventListener("click",e=>{let n=e.target.closest("nav button[data-tela]");if(n)tela(n.dataset.tela,n);let ed=e.target.closest("[data-edit]");if(ed)editar(ed.dataset.edit);let de=e.target.closest("[data-del]");if(de)del(de.dataset.del)})}document.addEventListener("DOMContentLoaded",init);
 </script>
 </body>
 </html>
