@@ -315,7 +315,7 @@ body.auth-aberto #app{display:none!important;}
 
 
 
-/* v122.4 - Modo claro ajustado Base */
+/* v122.5 - Modo claro ajustado Base */
 body:not(.light){--bg:#050b16;--bg2:#091426;--panel:#111a2a;--panel2:#0d1728;--line:rgba(148,163,184,.18);--txt:#f8fafc;--mut:#9fb1c9;background:radial-gradient(circle at 12% 0,rgba(37,99,235,.18),transparent 31%),linear-gradient(135deg,#050b16,#091426 58%,#050b16)!important}
 body:not(.light) .app{grid-template-columns:248px minmax(0,1fr)!important;background:radial-gradient(circle at 20% 0,rgba(37,99,235,.12),transparent 30%),linear-gradient(135deg,#050b16,#081325)!important}
 body:not(.light) .side{width:248px!important;padding:16px 14px!important;background:linear-gradient(180deg,rgba(5,14,30,.98),rgba(3,10,22,.99))!important;border-right:1px solid rgba(148,163,184,.14)!important;box-shadow:12px 0 38px rgba(0,0,0,.32)!important}
@@ -344,7 +344,7 @@ body:not(.light) .bar-bg{background:rgba(148,163,184,.14)!important}body:not(.li
 
 
 
-/* v122.4 - ajustes modo claro, PDF e central de notificações visual */
+/* v122.5 - ajustes modo claro, PDF e central de notificações visual */
 body.light .exec-card,
 body.light .panel,
 body.light .chart-panel,
@@ -414,7 +414,7 @@ body.light .details-btn{background:#eff6ff!important;color:#2563eb!important;bor
 
 
 
-/* v122.4 - padronização do modo claro sem alterar lógica */
+/* v122.5 - padronização do modo claro sem alterar lógica */
 body.light{
   --bg:#f4f7fc!important;
   --bg2:#eef4fb!important;
@@ -649,6 +649,11 @@ body.light .excel-btn{
   color:#fff!important;
 }
 
+
+
+/* v122.5 - Pesquisa global inteligente */
+.global-search-wrap{position:relative;min-width:320px;max-width:520px;width:34vw;z-index:90}.global-search-box{display:flex;align-items:center;gap:10px;width:100%;height:46px;padding:0 12px;border-radius:14px;background:rgba(15,23,42,.62);border:1px solid rgba(148,163,184,.22);box-shadow:inset 0 1px 0 rgba(255,255,255,.04)}.global-search-box input{height:100%;min-height:0!important;padding:0!important;border:0!important;background:transparent!important;color:#e5f2ff!important;box-shadow:none!important;outline:0!important;font-weight:850;width:100%}.global-search-box input::placeholder{color:#93a7c2}.search-kbd{font-size:10px;color:#9fb0c7;border:1px solid rgba(148,163,184,.28);border-radius:8px;padding:4px 6px;white-space:nowrap;background:rgba(148,163,184,.10)}.global-search-results{position:absolute;top:54px;left:0;right:0;background:linear-gradient(145deg,#101a2c,#0b1324);border:1px solid rgba(56,189,248,.24);border-radius:18px;box-shadow:0 28px 80px rgba(0,0,0,.38);overflow:hidden;max-height:420px;overflow-y:auto;z-index:10000}.global-search-head{padding:12px 14px;color:#9fb0c7;font-size:12px;text-transform:uppercase;letter-spacing:1.4px;border-bottom:1px solid rgba(148,163,184,.16);display:flex;justify-content:space-between}.global-search-item{display:grid;grid-template-columns:42px 1fr auto;gap:12px;align-items:center;padding:12px 14px;border-bottom:1px solid rgba(148,163,184,.12);cursor:pointer;transition:.15s ease}.global-search-item:hover,.global-search-item.active{background:rgba(56,189,248,.10)}.gs-avatar{width:42px;height:42px;border-radius:14px;display:grid;place-items:center;background:linear-gradient(135deg,#2563eb,#38bdf8);color:#fff;font-weight:950}.gs-main b{display:block;color:#f8fafc}.gs-main span{display:block;margin-top:3px;color:#9fb0c7;font-size:12px;font-weight:750}.gs-tags{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}.gs-chip{font-size:11px;border-radius:999px;padding:5px 8px;background:rgba(56,189,248,.12);color:#67e8f9;border:1px solid rgba(56,189,248,.22)}.gs-empty{padding:22px;color:#9fb0c7;text-align:center}.gs-empty b{display:block;color:#f8fafc;margin-bottom:6px}body.light .global-search-box{background:#ffffff;border-color:#cdd8e8;box-shadow:0 10px 24px rgba(15,23,42,.06)}body.light .global-search-box input{color:#0f172a!important}body.light .global-search-box input::placeholder{color:#64748b}body.light .search-kbd{background:#f1f5f9;color:#64748b;border-color:#dbe4ef}body.light .global-search-results{background:#ffffff;border-color:#cfe2f5;box-shadow:0 24px 70px rgba(15,23,42,.16)}body.light .global-search-head{color:#64748b;border-bottom-color:#dbe4ef}body.light .global-search-item{border-bottom-color:#e6edf5}body.light .global-search-item:hover,body.light .global-search-item.active{background:#eff6ff}body.light .gs-main b{color:#0f172a}body.light .gs-main span{color:#64748b}body.light .gs-empty b{color:#0f172a}@media(max-width:1100px){.global-search-wrap{width:100%;max-width:none}.exec-tools{flex-wrap:wrap}.exec-user{display:none}}@media(max-width:720px){.search-kbd{display:none}.global-search-results{position:fixed;left:16px;right:16px;top:82px}}
+
 </style>
 </head>
 <body>
@@ -666,21 +671,21 @@ body.light .excel-btn{
   <nav>
    <button class="active" data-tela="dashboard">🏠 Dashboard</button><button data-tela="novo">📝 Novo Atendimento</button><button data-tela="registros">📋 Registros</button><button data-tela="graficos">📈 Gráficos</button><button data-tela="indicadores">📊 Indicadores</button><button class="admin-only" data-tela="usuarios">👥 Usuários</button><button class="admin-only" data-tela="convites">🔗 Convites</button><button data-tela="perfil">👤 Perfil</button><button class="admin-only" data-tela="config">⚙️ Configurações</button>
   </nav>
-  <div class="side-bottom"><div class="ver"><span class="dot"></span><strong>v122.4</strong><small>Modo claro ajustado</small></div><button id="tema" class="btn">🌞 Modo Claro</button><button id="sair" class="btn danger">↪ Sair</button></div>
+  <div class="side-bottom"><div class="ver"><span class="dot"></span><strong>v122.5</strong><small>Modo claro ajustado</small></div><button id="tema" class="btn">🌞 Modo Claro</button><button id="sair" class="btn danger">↪ Sair</button></div>
  </aside>
  <main class="main">
   <div class="exec-topbar">
     <div class="exec-titlebar"><button class="exec-menu" type="button">☰</button><div><b id="execTitulo">Dashboard</b><span id="execSubtitulo">Visão geral dos atendimentos</span></div></div>
-    <div class="exec-tools"><div class="exec-search">🔎 <span>Pesquisar...</span></div><button class="exec-icon" type="button">🔔<em id="execNotifCount">0</em></button><button class="exec-icon" type="button">🌙</button><div class="exec-user"><div>👤</div><b id="execUserNome">Victor</b><span id="execUserPerfil">Administrador</span></div></div>
+    <div class="exec-tools"><div class="global-search-wrap"><div class="exec-search global-search-box">🔎 <input id="globalSearch" type="search" placeholder="Pesquisar cliente, código, telefone, tipo..." autocomplete="off"><span class="search-kbd">Ctrl K</span></div><div id="globalSearchResults" class="global-search-results hidden"></div></div><button id="execNotifToggle" class="exec-icon" type="button">🔔<em id="execNotifCount">0</em></button><button class="exec-icon" type="button" onclick="tema()">🌙</button><div class="exec-user"><div>👤</div><b id="execUserNome">Victor</b><span id="execUserPerfil">Administrador</span></div></div>
   </div>
-  <header class="top"><div><small>SISTEMA INTERNO</small><h1 id="titulo">Dashboard</h1><p id="subtitulo">Visão operacional dos atendimentos, críticos, OS e pós suporte.</p></div><div class="version"><b>Versão atual</b><h2>v122.4</h2><p class="sub">Modo claro ajustado</p></div></header>
+  <header class="top"><div><small>SISTEMA INTERNO</small><h1 id="titulo">Dashboard</h1><p id="subtitulo">Visão operacional dos atendimentos, críticos, OS e pós suporte.</p></div><div class="version"><b>Versão atual</b><h2>v122.5</h2><p class="sub">Modo claro ajustado</p></div></header>
   <section id="dashboard" class="screen active">
    <div class="dashboard-exec-wrap">
     <div class="dashboard-exec-main">
      <div class="cards exec-kpis"><div class="card c1"><span>📋 Total Atendimentos</span><b id="kTotal">0</b><small>Registros lançados</small></div><div class="card c2"><span>⚠️ Atendimentos Críticos</span><b id="kCrit">0</b><small>Precisam de atenção</small></div><div class="card c3"><span>✅ Resolvidos Remoto</span><b id="kRes">0</b><small>Resolvidos pelo suporte</small></div><div class="card c4"><span>👥 Pós Suporte</span><b id="kPos">0%</b><small>Validação realizada</small></div><div class="card c5"><span>🧰 Com OS Aberta</span><b id="kOS">0</b><small>Demandaram ordem</small></div></div>
      <div class="grid2 exec-grid"><div class="panel"><div class="panel-topline"><div><h2>Atendimentos por Tipo</h2><p class="sub">Distribuição por tipo de atendimento.</p></div><span>Este mês</span></div><div id="barsTipo" class="bars"></div></div><div class="panel"><h2>Resumo rápido</h2><p class="sub">Painel de acompanhamento operacional.</p><div class="quick"><div><b>Atendimento crítico</b><br><span>Deve ser documentado e validado.</span></div><div><b>Pós suporte</b><br><span>Confirmação com cliente após resolução.</span></div><div><b>Exportação</b><br><span>CSV compatível com Excel.</span></div></div></div></div>
     </div>
-    <aside class="exec-notifications"><div class="notif-head"><h2>Notificações</h2><button type="button">×</button></div><button class="notif-read" type="button">Marcar todas como lidas</button><div id="execNotifList" class="notif-list"><div class="notif-empty">Sem notificações recentes.</div></div></aside>
+    <aside class="exec-notifications"><div class="notif-head"><h2>Notificações</h2><button type="button">×</button></div><button id="execNotifLimpar" class="notif-read" type="button">Limpar notificações locais</button><div id="execNotifList" class="notif-list"><div class="notif-empty">Sem notificações recentes.</div></div></aside>
    </div>
   </section>
   <section id="indicadores" class="screen">
@@ -841,10 +846,11 @@ function notifKey(){return "tcf_v122_notificacoes"}
 function carregarNotifs(){try{return JSON.parse(localStorage.getItem(notifKey())||"[]")}catch(e){return []}}
 function salvarNotifs(n){localStorage.setItem(notifKey(),JSON.stringify(n.slice(0,40)))}
 function tempoNotif(ts){let d=Math.max(1,Math.round((Date.now()-ts)/1000));if(d<60)return "agora";let m=Math.round(d/60);if(m<60)return "há "+m+" min";let h=Math.round(m/60);if(h<24)return "há "+h+" h";return new Date(ts).toLocaleString("pt-BR")}
-function addNotif(titulo,texto,tipo="info",icone="🔔"){let n=carregarNotifs();n.unshift({id:Date.now()+Math.random(),titulo,texto,tipo,icone,ts:Date.now()});salvarNotifs(n);renderNotifs()}
-function renderNotifs(){let lista=$("notifLista"),count=$("notifCount");if(!lista||!count)return;let n=carregarNotifs();count.textContent=n.length>9?"9+":n.length;lista.innerHTML=n.length?n.map(x=>`<div class="notif-card ${x.tipo==='ok'?'n-ok':x.tipo==='warn'?'n-warn':x.tipo==='danger'?'n-danger':x.tipo==='purple'?'n-purple':''}"><div class="notif-icon">${esc(x.icone||"🔔")}</div><div><b>${esc(x.titulo)}</b><span>${esc(x.texto)}</span><small class="notif-time">${tempoNotif(x.ts)}</small></div></div>`).join(""):`<div class="notif-empty"><b>Nenhuma notificação ainda</b><br>As ações importantes aparecerão aqui.</div>`}
-function abrirNotif(){let p=$("notifPanel");if(p)p.classList.toggle("hidden");renderNotifs()}
-function limparNotifs(){if(confirm("Limpar notificações locais deste navegador?")){salvarNotifs([]);renderNotifs()}}
+function addNotif(titulo,texto,tipo="info",icone="🔔"){let n=carregarNotifs();n.unshift({id:Date.now()+Math.random(),titulo,texto,tipo,icone,ts:Date.now()});salvarNotifs(n);renderNotifs();renderNotificacoesExec()}
+function notifClass(tipo){return tipo==='ok'?'n-ok':tipo==='warn'?'n-warn':tipo==='danger'?'n-danger':tipo==='purple'?'n-purple':''}
+function renderNotifs(){let lista=$("notifLista"),count=$("notifCount"),execCount=$("execNotifCount");let n=carregarNotifs();if(count)count.textContent=n.length>9?"9+":n.length;if(execCount)execCount.textContent=n.length>9?"9+":n.length;if(!lista)return;lista.innerHTML=n.length?n.map(x=>`<div class="notif-card ${notifClass(x.tipo)}"><div class="notif-icon">${esc(x.icone||"🔔")}</div><div><b>${esc(x.titulo)}</b><span>${esc(x.texto)}</span><small class="notif-time">${tempoNotif(x.ts)}</small></div></div>`).join(""):`<div class="notif-empty"><b>Nenhuma notificação ainda</b><br>As ações importantes aparecerão aqui.</div>`}
+function abrirNotif(){let p=$("notifPanel");if(p)p.classList.toggle("hidden");renderNotifs();renderNotificacoesExec()}
+function limparNotifs(){if(confirm("Limpar notificações locais deste navegador?")){salvarNotifs([]);renderNotifs();renderNotificacoesExec()}}
 async function login(){try{
   msg("Entrando...");
   let login=$("login").value.trim();
@@ -960,15 +966,21 @@ function renderGraficosPremium(){let total=dados.length,crit=dados.filter(x=>x.c
 
 function renderNotificacoesExec(){
  let box=$("execNotifList"); if(!box) return;
+ let n=carregarNotifs();
+ if(n.length){
+  box.innerHTML=n.slice(0,6).map((x,i)=>`<div class="notif-item"><div class="notif-ico n${(i%3)+1}">${esc(x.icone||"🔔")}</div><div class="notif-body"><small>${esc(x.titulo)}</small><b>${esc(x.texto)}</b><span>${tempoNotif(x.ts)}</span></div><i class="notif-dot"></i></div>`).join("");
+  if($("execNotifCount"))$("execNotifCount").textContent=n.length>9?"9+":n.length;
+  return;
+ }
  let total=dados.length;
  let crit=dados.filter(x=>x.critico==="Sim").length;
  let os=dados.filter(x=>x.osAberta==="Sim").length;
  let recentes=dados.slice(0,4);
  let itens=[];
- if(total) itens.push(`<div class="notif-item"><div class="notif-ico n1">＋</div><div class="notif-body"><small>Novo atendimento</small><b>${esc(recentes[0]?.tecnico||"Equipe")} cadastrou atendimento ${esc(recentes[0]?.cliente||"")}</b><span>Agora há pouco</span></div><i class="notif-dot"></i></div>`);
+ if(total) itens.push(`<div class="notif-item"><div class="notif-ico n1">＋</div><div class="notif-body"><small>Resumo operacional</small><b>${total} atendimento(s) registrados no sistema</b><span>Dados atualizados</span></div><i class="notif-dot"></i></div>`);
  if(crit) itens.push(`<div class="notif-item"><div class="notif-ico n3">⚠</div><div class="notif-body"><small>Atendimento crítico</small><b>${crit} atendimento(s) marcado(s) como crítico</b><span>Requer acompanhamento</span></div><i class="notif-dot"></i></div>`);
  if(os) itens.push(`<div class="notif-item"><div class="notif-ico n2">🧰</div><div class="notif-body"><small>O.S. aberta</small><b>${os} atendimento(s) demandaram ordem de serviço</b><span>Verificar fila técnica</span></div><i class="notif-dot"></i></div>`);
- recentes.slice(1,4).forEach((x,i)=>itens.push(`<div class="notif-item"><div class="notif-ico n${(i%3)+1}">${esc((x.tecnico||"U").slice(0,2).toUpperCase())}</div><div class="notif-body"><small>${esc(x.tipo||"Atendimento")}</small><b>${esc(x.cliente||"Cliente")} • ${esc(x.status||"Sem status")}</b><span>${esc(x.data||"")}</span></div><i class="notif-dot"></i></div>`));
+ recentes.slice(0,3).forEach((x,i)=>itens.push(`<div class="notif-item"><div class="notif-ico n${(i%3)+1}">${esc((x.tecnico||"U").slice(0,2).toUpperCase())}</div><div class="notif-body"><small>${esc(x.tipo||"Atendimento")}</small><b>${esc(x.cliente||"Cliente")} • ${esc(x.status||"Sem status")}</b><span>${esc(x.data||"")}</span></div><i class="notif-dot"></i></div>`));
  box.innerHTML=itens.join("")||'<div class="notif-empty">Sem notificações recentes.</div>';
  if($("execNotifCount"))$("execNotifCount").textContent=Math.min(itens.length,9);
 }
@@ -1052,6 +1064,7 @@ async function alterarSenhaUsuario(id, loginAlvo){try{
  if(novaSenha.length<4) return alert("A senha precisa ter pelo menos 4 caracteres.");
  await api("/usuarios/"+id,{method:"PUT",body:JSON.stringify({senha:novaSenha})});
  alert("Senha alterada com sucesso.");
+ addNotif("Senha alterada",`${user?.nome||user?.login||"Administrador"} alterou a senha de ${loginAlvo||"um usuário"}.`,"warn","🔑");
  users();
 }catch(e){alert(e.message||"Erro ao alterar senha")}}
 async function excluirUsuarioSistema(id, loginAlvo){try{
@@ -1061,9 +1074,14 @@ async function excluirUsuarioSistema(id, loginAlvo){try{
  if(!confirm("Deseja realmente excluir o usuário " + (loginAlvo||"") + "?")) return;
  await api("/usuarios/"+id,{method:"DELETE"});
  alert("Usuário excluído com sucesso.");
+ addNotif("Usuário excluído",`${user?.nome||user?.login||"Administrador"} excluiu o usuário ${loginAlvo||""}.`,"danger","🗑");
  users();
 }catch(e){alert(e.message||"Erro ao excluir usuário")}}
-async function gerarConv(){try{let c=await api("/convites",{method:"POST",body:JSON.stringify({nome:$("convNome").value,email:$("convEmail").value,login:$("convLogin").value,perfil:$("convPerfil").value,criadoPor:user?.login||""})});let url=location.origin+location.pathname+"?convite="+c.token;$("convOut").innerHTML="Convite criado:<br><b>"+esc(c.token)+"</b><br>"+esc(url);addNotif("Convite gerado",`Convite criado para ${$("convNome").value||$("convLogin").value||"novo usuário"}.`,"purple","📩")}catch(e){$("convOut").textContent=e.message}}function tema(){document.body.classList.toggle("light");localStorage.setItem("tcf_v117.2_tema",document.body.classList.contains("light")?"light":"dark");$("tema").textContent=document.body.classList.contains("light")?"🌙 Modo Escuro":"🌞 Modo Claro"}function init(){document.body.classList.add("auth-aberto");if(localStorage.getItem("tcf_v117.2_tema")==="light")document.body.classList.add("light");$("tema").textContent=document.body.classList.contains("light")?"🌙 Modo Escuro":"🌞 Modo Claro";$("data").valueAsDate=new Date();let p=new URLSearchParams(location.search);if(p.get("convite")){showConvite();$("cvToken").value=p.get("convite")}let s=localStorage.getItem("tcf_v117.2_user")||localStorage.getItem("tcf_v117.1_user")||localStorage.getItem("tcf_v116_user");if(s){try{user=JSON.parse(s);abrirApp()}catch(e){}}$("entrar").onclick=login;$("senha").onkeydown=e=>{if(e.key==="Enter")login()};$("convite").onclick=showConvite;$("recuperar").onclick=showRec;document.querySelectorAll(".voltar").forEach(b=>b.onclick=showLogin);$("usarConvite").onclick=usarConvite;$("gerarRec").onclick=recuperar;$("sair").onclick=logout;$("tema").onclick=tema;$("salvar").onclick=salvar;$("limpar").onclick=limpar;$("expExcel").onclick=excel;if($("expPDF"))$("expPDF").onclick=pdf;$("expCSV").onclick=csv;$("carregarUsers").onclick=users;$("gerarConv").onclick=gerarConv;if($("notifToggle"))$("notifToggle").onclick=abrirNotif;if($("notifFechar"))$("notifFechar").onclick=()=>$("notifPanel").classList.add("hidden");if($("notifLimpar"))$("notifLimpar").onclick=limparNotifs;if($("notifAtualizar"))$("notifAtualizar").onclick=renderNotifs;renderNotifs();$("busca").oninput=tabela;$("filtroTec").onchange=tabela;$("filtroCrit").onchange=tabela;document.addEventListener("click",e=>{let n=e.target.closest("nav button[data-tela]");if(n)tela(n.dataset.tela,n);let vw=e.target.closest("[data-view]");if(vw)abrirDetalhes(vw.dataset.view);let ed=e.target.closest("[data-edit]");if(ed)editar(ed.dataset.edit);let de=e.target.closest("[data-del]");if(de)del(de.dataset.del);let up=e.target.closest("[data-user-pass]");if(up)alterarSenhaUsuario(up.dataset.userPass,up.dataset.userLogin);let ud=e.target.closest("[data-user-del]");if(ud)excluirUsuarioSistema(ud.dataset.userDel,ud.dataset.userLogin);if(e.target&&e.target.id==="detalheModal")fecharDetalhes()});let df=$("detFechar");if(df)df.onclick=fecharDetalhes;document.addEventListener("keydown",e=>{if(e.key==="Escape"&&$("detalheModal")&&!$("detalheModal").classList.contains("hidden"))fecharDetalhes()})}document.addEventListener("DOMContentLoaded",init);
+async function gerarConv(){try{let c=await api("/convites",{method:"POST",body:JSON.stringify({nome:$("convNome").value,email:$("convEmail").value,login:$("convLogin").value,perfil:$("convPerfil").value,criadoPor:user?.login||""})});let url=location.origin+location.pathname+"?convite="+c.token;$("convOut").innerHTML="Convite criado:<br><b>"+esc(c.token)+"</b><br>"+esc(url);addNotif("Convite gerado",`Convite criado para ${$("convNome").value||$("convLogin").value||"novo usuário"}.`,"purple","📩")}catch(e){$("convOut").textContent=e.message}}
+function textoBuscaAtendimento(x){return [x.id,x.data,x.tecnico,x.cliente,x.contato,x.telefone,x.tipo,x.osAberta,x.resolvidoRemoto,x.resolvidoInternamente,x.critico,x.posSuporte,x.status,x.observacoes].map(v=>String(v||"").toLowerCase()).join(" ")}
+function renderGlobalSearch(){let inp=$("globalSearch"), box=$("globalSearchResults");if(!inp||!box)return;let q=inp.value.trim().toLowerCase();if(!q){box.classList.add("hidden");box.innerHTML="";return}let termos=q.split(/\s+/).filter(Boolean);let res=dados.filter(x=>termos.every(t=>textoBuscaAtendimento(x).includes(t))).slice(0,8);let total=dados.filter(x=>termos.every(t=>textoBuscaAtendimento(x).includes(t))).length;if(!res.length){box.classList.remove("hidden");box.innerHTML=`<div class="global-search-head"><span>Pesquisa global</span><span>0 resultados</span></div><div class="gs-empty"><b>Nenhum atendimento encontrado</b>Tente código, cliente, telefone, técnico ou tipo.</div>`;return}box.classList.remove("hidden");box.innerHTML=`<div class="global-search-head"><span>Pesquisa global</span><span>${total} resultado(s)</span></div>`+res.map(x=>{let ini=(String(x.tecnico||x.cliente||"A").trim()[0]||"A").toUpperCase();let resumo=(x.observacoes||"").slice(0,75);return `<div class="global-search-item" data-view="${x.id}"><div class="gs-avatar">${esc(ini)}</div><div class="gs-main"><b>${esc(x.cliente||"Atendimento #"+x.id)}</b><span>${esc(x.contato||x.telefone||"Sem contato")} • ${esc(x.tecnico||"Sem técnico")} • ${esc(x.data||"")}</span><span>${esc(resumo)}${resumo.length>=75?"...":""}</span></div><div class="gs-tags"><span class="gs-chip">${esc(x.tipo||"Tipo")}</span><span class="gs-chip">${esc(x.status||"Status")}</span></div></div>`}).join("")}
+function setupGlobalSearch(){let inp=$("globalSearch"), box=$("globalSearchResults");if(!inp||!box)return;inp.oninput=renderGlobalSearch;inp.onfocus=renderGlobalSearch;inp.onkeydown=e=>{if(e.key==="Enter"){let first=box.querySelector("[data-view]");if(first){abrirDetalhes(first.dataset.view);box.classList.add("hidden");inp.blur()}}};document.addEventListener("keydown",e=>{if((e.ctrlKey||e.metaKey)&&String(e.key).toLowerCase()==="k"){e.preventDefault();inp.focus();inp.select()}});document.addEventListener("click",e=>{if(!e.target.closest(".global-search-wrap")){box.classList.add("hidden")}})}
+function tema(){document.body.classList.toggle("light");localStorage.setItem("tcf_v117.2_tema",document.body.classList.contains("light")?"light":"dark");$("tema").textContent=document.body.classList.contains("light")?"🌙 Modo Escuro":"🌞 Modo Claro"}function init(){document.body.classList.add("auth-aberto");if(localStorage.getItem("tcf_v117.2_tema")==="light")document.body.classList.add("light");$("tema").textContent=document.body.classList.contains("light")?"🌙 Modo Escuro":"🌞 Modo Claro";$("data").valueAsDate=new Date();let p=new URLSearchParams(location.search);if(p.get("convite")){showConvite();$("cvToken").value=p.get("convite")}let s=localStorage.getItem("tcf_v117.2_user")||localStorage.getItem("tcf_v117.1_user")||localStorage.getItem("tcf_v116_user");if(s){try{user=JSON.parse(s);abrirApp()}catch(e){}}$("entrar").onclick=login;$("senha").onkeydown=e=>{if(e.key==="Enter")login()};$("convite").onclick=showConvite;$("recuperar").onclick=showRec;document.querySelectorAll(".voltar").forEach(b=>b.onclick=showLogin);$("usarConvite").onclick=usarConvite;$("gerarRec").onclick=recuperar;$("sair").onclick=logout;$("tema").onclick=tema;$("salvar").onclick=salvar;$("limpar").onclick=limpar;$("expExcel").onclick=excel;if($("expPDF"))$("expPDF").onclick=pdf;$("expCSV").onclick=csv;$("carregarUsers").onclick=users;$("gerarConv").onclick=gerarConv;if($("notifToggle"))$("notifToggle").onclick=abrirNotif;if($("execNotifToggle"))$("execNotifToggle").onclick=abrirNotif;if($("notifFechar"))$("notifFechar").onclick=()=>$("notifPanel").classList.add("hidden");if($("notifLimpar"))$("notifLimpar").onclick=limparNotifs;if($("execNotifLimpar"))$("execNotifLimpar").onclick=limparNotifs;if($("notifAtualizar"))$("notifAtualizar").onclick=renderNotifs;renderNotifs();setupGlobalSearch();$("busca").oninput=tabela;$("filtroTec").onchange=tabela;$("filtroCrit").onchange=tabela;document.addEventListener("click",e=>{let n=e.target.closest("nav button[data-tela]");if(n)tela(n.dataset.tela,n);let vw=e.target.closest("[data-view]");if(vw)abrirDetalhes(vw.dataset.view);let ed=e.target.closest("[data-edit]");if(ed)editar(ed.dataset.edit);let de=e.target.closest("[data-del]");if(de)del(de.dataset.del);let up=e.target.closest("[data-user-pass]");if(up)alterarSenhaUsuario(up.dataset.userPass,up.dataset.userLogin);let ud=e.target.closest("[data-user-del]");if(ud)excluirUsuarioSistema(ud.dataset.userDel,ud.dataset.userLogin);if(e.target&&e.target.id==="detalheModal")fecharDetalhes()});let df=$("detFechar");if(df)df.onclick=fecharDetalhes;document.addEventListener("keydown",e=>{if(e.key==="Escape"&&$("detalheModal")&&!$("detalheModal").classList.contains("hidden"))fecharDetalhes()})}document.addEventListener("DOMContentLoaded",init);
 </script>
 </body>
 </html>
