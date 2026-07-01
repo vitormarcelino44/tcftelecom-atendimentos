@@ -315,7 +315,7 @@ body.auth-aberto #app{display:none!important;}
 
 
 
-/* v122.2 - Dark Executivo Base */
+/* v122.3 - Dark Executivo Base */
 body:not(.light){--bg:#050b16;--bg2:#091426;--panel:#111a2a;--panel2:#0d1728;--line:rgba(148,163,184,.18);--txt:#f8fafc;--mut:#9fb1c9;background:radial-gradient(circle at 12% 0,rgba(37,99,235,.18),transparent 31%),linear-gradient(135deg,#050b16,#091426 58%,#050b16)!important}
 body:not(.light) .app{grid-template-columns:248px minmax(0,1fr)!important;background:radial-gradient(circle at 20% 0,rgba(37,99,235,.12),transparent 30%),linear-gradient(135deg,#050b16,#081325)!important}
 body:not(.light) .side{width:248px!important;padding:16px 14px!important;background:linear-gradient(180deg,rgba(5,14,30,.98),rgba(3,10,22,.99))!important;border-right:1px solid rgba(148,163,184,.14)!important;box-shadow:12px 0 38px rgba(0,0,0,.32)!important}
@@ -342,6 +342,76 @@ body:not(.light) .bar-bg{background:rgba(148,163,184,.14)!important}body:not(.li
 @media(max-width:1400px){.dashboard-exec-wrap{grid-template-columns:1fr}.exec-notifications{position:relative;top:auto}.exec-tools .exec-search{min-width:190px}}
 @media(max-width:980px){body:not(.light) .app{grid-template-columns:1fr!important}.exec-topbar{flex-direction:column;align-items:stretch}.exec-tools{flex-wrap:wrap}.exec-search{flex:1;min-width:180px}.exec-kpis{grid-template-columns:1fr!important}.exec-grid{grid-template-columns:1fr!important}}
 
+
+
+/* v122.3 - ajustes modo claro, PDF e central de notificações visual */
+body.light .exec-card,
+body.light .panel,
+body.light .chart-panel,
+body.light .rank-box,
+body.light .recent-card,
+body.light .alert-item,
+body.light .notification-panel,
+body.light .notif-card,
+body.light .users-summary .u-card,
+body.light .user-view-card{
+  background:linear-gradient(135deg,#ffffff,#f3f7fd)!important;
+  border-color:#dbe5f2!important;
+  color:#0f172a!important;
+  box-shadow:0 16px 42px rgba(15,23,42,.08)!important;
+}
+body.light .exec-card b,
+body.light .panel h2,
+body.light .rank-box b,
+body.light .recent-card b,
+body.light .notif-card b,
+body.light .metric-card b,
+body.light .trend-summary-item b,
+body.light .bar-top b{
+  color:#0f172a!important;
+}
+body.light .exec-card span,
+body.light .exec-card small,
+body.light .sub,
+body.light .rank-box span,
+body.light .recent-card span,
+body.light .notif-card span,
+body.light .notif-time,
+body.light .bar-top,
+body.light .trend-summary-item span,
+body.light .trend-summary-item small{
+  color:#607086!important;
+}
+body.light .bar-bg,
+body.light .rank-bar-bg,
+body.light .trend-summary,
+body.light .column-chart,
+body.light .timeline-card{
+  background:#e8eef7!important;
+  border-color:#d8e4f2!important;
+}
+body.light .graph-kpi,
+body.light .metric-card,
+body.light .card{
+  color:#fff!important;
+  box-shadow:0 18px 44px rgba(15,23,42,.12)!important;
+}
+body.light .graph-kpi b,
+body.light .graph-kpi span,
+body.light .graph-kpi small,
+body.light .metric-card b,
+body.light .metric-card span,
+body.light .metric-card small,
+body.light .card b,
+body.light .card span,
+body.light .card small{color:#fff!important}
+body.light .registros-toolbar{background:#f3f7fd!important;border-color:#dbe5f2!important}
+body.light .btn:not(#tema):not(.danger),
+body.light .mini{background:#ffffff!important;color:#0f172a!important;border-color:#d6e1ef!important}
+body.light .details-btn{background:#eff6ff!important;color:#2563eb!important;border-color:#bfdbfe!important}
+.pdf-btn{background:linear-gradient(135deg,#dc2626,#fb7185)!important;color:#fff!important;border:0!important}
+.notif-toggle{position:fixed;right:22px;bottom:22px;z-index:6000;width:58px;height:58px;border-radius:20px;border:1px solid rgba(56,189,248,.35);background:linear-gradient(135deg,#2563eb,#38bdf8);color:#fff;display:grid;place-items:center;font-size:24px;box-shadow:0 22px 50px rgba(37,99,235,.34);cursor:pointer;transition:.18s ease}.notif-toggle:hover{transform:translateY(-3px) scale(1.02)}.notif-count{position:absolute;right:-6px;top:-6px;min-width:22px;height:22px;border-radius:999px;display:grid;place-items:center;background:#ef4444;color:white;border:2px solid var(--bg);font-size:11px;font-weight:950;padding:0 6px}.notification-panel{position:fixed;right:22px;bottom:92px;z-index:6001;width:min(420px,calc(100vw - 44px));max-height:72vh;display:grid;grid-template-rows:auto auto 1fr;background:linear-gradient(145deg,rgba(10,20,36,.96),rgba(6,14,28,.98));border:1px solid rgba(148,163,184,.20);border-radius:28px;box-shadow:0 36px 100px rgba(0,0,0,.45);backdrop-filter:blur(18px);overflow:hidden}.notification-panel.hidden{display:none!important}.notif-head{padding:20px 20px 14px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:12px;align-items:flex-start}.notif-head small{display:block;color:var(--cyan);letter-spacing:2px;font-size:10px;text-transform:uppercase}.notif-head h3{margin:5px 0 0;font-size:22px;letter-spacing:-.8px}.notif-close{width:40px;height:40px;border-radius:14px;background:rgba(148,163,184,.12)!important}.notif-tools{padding:12px 18px;border-bottom:1px solid var(--line);display:flex;gap:10px;justify-content:space-between}.notif-list{overflow:auto;padding:14px;display:grid;gap:12px}.notif-card{display:grid;grid-template-columns:44px 1fr;gap:12px;padding:14px;border-radius:20px;border:1px solid rgba(148,163,184,.18);background:linear-gradient(135deg,rgba(17,31,52,.96),rgba(56,189,248,.045));animation:notifIn .22s ease both}.notif-icon{width:44px;height:44px;border-radius:16px;display:grid;place-items:center;color:white;font-size:18px;background:linear-gradient(135deg,#2563eb,#38bdf8);box-shadow:0 12px 24px rgba(37,99,235,.20)}.notif-card b{display:block;margin-bottom:4px}.notif-card span{display:block;color:var(--mut);font-size:13px;line-height:1.35}.notif-time{display:block;margin-top:8px;color:var(--mut);font-size:11px;font-weight:900}.notif-empty{text-align:center;padding:34px 18px;color:var(--mut)}.notif-card.n-ok .notif-icon{background:linear-gradient(135deg,#16a34a,#5eead4)}.notif-card.n-warn .notif-icon{background:linear-gradient(135deg,#ea580c,#fdba74)}.notif-card.n-danger .notif-icon{background:linear-gradient(135deg,#ef4444,#fb7185)}.notif-card.n-purple .notif-icon{background:linear-gradient(135deg,#7c3aed,#c084fc)}@keyframes notifIn{from{opacity:.4;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}@media(max-width:700px){.notif-toggle{right:16px;bottom:16px}.notification-panel{right:12px;bottom:84px;width:calc(100vw - 24px);max-height:76vh}}
+
 </style>
 </head>
 <body>
@@ -359,14 +429,14 @@ body:not(.light) .bar-bg{background:rgba(148,163,184,.14)!important}body:not(.li
   <nav>
    <button class="active" data-tela="dashboard">🏠 Dashboard</button><button data-tela="novo">📝 Novo Atendimento</button><button data-tela="registros">📋 Registros</button><button data-tela="graficos">📈 Gráficos</button><button data-tela="indicadores">📊 Indicadores</button><button class="admin-only" data-tela="usuarios">👥 Usuários</button><button class="admin-only" data-tela="convites">🔗 Convites</button><button data-tela="perfil">👤 Perfil</button><button class="admin-only" data-tela="config">⚙️ Configurações</button>
   </nav>
-  <div class="side-bottom"><div class="ver"><span class="dot"></span><strong>v122.2</strong><small>Dark Executivo</small></div><button id="tema" class="btn">🌞 Modo Claro</button><button id="sair" class="btn danger">↪ Sair</button></div>
+  <div class="side-bottom"><div class="ver"><span class="dot"></span><strong>v122.3</strong><small>Dark Executivo</small></div><button id="tema" class="btn">🌞 Modo Claro</button><button id="sair" class="btn danger">↪ Sair</button></div>
  </aside>
  <main class="main">
   <div class="exec-topbar">
     <div class="exec-titlebar"><button class="exec-menu" type="button">☰</button><div><b id="execTitulo">Dashboard</b><span id="execSubtitulo">Visão geral dos atendimentos</span></div></div>
     <div class="exec-tools"><div class="exec-search">🔎 <span>Pesquisar...</span></div><button class="exec-icon" type="button">🔔<em id="execNotifCount">0</em></button><button class="exec-icon" type="button">🌙</button><div class="exec-user"><div>👤</div><b id="execUserNome">Victor</b><span id="execUserPerfil">Administrador</span></div></div>
   </div>
-  <header class="top"><div><small>SISTEMA INTERNO</small><h1 id="titulo">Dashboard</h1><p id="subtitulo">Visão operacional dos atendimentos, críticos, OS e pós suporte.</p></div><div class="version"><b>Versão atual</b><h2>v122.2</h2><p class="sub">Dark Executivo</p></div></header>
+  <header class="top"><div><small>SISTEMA INTERNO</small><h1 id="titulo">Dashboard</h1><p id="subtitulo">Visão operacional dos atendimentos, críticos, OS e pós suporte.</p></div><div class="version"><b>Versão atual</b><h2>v122.3</h2><p class="sub">Dark Executivo</p></div></header>
   <section id="dashboard" class="screen active">
    <div class="dashboard-exec-wrap">
     <div class="dashboard-exec-main">
@@ -500,11 +570,22 @@ body:not(.light) .bar-bg{background:rgba(148,163,184,.14)!important}body:not(.li
    </div>
   </section>
   <section id="novo" class="screen"><div class="panel"><h2>Novo atendimento</h2><div class="edit-alert">✏️ Modo edição ativo. Altere os dados e clique em Salvar Atendimento.</div><p class="sub">Preencha um atendimento por vez. Ao salvar, ele será inserido na tabela.</p><div class="form"><label>DATA<input id="data" type="date"></label><label>TÉCNICO/ATENDENTE<select id="tec"><option value="">Selecione</option><option>Victor</option><option>Hiago</option><option>Higor</option><option>Odair</option><option>Otavio</option><option>Gustavo</option><option>Cleiton</option><option>Daniel</option></select></label><label>CLIENTE<input id="cliente" placeholder="Nome ou código do cliente"></label><label>CONTATO<input id="contato" placeholder="Telefone / WhatsApp"></label><label class="span2">TIPO DE ATENDIMENTO<select id="tipo"><option value="">Selecione</option><option>Suporte</option><option>Verificação da Conexão</option><option>Mudança de Cômodo</option><option>Instabilidade</option><option>LOS</option><option>Sinal Alto</option><option>Problema na ONU</option><option>Fonte com Defeito</option><option>Problema IPTV</option><option>ONU Travada</option><option>Infraestrutura</option><option>Reversão de Cancelamento</option><option>Viabilidade</option><option>Cabeamento</option><option>Instalação de Roteadores</option><option>Rural</option><option>Outros</option></select></label><label>OS ABERTA?<select id="os"><option>Não</option><option>Sim</option></select></label><label>RESOLVIDO REMOTO?<select id="rem"><option>Não</option><option>Sim</option></select></label><label>PROBLEMA IPTV?<select id="int"><option>Não</option><option>Sim</option></select></label><label>CRÍTICO?<select id="crit"><option>Não</option><option>Sim</option></select></label><label>PÓS SUPORTE REALIZADO?<select id="pos"><option>Não</option><option>Sim</option></select></label><label class="span2">STATUS<select id="status"><option>Concluído</option><option>Pendente</option><option>Em andamento</option><option>Aguardando técnico</option><option>Aguardando cliente</option></select></label><label class="span4">OBSERVAÇÕES<textarea id="obs" placeholder="Ex.: Resolvido internamente pelo suporte."></textarea></label></div><div class="actions"><button id="salvar" class="primary">Salvar Atendimento</button><button id="limpar" class="btn">Limpar</button></div></div></section>
-  <section id="registros" class="screen"><div class="panel"><h2>Registros</h2><p class="sub">Tabela no padrão da planilha, com busca, filtros, edição e exclusão.</p><div class="registros-toolbar"><input id="busca" placeholder="🔎 Buscar cliente, contato, tipo ou observação..."><select id="filtroTec"><option value="">Todos os atendentes</option></select><select id="filtroCrit"><option value="">Crítico: todos</option><option>Sim</option><option>Não</option></select><button id="expExcel" class="btn excel-btn">Exportar Excel</button><button id="expCSV" class="btn">Exportar CSV</button></div><div class="table-wrap"><table><thead><tr><th>Data</th><th>Técnico/Atendente</th><th>Cliente</th><th>Contato</th><th>Tipo de atendimento</th><th>OS aberta?</th><th>Resolvido remoto?</th><th>Crítico?</th><th>Pós suporte realizado?</th><th>Status</th><th>Observações</th><th>Ações</th></tr></thead><tbody id="tbody"></tbody></table></div></div></section>
+  <section id="registros" class="screen"><div class="panel"><h2>Registros</h2><p class="sub">Tabela no padrão da planilha, com busca, filtros, edição e exclusão.</p><div class="registros-toolbar"><input id="busca" placeholder="🔎 Buscar cliente, contato, tipo ou observação..."><select id="filtroTec"><option value="">Todos os atendentes</option></select><select id="filtroCrit"><option value="">Crítico: todos</option><option>Sim</option><option>Não</option></select><button id="expExcel" class="btn excel-btn">Exportar Excel</button><button id="expPDF" class="btn pdf-btn">Exportar PDF</button><button id="expCSV" class="btn">Exportar CSV</button></div><div class="table-wrap"><table><thead><tr><th>Data</th><th>Técnico/Atendente</th><th>Cliente</th><th>Contato</th><th>Tipo de atendimento</th><th>OS aberta?</th><th>Resolvido remoto?</th><th>Crítico?</th><th>Pós suporte realizado?</th><th>Status</th><th>Observações</th><th>Ações</th></tr></thead><tbody id="tbody"></tbody></table></div></div></section>
   <section id="usuarios" class="screen admin-only"><div class="panel"><h2>Usuários</h2><div class="users-note">Gestão administrativa dos usuários cadastrados. Somente o administrador pode alterar senha ou excluir usuários de teste.</div><div class="users-summary"><div class="u-card"><span>Total</span><strong id="uTotalView">0</strong></div><div class="u-card"><span>Online</span><strong id="uOnlineView">0</strong></div><div class="u-card"><span>Ativos</span><strong id="uAtivosView">0</strong></div><div class="u-card"><span>Admins</span><strong id="uAdminsView">0</strong></div></div><div class="admin-note">🔒 Área restrita: somente Victor/Administrador pode gerenciar usuários. O administrador principal não pode ser excluído.</div><button id="carregarUsers" class="primary">Atualizar usuários</button><div id="listaUsers" class="list"></div></div></section>
   <section id="convites" class="screen admin-only"><div class="panel"><h2>Convites profissionais</h2><div class="admin-note">🔒 Área administrativa para gerar links de acesso. Nesta versão o visual foi preparado para a gestão de convites sem alterar o backend.</div><div class="form"><input id="convNome" placeholder="Nome"><input id="convEmail" placeholder="E-mail"><input id="convLogin" placeholder="Login sugerido"><select id="convPerfil"><option>Atendente</option><option>Suporte</option><option>Técnico</option><option>Supervisor</option><option>Administrador</option></select></div><div class="actions"><button id="gerarConv" class="primary">Gerar convite</button></div><div id="convOut" class="msg"></div></div></section>
   <section id="perfil" class="screen"><div class="panel"><h2>Perfil</h2><p id="perfilInfo"></p></div></section>
   <section id="config" class="screen admin-only"><div class="panel"><h2>Configurações</h2><p>API Railway conectada.</p></div></section>
+
+
+  <div id="notifPanel" class="notification-panel hidden">
+   <div class="notif-head">
+    <div><small>Central operacional</small><h3>Notificações</h3></div>
+    <button id="notifFechar" class="btn notif-close">×</button>
+   </div>
+   <div class="notif-tools"><button id="notifLimpar" class="btn">Limpar</button><button id="notifAtualizar" class="btn">Atualizar</button></div>
+   <div id="notifLista" class="notif-list"></div>
+  </div>
+  <button id="notifToggle" class="notif-toggle" title="Notificações">🔔<span id="notifCount" class="notif-count">0</span></button>
 
   <div id="detalheModal" class="modal-backdrop hidden">
    <div class="modal-card">
@@ -518,7 +599,16 @@ body:not(.light) .bar-bg{background:rgba(148,163,184,.14)!important}body:not(.li
  </main>
 </div>
 <script>
-const API="https://tcftelecom-atendimentos-production.up.railway.app";let user=null,dados=[],editId=null;const $=id=>document.getElementById(id);const tipos=["Suporte", "Verificação da Conexão", "Mudança de Cômodo", "Instabilidade", "LOS", "Sinal Alto", "Problema na ONU", "Fonte com Defeito", "Problema IPTV", "ONU Travada", "Infraestrutura", "Reversão de Cancelamento", "Viabilidade", "Cabeamento", "Instalação de Roteadores", "Rural", "Outros"];function esc(v){return String(v??"").replace(/[&<>"']/g,s=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[s]))}async function api(p,o={}){let r=await fetch(API+p,{...o,headers:{"Content-Type":"application/json",...(o.headers||{})}});let d=await r.json().catch(()=>({}));if(!r.ok)throw Error(d.erro||"Erro na API");return d}function msg(t,c=""){let m=$("msg");m.textContent=t;m.className="msg "+c}function admin(){let p=String(user?.perfil||"").toLowerCase();let l=String(user?.login||user?.nome||"").toLowerCase();return p==="administrador"||l==="victor"}function showLogin(){$("boxLogin").classList.remove("hidden");$("boxConvite").classList.add("hidden");$("boxRecuperar").classList.add("hidden");msg("")}function showConvite(){$("boxLogin").classList.add("hidden");$("boxConvite").classList.remove("hidden");$("boxRecuperar").classList.add("hidden");msg("")}function showRec(){$("boxLogin").classList.add("hidden");$("boxConvite").classList.add("hidden");$("boxRecuperar").classList.remove("hidden");msg("")}async function login(){try{
+const API="https://tcftelecom-atendimentos-production.up.railway.app";let user=null,dados=[],editId=null;const $=id=>document.getElementById(id);const tipos=["Suporte", "Verificação da Conexão", "Mudança de Cômodo", "Instabilidade", "LOS", "Sinal Alto", "Problema na ONU", "Fonte com Defeito", "Problema IPTV", "ONU Travada", "Infraestrutura", "Reversão de Cancelamento", "Viabilidade", "Cabeamento", "Instalação de Roteadores", "Rural", "Outros"];function esc(v){return String(v??"").replace(/[&<>"']/g,s=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[s]))}async function api(p,o={}){let r=await fetch(API+p,{...o,headers:{"Content-Type":"application/json",...(o.headers||{})}});let d=await r.json().catch(()=>({}));if(!r.ok)throw Error(d.erro||"Erro na API");return d}function msg(t,c=""){let m=$("msg");m.textContent=t;m.className="msg "+c}function admin(){let p=String(user?.perfil||"").toLowerCase();let l=String(user?.login||user?.nome||"").toLowerCase();return p==="administrador"||l==="victor"}function showLogin(){$("boxLogin").classList.remove("hidden");$("boxConvite").classList.add("hidden");$("boxRecuperar").classList.add("hidden");msg("")}function showConvite(){$("boxLogin").classList.add("hidden");$("boxConvite").classList.remove("hidden");$("boxRecuperar").classList.add("hidden");msg("")}function showRec(){$("boxLogin").classList.add("hidden");$("boxConvite").classList.add("hidden");$("boxRecuperar").classList.remove("hidden");msg("")}
+function notifKey(){return "tcf_v122_notificacoes"}
+function carregarNotifs(){try{return JSON.parse(localStorage.getItem(notifKey())||"[]")}catch(e){return []}}
+function salvarNotifs(n){localStorage.setItem(notifKey(),JSON.stringify(n.slice(0,40)))}
+function tempoNotif(ts){let d=Math.max(1,Math.round((Date.now()-ts)/1000));if(d<60)return "agora";let m=Math.round(d/60);if(m<60)return "há "+m+" min";let h=Math.round(m/60);if(h<24)return "há "+h+" h";return new Date(ts).toLocaleString("pt-BR")}
+function addNotif(titulo,texto,tipo="info",icone="🔔"){let n=carregarNotifs();n.unshift({id:Date.now()+Math.random(),titulo,texto,tipo,icone,ts:Date.now()});salvarNotifs(n);renderNotifs()}
+function renderNotifs(){let lista=$("notifLista"),count=$("notifCount");if(!lista||!count)return;let n=carregarNotifs();count.textContent=n.length>9?"9+":n.length;lista.innerHTML=n.length?n.map(x=>`<div class="notif-card ${x.tipo==='ok'?'n-ok':x.tipo==='warn'?'n-warn':x.tipo==='danger'?'n-danger':x.tipo==='purple'?'n-purple':''}"><div class="notif-icon">${esc(x.icone||"🔔")}</div><div><b>${esc(x.titulo)}</b><span>${esc(x.texto)}</span><small class="notif-time">${tempoNotif(x.ts)}</small></div></div>`).join(""):`<div class="notif-empty"><b>Nenhuma notificação ainda</b><br>As ações importantes aparecerão aqui.</div>`}
+function abrirNotif(){let p=$("notifPanel");if(p)p.classList.toggle("hidden");renderNotifs()}
+function limparNotifs(){if(confirm("Limpar notificações locais deste navegador?")){salvarNotifs([]);renderNotifs()}}
+async function login(){try{
   msg("Entrando...");
   let login=$("login").value.trim();
   let senha=$("senha").value.trim();
@@ -528,6 +618,7 @@ const API="https://tcftelecom-atendimentos-production.up.railway.app";let user=n
   localStorage.setItem("tcf_v117.2_user",JSON.stringify(user));
   msg("Login confirmado. Abrindo sistema...","ok");
   abrirApp();
+  addNotif("Login realizado", (user?.nome||user?.login||"Usuário")+" entrou no sistema.", "ok", "👤");
 }catch(e){
   msg(e.message||"Erro ao entrar no sistema","err");
 }}
@@ -651,7 +742,7 @@ function tabela(){let l=listaFiltrada();$("tbody").innerHTML=l.map(x=>{let obs=r
 function tagDetalhe(txt,cls=""){return `<span class="reg-status ${cls}">${esc(txt)}</span>`}
 function abrirDetalhes(id){let x=dados.find(i=>String(i.id)===String(id));if(!x)return;$("detTitulo").textContent=x.cliente||("#"+x.id);let stCls=statusClass(x.status);let tags=[tagDetalhe(x.status||"Sem status",stCls), x.critico==="Sim"?tagDetalhe("⚠ Crítico","warn"):"", x.osAberta==="Sim"?tagDetalhe("🔧 O.S. Aberta",""):"", x.resolvidoRemoto==="Sim"?tagDetalhe("Remoto ✓","ok"):"", x.resolvidoInternamente==="Sim"?tagDetalhe("Problema IPTV","warn"):"", x.posSuporte==="Sim"?tagDetalhe("Pós-suporte ✓","ok"):""].filter(Boolean).join("");$("detConteudo").innerHTML=`<div class="detail-tags">${tags}</div><div class="detail-grid"><div class="detail-field"><div class="detail-icon">📅</div><div><small>Data</small><b>${esc(x.data||"—")}</b></div></div><div class="detail-field"><div class="detail-icon">🏷</div><div><small>Tipo</small><b>${esc(x.tipo||"—")}</b></div></div><div class="detail-field"><div class="detail-icon">👤</div><div><small>Atendente</small><b>${esc(x.tecnico||"—")}</b></div></div><div class="detail-field"><div class="detail-icon">📌</div><div><small>Acompanhamento</small><b>${esc(x.posSuporte||"Não")}</b></div></div><div class="detail-field"><div class="detail-icon">👥</div><div><small>Cliente</small><b>${esc(x.cliente||"—")}</b></div></div><div class="detail-field"><div class="detail-icon">🧾</div><div><small>Código / ID</small><b>${esc(x.id||"—")}</b></div></div><div class="detail-field"><div class="detail-icon">☎</div><div><small>Contato</small><b>${esc(x.contato||x.telefone||"—")}</b></div></div><div class="detail-field"><div class="detail-icon">🖥</div><div><small>OS aberta?</small><b>${esc(x.osAberta||"Não")}</b></div></div></div><div class="detail-obs"><small>Observações</small><div class="detail-obs-text">${esc(x.observacoes||"Sem observações.")}</div></div>`;$("detEditar").onclick=()=>{fecharDetalhes();editar(id)};$("detExcluir").onclick=()=>{fecharDetalhes();del(id)};$("detalheModal").classList.remove("hidden")}
 function fecharDetalhes(){$("detalheModal").classList.add("hidden")}
-async function salvar(){try{let body={data:$("data").value,tecnico:$("tec").value,cliente:$("cliente").value.trim(),contato:$("contato").value.trim(),tipo:$("tipo").value,osAberta:$("os").value,resolvidoRemoto:$("rem").value,resolvidoInternamente:$("int").value,critico:$("crit").value,posSuporte:$("pos").value,status:$("status").value,observacoes:$("obs").value.trim()};if(!body.cliente||!body.tipo)return alert("Informe cliente e tipo.");if(editId){await api("/atendimentos/"+editId,{method:"PUT",body:JSON.stringify(body)});editId=null}else await api("/atendimentos",{method:"POST",body:JSON.stringify(body)});limpar();await carregar();alert("Salvo com sucesso.")}catch(e){alert(e.message)}}function limpar(){$("cliente").value="";$("contato").value="";$("obs").value="";editId=null;document.body.classList.remove("editando")}function editar(id){let x=dados.find(i=>i.id==id);if(!x)return;editId=id;$("data").value=x.data||"";$("tec").value=x.tecnico||"";$("cliente").value=x.cliente||"";$("contato").value=x.contato||x.telefone||"";$("tipo").value=x.tipo||"";$("os").value=x.osAberta||"Não";$("rem").value=x.resolvidoRemoto||"Não";$("int").value=x.resolvidoInternamente||"Não";$("crit").value=x.critico||"Não";$("pos").value=x.posSuporte||"Não";$("status").value=x.status||"Concluído";$("obs").value=x.observacoes||"";document.body.classList.add("editando");document.querySelector('[data-tela="novo"]').click()}async function del(id){if(confirm("Excluir atendimento?")){await api("/atendimentos/"+id,{method:"DELETE"});carregar()}}
+async function salvar(){try{let body={data:$("data").value,tecnico:$("tec").value,cliente:$("cliente").value.trim(),contato:$("contato").value.trim(),tipo:$("tipo").value,osAberta:$("os").value,resolvidoRemoto:$("rem").value,resolvidoInternamente:$("int").value,critico:$("crit").value,posSuporte:$("pos").value,status:$("status").value,observacoes:$("obs").value.trim()};if(!body.cliente||!body.tipo)return alert("Informe cliente e tipo.");let eraEdicao=!!editId;if(editId){await api("/atendimentos/"+editId,{method:"PUT",body:JSON.stringify(body)});editId=null}else await api("/atendimentos",{method:"POST",body:JSON.stringify(body)});addNotif(eraEdicao?"Atendimento editado":"Novo atendimento",`${body.tecnico||user?.nome||"Usuário"} ${eraEdicao?"alterou":"cadastrou"} ${body.tipo||"atendimento"} para ${body.cliente}.`,eraEdicao?"warn":"ok",eraEdicao?"✏️":"📝");limpar();await carregar();alert("Salvo com sucesso.")}catch(e){alert(e.message)}}function limpar(){$("cliente").value="";$("contato").value="";$("obs").value="";editId=null;document.body.classList.remove("editando")}function editar(id){let x=dados.find(i=>i.id==id);if(!x)return;editId=id;$("data").value=x.data||"";$("tec").value=x.tecnico||"";$("cliente").value=x.cliente||"";$("contato").value=x.contato||x.telefone||"";$("tipo").value=x.tipo||"";$("os").value=x.osAberta||"Não";$("rem").value=x.resolvidoRemoto||"Não";$("int").value=x.resolvidoInternamente||"Não";$("crit").value=x.critico||"Não";$("pos").value=x.posSuporte||"Não";$("status").value=x.status||"Concluído";$("obs").value=x.observacoes||"";document.body.classList.add("editando");document.querySelector('[data-tela="novo"]').click()}async function del(id){let x=dados.find(i=>String(i.id)===String(id));if(confirm("Excluir atendimento?")){await api("/atendimentos/"+id,{method:"DELETE"});addNotif("Atendimento excluído",`${user?.nome||user?.login||"Administrador"} excluiu ${x?.cliente||"um atendimento"}.`,"danger","🗑");carregar()}}
 function excel(){
   let lista = listaFiltrada();
   let cab = ["Data","Técnico/Atendente","Cliente","Contato","Tipo de Atendimento","OS Aberta?","Resolvido Remoto?","Problema IPTV?","Crítico?","Pós Suporte Realizado?","Status","Observações"];
@@ -682,6 +773,16 @@ function excel(){
   a.href=URL.createObjectURL(blob);
   a.download="tcftelecom_atendimentos.xls";
   a.click();
+}
+
+
+function pdf(){
+  let lista=listaFiltrada();
+  let rows=lista.map(x=>`<tr><td>${esc(x.data||"")}</td><td>${esc(x.tecnico||"")}</td><td>${esc(x.cliente||"")}</td><td>${esc(x.contato||x.telefone||"")}</td><td>${esc(x.tipo||"")}</td><td>${esc(x.osAberta||"")}</td><td>${esc(x.resolvidoRemoto||"")}</td><td>${esc(x.resolvidoInternamente||"")}</td><td>${esc(x.critico||"")}</td><td>${esc(x.posSuporte||"")}</td><td>${esc(x.status||"")}</td><td class="obs">${esc(x.observacoes||"")}</td></tr>`).join("");
+  let html=`<!doctype html><html><head><meta charset="utf-8"><title>TCFTELECOM PDF</title><style>@page{size:landscape;margin:10mm}body{font-family:Arial,sans-serif;color:#0f172a}h1{font-size:20px;margin:0 0 4px}.sub{color:#64748b;margin-bottom:14px}table{width:100%;border-collapse:collapse;font-size:10px}th{background:#0f2f4d;color:#fff;text-align:left}th,td{border:1px solid #cbd5e1;padding:6px;vertical-align:top}tr:nth-child(even) td{background:#f8fafc}.obs{max-width:360px;white-space:pre-wrap;word-break:break-word}.head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px}.badge{background:#e0f2fe;color:#075985;border:1px solid #bae6fd;border-radius:999px;padding:6px 10px;font-weight:bold}</style></head><body><div class="head"><div><h1>TCFTELECOM — Registros de Atendimentos</h1><div class="sub">Exportação PDF gerada em ${new Date().toLocaleString("pt-BR")}</div></div><div class="badge">${lista.length} registro(s)</div></div><table><thead><tr><th>Data</th><th>Técnico</th><th>Cliente</th><th>Contato</th><th>Tipo</th><th>OS</th><th>Remoto</th><th>IPTV</th><th>Crítico</th><th>Pós</th><th>Status</th><th>Observações</th></tr></thead><tbody>${rows||'<tr><td colspan="12">Nenhum registro encontrado.</td></tr>'}</tbody></table><script>window.onload=()=>setTimeout(()=>window.print(),250)<\/script></body></html>`;
+  let w=window.open("","_blank");
+  if(!w)return alert("Permita pop-ups para exportar PDF.");
+  w.document.open();w.document.write(html);w.document.close();
 }
 
 function csv(){let l=[["Data","Técnico","Cliente","Contato","Tipo","OS","Remoto","Crítico","Pós","Status","Observações"],...listaFiltrada().map(x=>[x.data,x.tecnico,x.cliente,x.contato||x.telefone,x.tipo,x.osAberta,x.resolvidoRemoto,x.critico,x.posSuporte,x.status,x.observacoes])];let s=l.map(r=>r.map(v=>`"${String(v??"").replace(/"/g,'""')}"`).join(";")).join("\\n");let a=document.createElement("a");a.href=URL.createObjectURL(new Blob(["\\ufeff"+s],{type:"text/csv"}));a.download="tcftelecom_atendimentos.csv";a.click()}async function users(){try{
@@ -725,7 +826,7 @@ async function excluirUsuarioSistema(id, loginAlvo){try{
  alert("Usuário excluído com sucesso.");
  users();
 }catch(e){alert(e.message||"Erro ao excluir usuário")}}
-async function gerarConv(){try{let c=await api("/convites",{method:"POST",body:JSON.stringify({nome:$("convNome").value,email:$("convEmail").value,login:$("convLogin").value,perfil:$("convPerfil").value,criadoPor:user?.login||""})});let url=location.origin+location.pathname+"?convite="+c.token;$("convOut").innerHTML="Convite criado:<br><b>"+esc(c.token)+"</b><br>"+esc(url)}catch(e){$("convOut").textContent=e.message}}function tema(){document.body.classList.toggle("light");localStorage.setItem("tcf_v117.2_tema",document.body.classList.contains("light")?"light":"dark");$("tema").textContent=document.body.classList.contains("light")?"🌙 Modo Escuro":"🌞 Modo Claro"}function init(){document.body.classList.add("auth-aberto");if(localStorage.getItem("tcf_v117.2_tema")==="light")document.body.classList.add("light");$("tema").textContent=document.body.classList.contains("light")?"🌙 Modo Escuro":"🌞 Modo Claro";$("data").valueAsDate=new Date();let p=new URLSearchParams(location.search);if(p.get("convite")){showConvite();$("cvToken").value=p.get("convite")}let s=localStorage.getItem("tcf_v117.2_user")||localStorage.getItem("tcf_v117.1_user")||localStorage.getItem("tcf_v116_user");if(s){try{user=JSON.parse(s);abrirApp()}catch(e){}}$("entrar").onclick=login;$("senha").onkeydown=e=>{if(e.key==="Enter")login()};$("convite").onclick=showConvite;$("recuperar").onclick=showRec;document.querySelectorAll(".voltar").forEach(b=>b.onclick=showLogin);$("usarConvite").onclick=usarConvite;$("gerarRec").onclick=recuperar;$("sair").onclick=logout;$("tema").onclick=tema;$("salvar").onclick=salvar;$("limpar").onclick=limpar;$("expExcel").onclick=excel;$("expCSV").onclick=csv;$("carregarUsers").onclick=users;$("gerarConv").onclick=gerarConv;$("busca").oninput=tabela;$("filtroTec").onchange=tabela;$("filtroCrit").onchange=tabela;document.addEventListener("click",e=>{let n=e.target.closest("nav button[data-tela]");if(n)tela(n.dataset.tela,n);let vw=e.target.closest("[data-view]");if(vw)abrirDetalhes(vw.dataset.view);let ed=e.target.closest("[data-edit]");if(ed)editar(ed.dataset.edit);let de=e.target.closest("[data-del]");if(de)del(de.dataset.del);let up=e.target.closest("[data-user-pass]");if(up)alterarSenhaUsuario(up.dataset.userPass,up.dataset.userLogin);let ud=e.target.closest("[data-user-del]");if(ud)excluirUsuarioSistema(ud.dataset.userDel,ud.dataset.userLogin);if(e.target&&e.target.id==="detalheModal")fecharDetalhes()});let df=$("detFechar");if(df)df.onclick=fecharDetalhes;document.addEventListener("keydown",e=>{if(e.key==="Escape"&&$("detalheModal")&&!$("detalheModal").classList.contains("hidden"))fecharDetalhes()})}document.addEventListener("DOMContentLoaded",init);
+async function gerarConv(){try{let c=await api("/convites",{method:"POST",body:JSON.stringify({nome:$("convNome").value,email:$("convEmail").value,login:$("convLogin").value,perfil:$("convPerfil").value,criadoPor:user?.login||""})});let url=location.origin+location.pathname+"?convite="+c.token;$("convOut").innerHTML="Convite criado:<br><b>"+esc(c.token)+"</b><br>"+esc(url);addNotif("Convite gerado",`Convite criado para ${$("convNome").value||$("convLogin").value||"novo usuário"}.`,"purple","📩")}catch(e){$("convOut").textContent=e.message}}function tema(){document.body.classList.toggle("light");localStorage.setItem("tcf_v117.2_tema",document.body.classList.contains("light")?"light":"dark");$("tema").textContent=document.body.classList.contains("light")?"🌙 Modo Escuro":"🌞 Modo Claro"}function init(){document.body.classList.add("auth-aberto");if(localStorage.getItem("tcf_v117.2_tema")==="light")document.body.classList.add("light");$("tema").textContent=document.body.classList.contains("light")?"🌙 Modo Escuro":"🌞 Modo Claro";$("data").valueAsDate=new Date();let p=new URLSearchParams(location.search);if(p.get("convite")){showConvite();$("cvToken").value=p.get("convite")}let s=localStorage.getItem("tcf_v117.2_user")||localStorage.getItem("tcf_v117.1_user")||localStorage.getItem("tcf_v116_user");if(s){try{user=JSON.parse(s);abrirApp()}catch(e){}}$("entrar").onclick=login;$("senha").onkeydown=e=>{if(e.key==="Enter")login()};$("convite").onclick=showConvite;$("recuperar").onclick=showRec;document.querySelectorAll(".voltar").forEach(b=>b.onclick=showLogin);$("usarConvite").onclick=usarConvite;$("gerarRec").onclick=recuperar;$("sair").onclick=logout;$("tema").onclick=tema;$("salvar").onclick=salvar;$("limpar").onclick=limpar;$("expExcel").onclick=excel;if($("expPDF"))$("expPDF").onclick=pdf;$("expCSV").onclick=csv;$("carregarUsers").onclick=users;$("gerarConv").onclick=gerarConv;if($("notifToggle"))$("notifToggle").onclick=abrirNotif;if($("notifFechar"))$("notifFechar").onclick=()=>$("notifPanel").classList.add("hidden");if($("notifLimpar"))$("notifLimpar").onclick=limparNotifs;if($("notifAtualizar"))$("notifAtualizar").onclick=renderNotifs;renderNotifs();$("busca").oninput=tabela;$("filtroTec").onchange=tabela;$("filtroCrit").onchange=tabela;document.addEventListener("click",e=>{let n=e.target.closest("nav button[data-tela]");if(n)tela(n.dataset.tela,n);let vw=e.target.closest("[data-view]");if(vw)abrirDetalhes(vw.dataset.view);let ed=e.target.closest("[data-edit]");if(ed)editar(ed.dataset.edit);let de=e.target.closest("[data-del]");if(de)del(de.dataset.del);let up=e.target.closest("[data-user-pass]");if(up)alterarSenhaUsuario(up.dataset.userPass,up.dataset.userLogin);let ud=e.target.closest("[data-user-del]");if(ud)excluirUsuarioSistema(ud.dataset.userDel,ud.dataset.userLogin);if(e.target&&e.target.id==="detalheModal")fecharDetalhes()});let df=$("detFechar");if(df)df.onclick=fecharDetalhes;document.addEventListener("keydown",e=>{if(e.key==="Escape"&&$("detalheModal")&&!$("detalheModal").classList.contains("hidden"))fecharDetalhes()})}document.addEventListener("DOMContentLoaded",init);
 </script>
 </body>
 </html>
